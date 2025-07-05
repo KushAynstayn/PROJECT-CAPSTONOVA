@@ -1,28 +1,38 @@
 <?php
 
-use App\Http\Controllers\Api\Auth\LoginController;
-use App\Http\Controllers\Api\Auth\LogoutController;
-use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\LogoutController;
+use App\Http\Controllers\Api\User\ProfileController;
+use App\Http\Controllers\Api\Auth\RegisterController;
 
 
 // Authentication routes grouped under the 'auth' prefix.
 Route::prefix('auth')->group(function () {
-    // Handles new user registration for Proponents (Students) and Viewers.
+    
     Route::post('/register', RegisterController::class)->name('auth.register');
 
-    // Handles user login and Sanctum token generation.
+    
     Route::post('/login', LoginController::class)->name('auth.login');
 
-    // Handles user logout and token revocation, protected by Sanctum.
+    
     Route::post('/logout', LogoutController::class)
         ->middleware('auth:sanctum')
         ->name('auth.logout');
+
+    });
+
+
+// User profile routes, protected by Sanctum authentication.
+Route::prefix('user')->middleware('auth:sanctum')->group(function () {
+    
+    Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');
+
+    
+    Route::put('/profile', [ProfileController::class, 'update'])->name('user.profile.update');
+
 });
 
-// Route to fetch personal details of the authenticated user, protected by Sanctum.
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return response()->json($request->user());
-})->name('user.details');
+
