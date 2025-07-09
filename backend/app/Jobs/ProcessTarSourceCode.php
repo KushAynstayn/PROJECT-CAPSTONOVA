@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\CapstoneManuscript;
 use App\Models\CapstoneSourceCode;
 use App\Models\Notification;
 use App\Models\ProgrammingLanguage;
@@ -24,9 +25,6 @@ class ProcessTarSourceCode implements ShouldQueue
 
     public $tries = 3;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(
         public User $user,
         public int $projectId,
@@ -35,12 +33,8 @@ class ProcessTarSourceCode implements ShouldQueue
     ) {
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
-        // Step 1: Notify the user that the job has started.
         Notification::create([
             'user_id' => $this->user->id,
             'message' => 'Your TAR file upload is now being processed.',
@@ -49,7 +43,6 @@ class ProcessTarSourceCode implements ShouldQueue
         ]);
 
         try {
-            // Step 2: Process the file.
             $tarContent = Storage::get($this->tempTarPath);
             $compressedContent = zstd_compress($tarContent);
             $encryptedContent = Crypt::encrypt($compressedContent);
@@ -57,17 +50,20 @@ class ProcessTarSourceCode implements ShouldQueue
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             Storage::put($finalPath, $encryptedContent);
+            
+            $sizeInBytes = Storage::size($finalPath);
+            $sizeInMB = round($sizeInBytes / 1024 / 1024, 2);
 
-            DB::transaction(function () use ($finalPath) {
-                // Step 3: AFTER processing, create the new row in 'capstone_source_codes'.
+            DB::transaction(function () use ($finalPath, $sizeInMB) {
+                // Create the source code record
                 $sourceCode = CapstoneSourceCode::create([
                     'project_id' => $this->projectId,
-                    'file_path' => $finalPath, // The final path of the processed file.
+                    'file_path' => $finalPath,
                     'repository_url' => null,
                     'upload_date' => now(),
                 ]);
 
-                // Step 4: Find or create languages and get their IDs.
+                // Attach programming languages
                 $languageIds = [];
                 foreach ($this->programmingLanguages as $langName) {
                     $language = ProgrammingLanguage::firstOrCreate(
@@ -76,9 +72,11 @@ class ProcessTarSourceCode implements ShouldQueue
                     );
                     $languageIds[] = $language->id;
                 }
-
-                // Step 5: Now that the source code record exists, populate the pivot table.
                 $sourceCode->programmingLanguages()->attach($languageIds);
+
+                // Find the corresponding manuscript record and update its size
+                CapstoneManuscript::where('project_id', $this->projectId)
+                    ->update(['project_size' => $sizeInMB]);
             });
 
         } catch (Throwable $e) {
