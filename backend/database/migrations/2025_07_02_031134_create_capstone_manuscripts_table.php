@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('capstone_manuscripts', function (Blueprint $table) {
             $table->id('manuscript_id');
-            $table->foreignId('project_id')->constrained('capstone_projects')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('project_id')->unique()->constrained('capstone_projects')->cascadeOnUpdate()->cascadeOnDelete();
             $table->string('file_path', 255);
             $table->string('acm_path', 255);
             $table->float('project_size');

@@ -16,24 +16,27 @@ class CapstoneProject extends Model
         return $this->belongsTo(User::class, 'adviser_id');
     }
 
-    public function manuscripts()
+
+    public function manuscript()
     {
-        return $this->hasMany(CapstoneManuscript::class, 'project_id');
+        return $this->hasOne(CapstoneManuscript::class, 'project_id');
     }
 
-    public function sourceCodes()
+
+    public function sourceCode()
     {
-        return $this->hasMany(CapstoneSourceCode::class, 'project_id');
+        return $this->hasOne(CapstoneSourceCode::class, 'project_id');
     }
 
-    public function researchers()
+    public function researcher()
     {
-        return $this->belongsToMany(User::class, 'project_researchers');
+        return $this->belongsTo(User::class, 'project_researchers');
     }
 
-    public function projectResearchers()
+
+    public function projectResearcher()
     {
-        return $this->hasMany(ProjectResearcher::class, 'project_id');
+        return $this->hasOne(ProjectResearcher::class, 'project_id');
     }
 
     public function keywords()
