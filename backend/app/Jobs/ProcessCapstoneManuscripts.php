@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Models\CapstoneManuscript;
 use App\Models\CapstoneProject;
-use App\Models\Notification; 
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -39,15 +39,36 @@ class ProcessCapstoneManuscripts implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Process Manuscript PDF (Compress -> Encrypt)
+            // Process Manuscript PDF (Compress -> Encrypt in Chunks)
             $manuscriptContent = Storage::get($this->tempPaths['manuscript']);
             $compressedManuscript = zstd_compress($manuscriptContent);
-            $encryptedManuscript = Crypt::encrypt($compressedManuscript);
             $manuscriptUuid = Str::uuid();
+            
+            $tempEncryptedPath = "private/temp/{$this->user->id}/{$manuscriptUuid}.tmp";
             $finalManuscriptPath = "private/manuscripts/{$manuscriptUuid}.pdf.zst.enc";
-            Storage::put($finalManuscriptPath, $encryptedManuscript);
+            $chunkSize = 1048576; // 1MB
 
-            // Process ACM PDF (Encrypt only)
+            // Create a temporary stream for the compressed content
+            $stream = fopen('php://temp', 'r+');
+            fwrite($stream, $compressedManuscript);
+            rewind($stream);
+
+            // Create an empty file in storage to append chunks to
+            Storage::put($tempEncryptedPath, '');
+
+            // Read the stream in chunks, encrypt, and append to the temp file
+            while (!feof($stream)) {
+                $chunk = fread($stream, $chunkSize);
+                $encryptedChunk = Crypt::encrypt($chunk);
+                // Append the encrypted chunk followed by a newline to act as a delimiter
+                Storage::append($tempEncryptedPath, $encryptedChunk . PHP_EOL);
+            }
+            fclose($stream);
+            
+            // Move the file of concatenated encrypted chunks to its final destination
+            Storage::move($tempEncryptedPath, $finalManuscriptPath);
+
+            // Process ACM PDF (Encrypt only, no chunking)
             $acmContent = Storage::get($this->tempPaths['acm']);
             $encryptedAcm = Crypt::encryptString($acmContent);
             $acmUuid = Str::uuid();
@@ -59,11 +80,11 @@ class ProcessCapstoneManuscripts implements ShouldQueue
                 'project_id' => $this->project->id,
                 'file_path' => $finalManuscriptPath,
                 'acm_path' => $finalAcmPath,
-                'project_size' => 0, 
+                'project_size' => 0, // Note: Size calculation might need adjustment
                 'upload_date' => now(),
             ]);
 
-            // Clean up temporary files
+            // Clean up original temporary files
             Storage::deleteDirectory("private/temp/{$this->user->id}");
 
             
