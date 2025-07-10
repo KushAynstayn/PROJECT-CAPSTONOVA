@@ -12,7 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Config; // Added
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
@@ -74,7 +74,7 @@ class ProcessGithubSourceCode implements ShouldQueue
             $phar = new PharData($tempTarPath);
             $phar->buildFromDirectory($tempClonePath);
 
-            // --- ENCRYPTION REFACTOR STARTS HERE ---
+            // --- REFACTOR STARTS HERE: Zstandard Streaming Compression ---
 
             // 1. Key Preparation & Validation
             if (!extension_loaded('sodium')) {
@@ -90,21 +90,31 @@ class ProcessGithubSourceCode implements ShouldQueue
             if (strlen($sodiumEncryptionKey) !== SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
                 throw new \Exception('Invalid application key length for Sodium encryption.');
             }
-
-            // 2. Prepare content and paths for streaming encryption
-            $tarContent = file_get_contents($tempTarPath);
-            $compressedContent = zstd_compress($tarContent);
             
+            $chunkSize = 1048576; // 1MB
+
+            // 2. Stream the TAR file and compress it in chunks with level 6
+            $sourceTarStream = fopen($tempTarPath, 'rb');
+            if ($sourceTarStream === false) {
+                throw new \Exception("Could not open read stream for TAR file: {$tempTarPath}");
+            }
+
+            $compressedDataStream = fopen('php://temp', 'r+');
+            while (!feof($sourceTarStream)) {
+                $chunk = fread($sourceTarStream, $chunkSize);
+                $compressedChunk = zstd_compress($chunk, 6);
+                fwrite($compressedDataStream, $compressedChunk);
+            }
+            fclose($sourceTarStream);
+            rewind($compressedDataStream);
+
+            // --- REFACTOR ENDS HERE ---
+
+            // 3. Sodium Streaming Encryption (Now reads from the compressed stream)
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             $tempEncryptedPath = "private/temp/{$this->user->id}/{$uuid}.enc.tmp";
-            $chunkSize = 1048576; // 1MB
-
-            // 3. Create streams for reading compressed data and writing encrypted data
-            $sourceCompressedStream = fopen('php://temp', 'r+');
-            fwrite($sourceCompressedStream, $compressedContent);
-            rewind($sourceCompressedStream);
-
+            
             $fullTempEncryptedPath = Storage::path($tempEncryptedPath);
             Storage::makeDirectory(dirname($tempEncryptedPath));
             $destinationEncryptedStream = fopen($fullTempEncryptedPath, 'wb');
@@ -113,34 +123,28 @@ class ProcessGithubSourceCode implements ShouldQueue
                 throw new \Exception("Could not open a write stream to the destination path: {$fullTempEncryptedPath}");
             }
 
-            // 4. Encrypt in chunks
-            while (!feof($sourceCompressedStream)) {
-                $chunk = fread($sourceCompressedStream, $chunkSize);
+            while (!feof($compressedDataStream)) {
+                $chunk = fread($compressedDataStream, $chunkSize);
                 $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
                 $encryptedChunkWithTag = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($chunk, '', $nonce, $sodiumEncryptionKey);
-
                 $header = pack('N', strlen($encryptedChunkWithTag)) . $nonce;
                 
                 if (fwrite($destinationEncryptedStream, $header . $encryptedChunkWithTag) === false) {
-                    fclose($sourceCompressedStream);
+                    fclose($compressedDataStream);
                     fclose($destinationEncryptedStream);
                     throw new \Exception("Failed to write encrypted chunk to storage stream.");
                 }
             }
-            fclose($sourceCompressedStream);
+            fclose($compressedDataStream);
             fclose($destinationEncryptedStream);
 
-            // 5. Move the completed encrypted file to its final destination
             Storage::move($tempEncryptedPath, $finalPath);
-
-            // --- ENCRYPTION REFACTOR ENDS HERE ---
             
             $sizeInBytes = Storage::size($finalPath);
             $sizeInMB = round($sizeInBytes / 1024 / 1024, 2);
 
             // --- DATABASE LOGIC (UNCHANGED) ---
             DB::transaction(function () use ($finalPath, $sizeInMB) {
-                // Create the source code record
                 $sourceCode = CapstoneSourceCode::create([
                     'project_id' => $this->projectId,
                     'file_path' => $finalPath,
@@ -148,7 +152,6 @@ class ProcessGithubSourceCode implements ShouldQueue
                     'upload_date' => now(),
                 ]);
 
-                // Attach programming languages
                 $languageIds = [];
                 foreach ($this->programmingLanguages as $langName) {
                     $language = ProgrammingLanguage::firstOrCreate(
@@ -159,7 +162,6 @@ class ProcessGithubSourceCode implements ShouldQueue
                 }
                 $sourceCode->programmingLanguages()->attach($languageIds);
 
-                // Find the corresponding manuscript record and update its size
                 CapstoneManuscript::where('project_id', $this->projectId)
                     ->update(['project_size' => $sizeInMB]);
             });
@@ -173,8 +175,6 @@ class ProcessGithubSourceCode implements ShouldQueue
             if (file_exists($tempTarPath)) {
                 unlink($tempTarPath);
             }
-            // The new temp encrypted file is inside the user's temp directory,
-            // so it will be cleaned up automatically by the existing Storage::deleteDirectory call.
         }
     }
 }

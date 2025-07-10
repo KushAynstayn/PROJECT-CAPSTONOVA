@@ -56,73 +56,96 @@ class ProcessCapstoneManuscripts implements ShouldQueue
                 throw new \Exception('Invalid application key length for Sodium encryption.');
             }
 
-            // Process Manuscript PDF (Compress -> Encrypt in Chunks)
-            $manuscriptContent = Storage::get($this->tempPaths['manuscript']);
-            $compressedManuscript = zstd_compress($manuscriptContent);
-            $manuscriptUuid = Str::uuid();
-
-            $tempEncryptedPath = "private/temp/{$this->user->id}/{$manuscriptUuid}.tmp";
-            $finalManuscriptPath = "private/manuscripts/{$manuscriptUuid}.pdf.zst.enc";
             $chunkSize = 1048576; // 1MB
 
-            // 2. Manuscript Encryption Loop Replacement (Sodium Streaming)
-            $sourceCompressedStream = fopen('php://temp', 'r+');
-            fwrite($sourceCompressedStream, $compressedManuscript);
-            rewind($sourceCompressedStream);
+            // 2. Process Manuscript PDF (Stream Compress -> Stream Encrypt)
+            $sourceManuscriptStream = Storage::readStream($this->tempPaths['manuscript']);
+            if ($sourceManuscriptStream === false) {
+                throw new \Exception('Could not open a read stream for the manuscript.');
+            }
 
-            // -- FIX STARTS HERE --
-            // Get the full system path for the temporary file and open a native PHP stream.
-            // This is the correct way to get a writable stream for a file in local storage.
+            $compressedDataStream = fopen('php://temp', 'r+');
+            while (!feof($sourceManuscriptStream)) {
+                $chunk = fread($sourceManuscriptStream, $chunkSize);
+                $compressedChunk = zstd_compress($chunk, 6);
+                fwrite($compressedDataStream, $compressedChunk);
+            }
+            fclose($sourceManuscriptStream);
+            rewind($compressedDataStream);
+
+            $manuscriptUuid = Str::uuid();
+            $tempEncryptedPath = "private/temp/{$this->user->id}/{$manuscriptUuid}.tmp";
+            $finalManuscriptPath = "private/manuscripts/{$manuscriptUuid}.pdf.zst.enc";
             $fullTempPath = Storage::path($tempEncryptedPath);
-            // Ensure the directory exists before trying to open the file
             Storage::makeDirectory(dirname($tempEncryptedPath));
-            $destinationEncryptedStream = fopen($fullTempPath, 'wb'); 
-            // -- FIX ENDS HERE --
+            $destinationEncryptedStream = fopen($fullTempPath, 'wb');
 
             if ($destinationEncryptedStream === false) {
                 throw new \Exception("Could not open a write stream to the destination path: {$fullTempPath}");
             }
 
-            while (!feof($sourceCompressedStream)) {
-                $chunk = fread($sourceCompressedStream, $chunkSize);
+            while (!feof($compressedDataStream)) {
+                $chunk = fread($compressedDataStream, $chunkSize);
                 $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
                 $encryptedChunkWithTag = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($chunk, '', $nonce, $sodiumEncryptionKey);
-
-                // Prepend a header with the length of the encrypted chunk and the unique nonce
                 $header = pack('N', strlen($encryptedChunkWithTag)) . $nonce;
-                
                 if (fwrite($destinationEncryptedStream, $header . $encryptedChunkWithTag) === false) {
-                    fclose($sourceCompressedStream); // Close streams before throwing
+                    fclose($compressedDataStream);
                     fclose($destinationEncryptedStream);
                     throw new \Exception("Failed to write encrypted chunk to storage stream.");
                 }
             }
-            fclose($sourceCompressedStream);
+            fclose($compressedDataStream);
             fclose($destinationEncryptedStream);
-
-            // Move the file of concatenated encrypted chunks to its final destination
-            // Storage::move works correctly here as it operates on the relative path.
             Storage::move($tempEncryptedPath, $finalManuscriptPath);
 
-            // Process ACM PDF (Encrypt only, no chunking) - UNCHANGED
-            $acmContent = Storage::get($this->tempPaths['acm']);
-            $encryptedAcm = Crypt::encryptString($acmContent);
+            // -- REFACTOR STARTS HERE: ACM PDF Sodium Streaming Encryption --
+
+            // 3. Process ACM PDF (Stream Encrypt)
+            $sourceAcmStream = Storage::readStream($this->tempPaths['acm']);
+            if ($sourceAcmStream === false) {
+                throw new \Exception('Could not open a read stream for the ACM file.');
+            }
+
             $acmUuid = Str::uuid();
+            $tempAcmEncryptedPath = "private/temp/{$this->user->id}/{$acmUuid}.tmp";
             $finalAcmPath = "private/manuscripts/{$acmUuid}.pdf.enc";
-            Storage::put($finalAcmPath, $encryptedAcm);
+            $fullTempAcmPath = Storage::path($tempAcmEncryptedPath);
+            Storage::makeDirectory(dirname($tempAcmEncryptedPath)); // Directory should already exist, but this is safe
+            $destinationAcmEncryptedStream = fopen($fullTempAcmPath, 'wb');
 
+            if ($destinationAcmEncryptedStream === false) {
+                throw new \Exception("Could not open a write stream for the ACM temporary file: {$fullTempAcmPath}");
+            }
 
+            while (!feof($sourceAcmStream)) {
+                $chunk = fread($sourceAcmStream, $chunkSize);
+                $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+                $encryptedChunkWithTag = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($chunk, '', $nonce, $sodiumEncryptionKey);
+                $header = pack('N', strlen($encryptedChunkWithTag)) . $nonce;
+                if (fwrite($destinationAcmEncryptedStream, $header . $encryptedChunkWithTag) === false) {
+                    fclose($sourceAcmStream);
+                    fclose($destinationAcmEncryptedStream);
+                    throw new \Exception("Failed to write encrypted ACM chunk to storage stream.");
+                }
+            }
+            fclose($sourceAcmStream);
+            fclose($destinationAcmEncryptedStream);
+            Storage::move($tempAcmEncryptedPath, $finalAcmPath);
+
+            // -- REFACTOR ENDS HERE --
+
+            // 4. Create Database Records (Unchanged)
             CapstoneManuscript::create([
                 'project_id' => $this->project->id,
                 'file_path' => $finalManuscriptPath,
                 'acm_path' => $finalAcmPath,
-                'project_size' => 0, // Note: Size calculation might need adjustment
+                'project_size' => 0,
                 'upload_date' => now(),
             ]);
 
-            // Clean up original temporary files
+            // 5. Cleanup and Notify (Unchanged)
             Storage::deleteDirectory("private/temp/{$this->user->id}");
-
 
             Notification::create([
                 'user_id' => $this->user->id,
@@ -143,7 +166,6 @@ class ProcessCapstoneManuscripts implements ShouldQueue
     {
         // Clean up temporary files on failure
         Storage::deleteDirectory("private/temp/{$this->user->id}");
-
 
         Notification::create([
             'user_id' => $this->user->id,
