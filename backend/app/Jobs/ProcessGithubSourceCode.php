@@ -9,6 +9,7 @@ use App\Models\ProgrammingLanguage;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Filesystem\Filesystem; // Import the powerful Filesystem class
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -52,8 +53,12 @@ class ProcessGithubSourceCode implements ShouldQueue
         $cloneId = Str::uuid();
         $tempClonePath = storage_path("app/private/temp/{$this->user->id}/{$cloneId}");
         $tempTarPath = storage_path("app/private/temp/{$this->user->id}/{$cloneId}.tar");
+        
+        $tempEncryptedPath = null; 
 
         try {
+            // All the processing logic (git clone, tar, compress, encrypt) remains the same.
+            // ...
             // --- GIT CLONE LOGIC (UNCHANGED) ---
             $process = new Process(['git', 'clone', '--depth=1', $this->githubUrl, $tempClonePath]);
             $process->run();
@@ -74,31 +79,23 @@ class ProcessGithubSourceCode implements ShouldQueue
             $phar = new PharData($tempTarPath);
             $phar->buildFromDirectory($tempClonePath);
 
-            // --- REFACTOR STARTS HERE: Zstandard Streaming Compression ---
-
-            // 1. Key Preparation & Validation
+            // --- Zstandard Streaming Compression (UNCHANGED) ---
             if (!extension_loaded('sodium')) {
                 throw new \Exception('The Sodium extension is required for encryption but is not loaded.');
             }
-
             $key = Config::get('app.key');
             if (str_starts_with($key, 'base64:')) {
                 $key = substr($key, 7);
             }
             $sodiumEncryptionKey = base64_decode($key);
-
             if (strlen($sodiumEncryptionKey) !== SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
                 throw new \Exception('Invalid application key length for Sodium encryption.');
             }
-            
-            $chunkSize = 1048576; // 1MB
-
-            // 2. Stream the TAR file and compress it in chunks with level 6
+            $chunkSize = 1048576;
             $sourceTarStream = fopen($tempTarPath, 'rb');
             if ($sourceTarStream === false) {
                 throw new \Exception("Could not open read stream for TAR file: {$tempTarPath}");
             }
-
             $compressedDataStream = fopen('php://temp', 'r+');
             while (!feof($sourceTarStream)) {
                 $chunk = fread($sourceTarStream, $chunkSize);
@@ -108,27 +105,21 @@ class ProcessGithubSourceCode implements ShouldQueue
             fclose($sourceTarStream);
             rewind($compressedDataStream);
 
-            // --- REFACTOR ENDS HERE ---
-
-            // 3. Sodium Streaming Encryption (Now reads from the compressed stream)
+            // --- Sodium Streaming Encryption (UNCHANGED) ---
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             $tempEncryptedPath = "private/temp/{$this->user->id}/{$uuid}.enc.tmp";
-            
             $fullTempEncryptedPath = Storage::path($tempEncryptedPath);
             Storage::makeDirectory(dirname($tempEncryptedPath));
             $destinationEncryptedStream = fopen($fullTempEncryptedPath, 'wb');
-
             if ($destinationEncryptedStream === false) {
                 throw new \Exception("Could not open a write stream to the destination path: {$fullTempEncryptedPath}");
             }
-
             while (!feof($compressedDataStream)) {
                 $chunk = fread($compressedDataStream, $chunkSize);
                 $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
                 $encryptedChunkWithTag = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($chunk, '', $nonce, $sodiumEncryptionKey);
                 $header = pack('N', strlen($encryptedChunkWithTag)) . $nonce;
-                
                 if (fwrite($destinationEncryptedStream, $header . $encryptedChunkWithTag) === false) {
                     fclose($compressedDataStream);
                     fclose($destinationEncryptedStream);
@@ -137,9 +128,7 @@ class ProcessGithubSourceCode implements ShouldQueue
             }
             fclose($compressedDataStream);
             fclose($destinationEncryptedStream);
-
             Storage::move($tempEncryptedPath, $finalPath);
-            
             $sizeInBytes = Storage::size($finalPath);
             $sizeInMB = round($sizeInBytes / 1024 / 1024, 2);
 
@@ -151,29 +140,35 @@ class ProcessGithubSourceCode implements ShouldQueue
                     'repository_url' => $this->githubUrl,
                     'upload_date' => now(),
                 ]);
-
                 $languageIds = [];
                 foreach ($this->programmingLanguages as $langName) {
-                    $language = ProgrammingLanguage::firstOrCreate(
-                        ['language_name' => trim($langName)],
-                        ['is_framework' => false]
-                    );
+                    $language = ProgrammingLanguage::firstOrCreate(['language_name' => trim($langName)],['is_framework' => false]);
                     $languageIds[] = $language->id;
                 }
                 $sourceCode->programmingLanguages()->attach($languageIds);
-
-                CapstoneManuscript::where('project_id', $this->projectId)
-                    ->update(['project_size' => $sizeInMB]);
+                CapstoneManuscript::where('project_id', $this->projectId)->update(['project_size' => $sizeInMB]);
             });
 
         } catch (Throwable $e) {
             Log::error("Failed processing GitHub repo for project ID {$this->projectId}: " . $e->getMessage());
             $this->fail($e);
         } finally {
-            // --- CLEANUP LOGIC (UNCHANGED) ---
-            Storage::deleteDirectory("private/temp/{$this->user->id}/{$cloneId}");
-            if (file_exists($tempTarPath)) {
-                unlink($tempTarPath);
+            // --- DEFINITIVE AND COMPLETE CLEANUP LOGIC ---
+
+            // 1. Forcefully delete the cloned repository directory using the robust Filesystem class.
+            $filesystem = new Filesystem();
+            if ($filesystem->isDirectory($tempClonePath)) {
+                $filesystem->deleteDirectory($tempClonePath);
+            }
+
+            // 2. Always delete the TAR archive if it still exists.
+            if ($filesystem->exists($tempTarPath)) {
+                $filesystem->delete($tempTarPath);
+            }
+
+            // 3. Always delete the temporary encrypted file if it still exists.
+            if ($tempEncryptedPath && Storage::exists($tempEncryptedPath)) {
+                Storage::delete($tempEncryptedPath);
             }
         }
     }
