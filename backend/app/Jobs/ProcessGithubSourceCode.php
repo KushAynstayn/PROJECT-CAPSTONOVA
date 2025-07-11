@@ -153,23 +153,82 @@ class ProcessGithubSourceCode implements ShouldQueue
             Log::error("Failed processing GitHub repo for project ID {$this->projectId}: " . $e->getMessage());
             $this->fail($e);
         } finally {
-            // --- DEFINITIVE AND COMPLETE CLEANUP LOGIC ---
-
-            // 1. Forcefully delete the cloned repository directory using the robust Filesystem class.
+            // --- ENHANCED CLEANUP LOGIC FOR GITHUB CLONE DIRECTORIES ---
             $filesystem = new Filesystem();
-            if ($filesystem->isDirectory($tempClonePath)) {
-                $filesystem->deleteDirectory($tempClonePath);
-            }
+            
+            try {
+                // 1. Force delete the cloned repository directory (including .git and read-only files)
+                if ($filesystem->isDirectory($tempClonePath)) {
+                    $this->makeDirectoryWritable($tempClonePath, $filesystem);
+                    $filesystem->deleteDirectory($tempClonePath);
+                }
 
-            // 2. Always delete the TAR archive if it still exists.
-            if ($filesystem->exists($tempTarPath)) {
-                $filesystem->delete($tempTarPath);
-            }
+                // 2. Always delete the TAR archive if it still exists
+                if ($filesystem->exists($tempTarPath)) {
+                    $filesystem->delete($tempTarPath);
+                }
 
-            // 3. Always delete the temporary encrypted file if it still exists.
-            if ($tempEncryptedPath && Storage::exists($tempEncryptedPath)) {
-                Storage::delete($tempEncryptedPath);
+                // 3. Always delete the temporary encrypted file if it still exists
+                if ($tempEncryptedPath && Storage::exists($tempEncryptedPath)) {
+                    Storage::delete($tempEncryptedPath);
+                }
+
+                // 4. Clean up empty parent directories if they exist
+                $userTempDir = storage_path("app/private/temp/{$this->user->id}");
+                if ($filesystem->isDirectory($userTempDir) && $this->isDirectoryEmpty($userTempDir, $filesystem)) {
+                    $filesystem->deleteDirectory($userTempDir);
+                }
+
+            } catch (Throwable $cleanupException) {
+                // Don't throw here - we don't want cleanup failures to fail the job
             }
         }
+    }
+
+    /**
+     * Make all files and directories writable recursively
+     * This is especially important for .git directories which often have read-only files
+     */
+    private function makeDirectoryWritable(string $path, Filesystem $filesystem): void
+    {
+        if (!$filesystem->isDirectory($path)) {
+            return;
+        }
+
+        try {
+            chmod($path, 0755);
+
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+
+            foreach ($iterator as $file) {
+                $filePath = $file->getPathname();
+                
+                if ($file->isDir()) {
+                    chmod($filePath, 0755);
+                } else {
+                    chmod($filePath, 0644);
+                }
+            }
+        } catch (Throwable $e) {
+            // Silently continue if chmod fails
+        }
+    }
+
+    /**
+     * Check if directory is empty (no files or subdirectories)
+     */
+    private function isDirectoryEmpty(string $path, Filesystem $filesystem): bool
+    {
+        if (!$filesystem->isDirectory($path)) {
+            return true;
+        }
+
+        $files = $filesystem->allFiles($path);
+        $directories = $filesystem->directories($path);
+
+        return empty($files) && empty($directories);
     }
 }
