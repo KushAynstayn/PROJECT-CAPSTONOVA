@@ -15,7 +15,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -55,10 +54,10 @@ class ProcessGithubSourceCode implements ShouldQueue
         $tempTarPath = storage_path("app/private/temp/{$this->user->id}/{$cloneId}.tar");
         
         $tempEncryptedPath = null; 
+        $sourceTarStream = null;
+        $destinationEncryptedStream = null;
 
         try {
-            // All the processing logic (git clone, tar, compress, encrypt) remains the same.
-            // ...
             // --- GIT CLONE LOGIC (UNCHANGED) ---
             $process = new Process(['git', 'clone', '--depth=1', $this->githubUrl, $tempClonePath]);
             $process->run();
@@ -79,7 +78,7 @@ class ProcessGithubSourceCode implements ShouldQueue
             $phar = new PharData($tempTarPath);
             $phar->buildFromDirectory($tempClonePath);
 
-            // --- Zstandard Streaming Compression (UNCHANGED) ---
+            // --- KEY PREPARATION (UNCHANGED) ---
             if (!extension_loaded('sodium')) {
                 throw new \Exception('The Sodium extension is required for encryption but is not loaded.');
             }
@@ -91,55 +90,47 @@ class ProcessGithubSourceCode implements ShouldQueue
             if (strlen($sodiumEncryptionKey) !== SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
                 throw new \Exception('Invalid application key length for Sodium encryption.');
             }
-            $chunkSize = 1048576;
+            
+            $chunkSize = 1048576; // 1MB
+
+            // --- CORRECTED SINGLE PIPELINE FOR GITHUB TAR ---
+            // Process TAR File (Stream Read -> Compress -> Encrypt -> Stream Write)
             $sourceTarStream = fopen($tempTarPath, 'rb');
             if ($sourceTarStream === false) {
                 throw new \Exception("Could not open read stream for TAR file: {$tempTarPath}");
             }
-            $compressedDataStream = fopen('php://temp', 'r+');
-            while (!feof($sourceTarStream)) {
-                $chunk = fread($sourceTarStream, $chunkSize);
-                $compressedChunk = zstd_compress($chunk, 6);
-                fwrite($compressedDataStream, $compressedChunk);
-            }
-            fclose($sourceTarStream);
-            rewind($compressedDataStream);
 
-            // --- Sodium Streaming Encryption (UNCHANGED) ---
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             $tempEncryptedPath = "private/temp/{$this->user->id}/{$uuid}.enc.tmp";
+            
             $fullTempEncryptedPath = Storage::path($tempEncryptedPath);
             Storage::makeDirectory(dirname($tempEncryptedPath));
             $destinationEncryptedStream = fopen($fullTempEncryptedPath, 'wb');
+
             if ($destinationEncryptedStream === false) {
                 throw new \Exception("Could not open a write stream to the destination path: {$fullTempEncryptedPath}");
             }
-            while (!feof($compressedDataStream)) {
-                $chunk = fread($compressedDataStream, $chunkSize);
+
+            // This single loop now handles the entire pipeline correctly.
+            while (!feof($sourceTarStream)) {
+                $rawChunk = fread($sourceTarStream, $chunkSize);
+                $compressedFrame = zstd_compress($rawChunk, 6);
                 $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-                $encryptedChunkWithTag = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($chunk, '', $nonce, $sodiumEncryptionKey);
-                $header = pack('N', strlen($encryptedChunkWithTag)) . $nonce;
-                if (fwrite($destinationEncryptedStream, $header . $encryptedChunkWithTag) === false) {
-                    fclose($compressedDataStream);
-                    fclose($destinationEncryptedStream);
-                    throw new \Exception("Failed to write encrypted chunk to storage stream.");
+                $encryptedChunk = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($compressedFrame, '', $nonce, $sodiumEncryptionKey);
+                $header = pack('N', strlen($encryptedChunk)) . $nonce;
+                if (fwrite($destinationEncryptedStream, $header . $encryptedChunk) === false) {
+                    throw new \Exception("Failed to write encrypted GitHub TAR chunk to storage stream.");
                 }
             }
-            fclose($compressedDataStream);
-            fclose($destinationEncryptedStream);
             Storage::move($tempEncryptedPath, $finalPath);
+            
             $sizeInBytes = Storage::size($finalPath);
             $sizeInMB = round($sizeInBytes / 1024 / 1024, 2);
 
             // --- DATABASE LOGIC (UNCHANGED) ---
             DB::transaction(function () use ($finalPath, $sizeInMB) {
-                $sourceCode = CapstoneSourceCode::create([
-                    'project_id' => $this->projectId,
-                    'file_path' => $finalPath,
-                    'repository_url' => $this->githubUrl,
-                    'upload_date' => now(),
-                ]);
+                $sourceCode = CapstoneSourceCode::create(['project_id' => $this->projectId, 'file_path' => $finalPath, 'repository_url' => $this->githubUrl, 'upload_date' => now()]);
                 $languageIds = [];
                 foreach ($this->programmingLanguages as $langName) {
                     $language = ProgrammingLanguage::firstOrCreate(['language_name' => trim($langName)],['is_framework' => false]);
@@ -153,8 +144,12 @@ class ProcessGithubSourceCode implements ShouldQueue
             Log::error("Failed processing GitHub repo for project ID {$this->projectId}: " . $e->getMessage());
             $this->fail($e);
         } finally {
-            // --- ENHANCED CLEANUP LOGIC FOR GITHUB CLONE DIRECTORIES ---
+            // --- ENHANCED CLEANUP LOGIC FOR GITHUB CLONE DIRECTORIES (UNCHANGED) ---
             $filesystem = new Filesystem();
+            
+            // Ensure streams are closed even on failure
+            if (is_resource($sourceTarStream)) fclose($sourceTarStream);
+            if (is_resource($destinationEncryptedStream)) fclose($destinationEncryptedStream);
             
             try {
                 // 1. Force delete the cloned repository directory (including .git and read-only files)

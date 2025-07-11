@@ -14,7 +14,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -46,6 +45,10 @@ class ProcessTarSourceCode implements ShouldQueue
             'is_read' => false,
         ]);
 
+        $sourceTarStream = null;
+        $destinationEncryptedStream = null;
+        $tempEncryptedPath = null;
+
         try {
             // 1. Key Preparation & Validation
             if (!extension_loaded('sodium')) {
@@ -64,30 +67,14 @@ class ProcessTarSourceCode implements ShouldQueue
 
             $chunkSize = 1048576; // 1MB
 
-            // -- REFACTOR STARTS HERE: Zstandard Streaming Compression --
+            // --- CORRECTED SINGLE PIPELINE FOR TAR FILE ---
+            // 2. Process TAR File (Stream Read -> Compress -> Encrypt -> Stream Write)
 
-            // 2. Open a read stream to the source TAR file.
             $sourceTarStream = Storage::readStream($this->tempTarPath);
             if ($sourceTarStream === false) {
                 throw new \Exception("Could not open read stream for TAR file: {$this->tempTarPath}");
             }
 
-            // This stream will hold the compressed data and will be the input for the encryption stream.
-            $compressedDataStream = fopen('php://temp', 'r+');
-
-            // Read the TAR file in chunks, compress each chunk with level 6, and write to the temp stream.
-            while (!feof($sourceTarStream)) {
-                $chunk = fread($sourceTarStream, $chunkSize);
-                $compressedChunk = zstd_compress($chunk, 6);
-                fwrite($compressedDataStream, $compressedChunk);
-            }
-            fclose($sourceTarStream);
-            rewind($compressedDataStream);
-
-            // -- REFACTOR ENDS HERE --
-
-
-            // 3. Sodium Streaming Encryption (Now reads from the compressed stream)
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             $tempEncryptedPath = dirname($this->tempTarPath) . "/{$uuid}.enc.tmp";
@@ -100,27 +87,30 @@ class ProcessTarSourceCode implements ShouldQueue
                 throw new \Exception("Could not open a write stream to the destination path: {$fullTempEncryptedPath}");
             }
 
-            while (!feof($compressedDataStream)) {
-                $chunk = fread($compressedDataStream, $chunkSize);
-                $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-                $encryptedChunkWithTag = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($chunk, '', $nonce, $sodiumEncryptionKey);
-                $header = pack('N', strlen($encryptedChunkWithTag)) . $nonce;
+            // This single loop now handles the entire pipeline correctly.
+            while (!feof($sourceTarStream)) {
+                // a. Read a raw chunk from the source TAR file
+                $rawChunk = fread($sourceTarStream, $chunkSize);
 
-                if (fwrite($destinationEncryptedStream, $header . $encryptedChunkWithTag) === false) {
-                    fclose($compressedDataStream);
-                    fclose($destinationEncryptedStream);
-                    throw new \Exception("Failed to write encrypted chunk to storage stream.");
+                // b. Compress that single chunk to create a complete zstd frame
+                $compressedFrame = zstd_compress($rawChunk, 6);
+
+                // c. Encrypt the entire compressed frame
+                $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+                $encryptedChunk = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($compressedFrame, '', $nonce, $sodiumEncryptionKey);
+                
+                // d. Write a header and the encrypted frame to the destination
+                $header = pack('N', strlen($encryptedChunk)) . $nonce;
+                if (fwrite($destinationEncryptedStream, $header . $encryptedChunk) === false) {
+                    throw new \Exception("Failed to write encrypted TAR chunk to storage stream.");
                 }
             }
-            fclose($compressedDataStream);
-            fclose($destinationEncryptedStream);
-
             Storage::move($tempEncryptedPath, $finalPath);
 
             $sizeInBytes = Storage::size($finalPath);
             $sizeInMB = round($sizeInBytes / 1024 / 1024, 2);
 
-            // --- DATABASE LOGIC (UNCHANGED) ---
+            // 3. Database Logic (Unchanged)
             DB::transaction(function () use ($finalPath, $sizeInMB) {
                 $sourceCode = CapstoneSourceCode::create([
                     'project_id' => $this->projectId,
@@ -147,8 +137,17 @@ class ProcessTarSourceCode implements ShouldQueue
             Log::error("Failed processing TAR for project ID {$this->projectId}: " . $e->getMessage());
             $this->fail($e);
         } finally {
-            // --- CLEANUP LOGIC (UNCHANGED) ---
-            Storage::delete($this->tempTarPath);
+            // Ensure all file handles are closed
+            if (is_resource($sourceTarStream)) fclose($sourceTarStream);
+            if (is_resource($destinationEncryptedStream)) fclose($destinationEncryptedStream);
+
+            // Clean up all temporary files
+            if (Storage::exists($this->tempTarPath)) {
+                Storage::delete($this->tempTarPath);
+            }
+            if ($tempEncryptedPath && Storage::exists($tempEncryptedPath)) {
+                Storage::delete($tempEncryptedPath);
+            }
         }
     }
 }
