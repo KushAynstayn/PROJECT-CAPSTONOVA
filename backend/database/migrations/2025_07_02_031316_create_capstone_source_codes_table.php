@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('capstone_source_codes', function (Blueprint $table) {
-            $table->id('id');
-            $table->foreignId('project_id')->constrained('capstone_projects')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->id();
+            $table->foreignId('project_id')->unique()->constrained('capstone_projects')->cascadeOnUpdate()->cascadeOnDelete();
             $table->string('file_path', 255)->nullable();
             $table->string('repository_url', 255)->nullable();
             $table->dateTime('upload_date');
