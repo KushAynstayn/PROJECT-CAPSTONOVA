@@ -12,6 +12,7 @@ use Throwable;
 
 class DownloadSourceCodeController extends Controller
 {
+    use \Illuminate\Foundation\Auth\Access\AuthorizesRequests;
     /**
      * Handle the incoming request to download a source code archive.
      *
@@ -20,6 +21,7 @@ class DownloadSourceCodeController extends Controller
      */
     public function __invoke(CapstoneSourceCode $source_code)
     {
+        $this->authorize('view', $source_code);
         $filePath = $source_code->file_path;
 
         if (!$filePath || !Storage::exists($filePath)) {

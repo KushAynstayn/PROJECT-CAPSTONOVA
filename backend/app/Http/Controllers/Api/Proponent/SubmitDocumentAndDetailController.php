@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Api\Proponent;
 
-use App\Http\Controllers\Controller;
-use App\Jobs\ProcessCapstoneManuscripts;
-use App\Models\CapstoneProject;
 use App\Models\Keyword;
+use Illuminate\Http\Request;
+use App\Models\CapstoneProject;
 use App\Models\ProjectResearcher;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use App\Jobs\ProcessCapstoneManuscripts;
 use Illuminate\Support\Facades\Validator;
 
 class SubmitDocumentAndDetailController extends Controller
@@ -26,6 +27,10 @@ class SubmitDocumentAndDetailController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $user = Auth::user();
+
+        if (!Gate::allows('isProponent')) {
+            abort(403, 'Unauthorized - Proponent access required');
+        }
 
         $validator = Validator::make($request->all(), [
             'title' => ['required', 'string', 'max:255'],
@@ -85,7 +90,6 @@ class SubmitDocumentAndDetailController extends Controller
             ProcessCapstoneManuscripts::dispatch($user, $project, $tempPaths);
 
             return response()->json(['status' => 'queued'], 202);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Capstone Submission Failed: {$e->getMessage()}");

@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Api\Proponent;
 
-use App\Http\Controllers\Controller;
+use Throwable;
 use App\Models\CapstoneManuscript;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Throwable;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class StreamManuscriptController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Handle the incoming request to stream a manuscript.
      *
@@ -20,6 +22,8 @@ class StreamManuscriptController extends Controller
      */
     public function __invoke(CapstoneManuscript $manuscript)
     {
+
+        $this->authorize('view', $manuscript);
         $filePath = $manuscript->file_path;
 
         if (!Storage::exists($filePath)) {

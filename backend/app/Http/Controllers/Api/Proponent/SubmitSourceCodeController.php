@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Api\Proponent;
 
-use App\Http\Controllers\Controller;
-use App\Jobs\ProcessGithubSourceCode;
-use App\Jobs\ProcessTarSourceCode;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\JsonResponse;
+use App\Jobs\ProcessTarSourceCode;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use App\Jobs\ProcessGithubSourceCode;
+use Illuminate\Support\Facades\Validator;
 
 class SubmitSourceCodeController extends Controller
 {
@@ -22,6 +23,10 @@ class SubmitSourceCodeController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $user = Auth::user();
+
+        if (!Gate::allows('isProponent')) {
+            abort(403, 'Unauthorized - Proponent access required');
+        }
 
         $validator = Validator::make($request->all(), [
             'upload_type' => ['required', 'string', Rule::in(['github', 'tar'])],

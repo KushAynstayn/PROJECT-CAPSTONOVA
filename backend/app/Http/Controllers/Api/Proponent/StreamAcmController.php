@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Throwable;
 
 class StreamAcmController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Handle the incoming request to stream an ACM file.
      *
@@ -20,6 +22,7 @@ class StreamAcmController extends Controller
      */
     public function __invoke(CapstoneManuscript $manuscript)
     {
+        $this->authorize('view', $manuscript);
         $filePath = $manuscript->acm_path;
 
         if (!Storage::exists($filePath)) {

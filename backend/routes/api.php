@@ -37,6 +37,9 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
 
 
 
+
+
+//Proponent routes.
 Route::prefix('proponent')->middleware('auth:sanctum')->group(function () {
 
     Route::post('/submit-project', SubmitDocumentAndDetailController::class)
