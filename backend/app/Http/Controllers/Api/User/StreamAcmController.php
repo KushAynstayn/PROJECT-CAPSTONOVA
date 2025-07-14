@@ -1,31 +1,32 @@
 <?php
 
-namespace App\Http\Controllers\Api\Proponent;
+namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\CapstoneSourceCode;
+use App\Models\CapstoneManuscript;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Throwable;
 
-class DownloadSourceCodeController extends Controller
+class StreamAcmController extends Controller
 {
-    use \Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+    use AuthorizesRequests;
     /**
-     * Handle the incoming request to download a source code archive.
+     * Handle the incoming request to stream an ACM file.
      *
-     * @param  \App\Models\CapstoneSourceCode  $source_code
+     * @param  \App\Models\CapstoneManuscript  $manuscript
      * @return \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\JsonResponse
      */
-    public function __invoke(CapstoneSourceCode $source_code)
+    public function __invoke(CapstoneManuscript $manuscript)
     {
-        $this->authorize('view', $source_code);
-        $filePath = $source_code->file_path;
+        $this->authorize('view', $manuscript);
+        $filePath = $manuscript->acm_path;
 
-        if (!$filePath || !Storage::exists($filePath)) {
-            return response()->json(['error' => 'Source code file not found.'], 404);
+        if (!Storage::exists($filePath)) {
+            return response()->json(['error' => 'ACM file not found.'], 404);
         }
 
         try {
@@ -43,32 +44,28 @@ class DownloadSourceCodeController extends Controller
 
                     // 2. Read nonce
                     $nonce = fread($sourceStream, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-                    if ($nonce === false) continue;
 
                     // 3. Read the encrypted chunk
                     $encryptedChunk = fread($sourceStream, $chunkLength);
                     if ($encryptedChunk === false) continue;
 
-                    // 4. Decrypt the chunk
+                    // 4. Decrypt the chunk and output (no decompression needed for ACM)
                     $decryptedChunk = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($encryptedChunk, '', $nonce, $sodiumEncryptionKey);
-                    if ($decryptedChunk === false) continue;
-
-                    // 5. Decompress the decrypted chunk and output
-                    $decompressedChunk = zstd_uncompress($decryptedChunk);
-                    echo $decompressedChunk;
+                    if ($decryptedChunk !== false) {
+                        echo $decryptedChunk;
+                    }
 
                     flush();
                 }
                 fclose($sourceStream);
             });
 
-            // Set headers to force a download of the TAR file
-            $response->headers->set('Content-Type', 'application/x-tar');
-            $response->headers->set('Content-Disposition', 'attachment; filename="source_code.tar"');
+            $response->headers->set('Content-Type', 'application/pdf');
+            $response->headers->set('Content-Disposition', 'inline; filename="acm.pdf"');
             return $response;
         } catch (Throwable $e) {
-            Log::error("Source code download failed for path {$filePath}: " . $e->getMessage());
-            return response()->json(['error' => 'Could not process the source code file.'], 500);
+            Log::error("ACM streaming failed for path {$filePath}: " . $e->getMessage());
+            return response()->json(['error' => 'Could not process the ACM file.'], 500);
         }
     }
 

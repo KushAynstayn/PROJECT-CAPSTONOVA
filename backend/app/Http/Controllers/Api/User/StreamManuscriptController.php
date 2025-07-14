@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Proponent;
+namespace App\Http\Controllers\Api\User;
 
 use Throwable;
 use App\Models\CapstoneManuscript;
