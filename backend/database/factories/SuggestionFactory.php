@@ -11,10 +11,11 @@ class SuggestionFactory extends Factory
     {
         return [
             'adviser_id' => User::factory(['role' => 'Adviser']),
+            'title' => fake()->sentence(6),
             'suggestion_text' => fake()->paragraph(),
             'submission_date' => fake()->date(),
             'is_archived' => fake()->boolean(),
-            'interested_student_id' => fake()->optional()->randomElement(User::where('role', 'Proponent')->pluck('id')->toArray()),
+            'interested_student_id' => fake()->optional()->randomElement(User::where('role', 'Viewer')->pluck('id')->toArray()),
         ];
     }
 }

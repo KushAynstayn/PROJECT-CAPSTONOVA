@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('suggestions', function (Blueprint $table) {
             $table->id('suggestion_id');
             $table->foreignId('adviser_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->string('title', 255);
             $table->text('suggestion_text');
             $table->date('submission_date');
             $table->boolean('is_archived')->default(false);

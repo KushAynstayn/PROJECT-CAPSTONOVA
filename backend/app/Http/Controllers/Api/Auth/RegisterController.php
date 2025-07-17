@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\UserDetail;
 use App\Models\Whitelist;
+use App\Models\UserDetail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
 {
@@ -81,6 +82,14 @@ class RegisterController extends Controller
 
             DB::commit();
 
+            // If the user is a Proponent, send a notification to the adviser.
+            if ($user->role === 'Proponent' && !is_null($adviserId)) {
+                SendNotification::dispatch(
+                    $adviserId,
+                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered."
+                );
+            }
+
             // Create a Sanctum token for the new user.
             $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -89,7 +98,6 @@ class RegisterController extends Controller
                 'user' => $user->fresh('userDetail'), // Eager load the details.
                 'token' => $token,
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             // Log the exception message for debugging.
