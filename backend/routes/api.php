@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
+use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
@@ -100,4 +101,9 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
     // Proponent Routes
     Route::get('proponents', [ProponentController::class, 'index'])
         ->name('proponents.index');
+});
+
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+
+    Route::post('whitelist', [WhitelistController::class, 'store']);
 });
