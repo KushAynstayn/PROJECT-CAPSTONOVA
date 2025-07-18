@@ -11,7 +11,8 @@ class ImportWhitelistRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        // Authorization is handled by the 'auth:sanctum' middleware on the route.
+        return true;
     }
 
     /**
@@ -22,7 +23,7 @@ class ImportWhitelistRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'file' => 'required|file|mimes:xlsx,xls|max:2048',
         ];
     }
 }

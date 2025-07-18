@@ -106,4 +106,5 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::post('whitelist', [WhitelistController::class, 'store']);
+    Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel']);
 });

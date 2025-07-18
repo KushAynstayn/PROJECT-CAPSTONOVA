@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use Exception;
 use Throwable;
 use App\Models\Whitelist;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Imports\WhitelistImport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
+use App\Http\Requests\Api\Admin\ImportWhitelistRequest;
 
 class WhitelistController extends Controller
 {
@@ -33,9 +38,14 @@ class WhitelistController extends Controller
                 'required',
                 'email',
                 'distinct:ignore_case', // Ensures emails are unique within the request array
-                Rule::unique('whitelist', 'student_email') // Ensures emails are unique in the database
+                Rule::unique('whitelist', 'student_email'), // Ensures emails are unique in the database
             ],
-            'entries.*.student_id' => ['required', 'integer'],
+            'entries.*.student_id' => [
+                'required',
+                'integer',
+                'distinct', // Ensures student IDs are unique within the request array
+                Rule::unique('whitelist', 'student_id'), // Ensures student IDs are unique in the database
+            ],
             'entries.*.adviser_id' => [
                 'required',
                 'integer',
@@ -83,6 +93,56 @@ class WhitelistController extends Controller
                 'success' => false,
                 'message' => 'An unexpected error occurred during the database transaction.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * @param ImportWhitelistRequest $request
+     * @return JsonResponse
+     */
+    public function uploadExcel(ImportWhitelistRequest $request): JsonResponse
+    {
+        $file = $request->file('file');
+
+        try {
+            $import = new WhitelistImport();
+            Excel::import($import, $file);
+
+            $errors = $import->getErrors();
+            if (!empty($errors)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed. Please check the errors.',
+                    'data'    => [
+                        'processed_count' => 0,
+                        'failed_rows'     => $errors,
+                        'errors'          => $errors,
+                    ],
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Whitelist has been successfully uploaded.',
+                'data'    => [
+                    'processed_count' => $import->getProcessedCount(),
+                    'failed_rows'     => [],
+                    'errors'          => [],
+                ],
+            ], 200);
+        } catch (Exception $e) {
+            // Log the exception for auditing and debugging
+            Log::error('Excel Upload Failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred during file processing.',
+                'data'    => [
+                    'processed_count' => 0,
+                    'failed_rows'     => [],
+                    'errors'          => [$e->getMessage()],
+                ],
+            ], 500);
         }
     }
 }
