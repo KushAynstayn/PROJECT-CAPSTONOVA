@@ -9,8 +9,9 @@ use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 
 use App\Http\Controllers\Api\User\ProfileController;
-use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Admin\AdviserController;
 
+use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
@@ -106,5 +107,10 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::post('whitelist', [WhitelistController::class, 'store']);
+
     Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel']);
+
+    Route::post('advisers', [AdviserController::class, 'store']);
+
+    Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict']);
 });

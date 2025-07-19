@@ -102,6 +102,10 @@ class WhitelistController extends Controller
      */
     public function uploadExcel(ImportWhitelistRequest $request): JsonResponse
     {
+        if (!Gate::allows('isAdmin')) {
+            abort(403, 'Unauthorized - Admin access required');
+        }
+
         $file = $request->file('file');
 
         try {
