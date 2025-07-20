@@ -11,6 +11,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Api\Admin\StoreAdviserRequest;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 
 class AdviserController extends Controller
 {
@@ -42,19 +44,19 @@ class AdviserController extends Controller
                     'status'     => 'active',
                 ]);
 
-                // 2. Create the associated UserDetail record
+
                 UserDetail::create([
                     'user_id'    => $newUser->id,
-                    'student_id' => 'N/A', // Placeholder as Adviser is not a student
+                    'student_id' => 'N/A',
                     'department' => $validatedData['department'],
                     'program'    => $validatedData['program'] ?? null,
-                    'adviser_id' => $newUser->id, // Satisfies non-nullable foreign key
+                    'adviser_id' => $newUser->id,
                 ]);
 
                 return $newUser;
             });
 
-            // Load the new details and return the complete adviser object
+
             return response()->json($adviser->load('userDetail'), 201);
         } catch (Throwable $e) {
             report($e);
@@ -73,18 +75,90 @@ class AdviserController extends Controller
      */
     public function restrict(User $user): JsonResponse
     {
-        // 1. Verify the user has the 'Adviser' role.
+
         if ($user->role !== 'Adviser') {
             return response()->json(['message' => 'User is not an adviser.'], 404);
         }
 
-        // 2. Update the status to 'restricted'.
         $user->status = 'restricted';
         $user->save();
 
-        // 3. Return a success response with the updated adviser data.
         return response()->json([
             'message' => 'Adviser has been successfully restricted.',
+            'adviser' => $user->load('userDetail'),
+        ], 200);
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+
+        $validator = Validator::make($request->query(), [
+            'status' => 'required|in:active,restricted',
+            'name'   => 'sometimes|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or missing parameters.',
+                'errors'  => $validator->errors(),
+            ], 400);
+        }
+
+
+        $status = $request->query('status');
+        $query = User::query()
+            ->where('role', 'Adviser')
+            ->where('status', $status);
+
+
+        if ($request->filled('name')) {
+
+            $searchWords = explode(' ', $request->query('name'));
+
+            $query->where(function ($q) use ($searchWords) {
+                foreach ($searchWords as $word) {
+
+                    if (!empty($word)) {
+
+                        $q->orWhere('first_name', 'LIKE', "%{$word}%")
+                            ->orWhere('last_name', 'LIKE', "%{$word}%")
+                            ->orWhere('middle_name', 'LIKE', "%{$word}%");
+                    }
+                }
+            });
+        }
+
+
+        $advisers = $query->with('userDetail')
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+
+        return response()->json($advisers);
+    }
+
+    /**
+     * Set the specified adviser's status to 'active'.
+     *
+     * @param User $user The user instance injected by route-model binding.
+     * @return JsonResponse
+     */
+    public function activate(User $user): JsonResponse
+    {
+
+        if ($user->role !== 'Adviser') {
+            return response()->json(['message' => 'User is not an adviser.'], 404);
+        }
+
+
+        $user->status = 'active';
+        $user->save();
+
+
+        return response()->json([
+            'message' => 'Adviser has been successfully activated.',
             'adviser' => $user->load('userDetail'),
         ], 200);
     }

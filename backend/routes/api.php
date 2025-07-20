@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\SearchController;
@@ -17,6 +15,7 @@ use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
@@ -106,11 +105,25 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
 
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
-    Route::post('whitelist', [WhitelistController::class, 'store']);
+    Route::post('whitelist', [WhitelistController::class, 'store'])
+        ->name('admin.whitelist.store');
 
-    Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel']);
+    Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel'])
+        ->name('admin.whitelist.upload-excel');
 
-    Route::post('advisers', [AdviserController::class, 'store']);
+    Route::post('advisers', [AdviserController::class, 'store'])
+        ->name('admin.advisers.store');
 
-    Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict']);
+    Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict'])
+        ->name('admin.advisers.restrict');
+
+    Route::get('advisers', [AdviserController::class, 'index'])
+        ->name('admin.advisers.index');
+
+    Route::patch('capstone-projects/{project}/archive', [CapstoneProjectController::class, 'archive'])
+        ->name('admin.capstone-projects.archive');
+    Route::patch('capstone-projects/{project}/unarchive', [CapstoneProjectController::class, 'unarchive'])
+        ->name('admin.capstone-projects.unarchive');
+    Route::get('capstone-projects/archived', [CapstoneProjectController::class, 'getArchived'])
+        ->name('admin.capstone-projects.archived');
 });
