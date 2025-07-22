@@ -104,13 +104,13 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
 });
 
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
-
+    //Whitelist Routes
     Route::post('whitelist', [WhitelistController::class, 'store'])
         ->name('admin.whitelist.store');
 
     Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel'])
         ->name('admin.whitelist.upload-excel');
-
+    //adviser Routes
     Route::post('advisers', [AdviserController::class, 'store'])
         ->name('admin.advisers.store');
 
@@ -120,10 +120,13 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::get('advisers', [AdviserController::class, 'index'])
         ->name('admin.advisers.index');
 
+    // Capstone Project Routes
     Route::patch('capstone-projects/{project}/archive', [CapstoneProjectController::class, 'archive'])
         ->name('admin.capstone-projects.archive');
+
     Route::patch('capstone-projects/{project}/unarchive', [CapstoneProjectController::class, 'unarchive'])
         ->name('admin.capstone-projects.unarchive');
+
     Route::get('capstone-projects/archived', [CapstoneProjectController::class, 'getArchived'])
         ->name('admin.capstone-projects.archived');
 });
