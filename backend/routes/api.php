@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\SearchController;
@@ -9,12 +7,15 @@ use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 
 use App\Http\Controllers\Api\User\ProfileController;
-use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Admin\AdviserController;
 
+use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
+use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
@@ -100,4 +101,32 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
     // Proponent Routes
     Route::get('proponents', [ProponentController::class, 'index'])
         ->name('proponents.index');
+});
+
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    //Whitelist Routes
+    Route::post('whitelist', [WhitelistController::class, 'store'])
+        ->name('admin.whitelist.store');
+
+    Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel'])
+        ->name('admin.whitelist.upload-excel');
+    //adviser Routes
+    Route::post('advisers', [AdviserController::class, 'store'])
+        ->name('admin.advisers.store');
+
+    Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict'])
+        ->name('admin.advisers.restrict');
+
+    Route::get('advisers', [AdviserController::class, 'index'])
+        ->name('admin.advisers.index');
+
+    // Capstone Project Routes
+    Route::patch('capstone-projects/{project}/archive', [CapstoneProjectController::class, 'archive'])
+        ->name('admin.capstone-projects.archive');
+
+    Route::patch('capstone-projects/{project}/unarchive', [CapstoneProjectController::class, 'unarchive'])
+        ->name('admin.capstone-projects.unarchive');
+
+    Route::get('capstone-projects/archived', [CapstoneProjectController::class, 'getArchived'])
+        ->name('admin.capstone-projects.archived');
 });

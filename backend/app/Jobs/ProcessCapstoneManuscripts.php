@@ -30,8 +30,7 @@ class ProcessCapstoneManuscripts implements ShouldQueue
         public User $user,
         public CapstoneProject $project,
         public array $tempPaths
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the job.
@@ -74,7 +73,7 @@ class ProcessCapstoneManuscripts implements ShouldQueue
             $manuscriptUuid = Str::uuid();
             $tempEncryptedPath = "private/temp/{$this->user->id}/{$manuscriptUuid}.tmp";
             $finalManuscriptPath = "private/manuscripts/{$manuscriptUuid}.pdf.zst.enc";
-            
+
             $fullTempPath = Storage::path($tempEncryptedPath);
             Storage::makeDirectory(dirname($tempEncryptedPath));
             $destinationEncryptedStream = fopen($fullTempPath, 'wb');
@@ -94,7 +93,7 @@ class ProcessCapstoneManuscripts implements ShouldQueue
                 // c. Encrypt the entire compressed frame
                 $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
                 $encryptedChunk = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($compressedFrame, '', $nonce, $sodiumEncryptionKey);
-                
+
                 // d. Write a header and the encrypted frame to the destination
                 $header = pack('N', strlen($encryptedChunk)) . $nonce;
                 if (fwrite($destinationEncryptedStream, $header . $encryptedChunk) === false) {
@@ -113,7 +112,7 @@ class ProcessCapstoneManuscripts implements ShouldQueue
             $acmUuid = Str::uuid();
             $tempAcmEncryptedPath = "private/temp/{$this->user->id}/{$acmUuid}.tmp";
             $finalAcmPath = "private/manuscripts/{$acmUuid}.pdf.enc";
-            
+
             $fullTempAcmPath = Storage::path($tempAcmEncryptedPath);
             Storage::makeDirectory(dirname($tempAcmEncryptedPath));
             $destinationAcmEncryptedStream = fopen($fullTempAcmPath, 'wb');
@@ -146,12 +145,16 @@ class ProcessCapstoneManuscripts implements ShouldQueue
             // 5. Cleanup on Success and Notify
             Storage::deleteDirectory("private/temp/{$this->user->id}");
 
-            Notification::create([
-                'user_id' => $this->user->id,
-                'message' => "Your project '{$this->project->title}' file processing succeeded.",
-                'notification_date' => now(),
-            ]);
+            $adminIds = User::where('role', 'Admin')->pluck('id')->all();
+            $adminMessage = "User {$this->user->first_name} {$this->user->last_name} 
+            has uploaded documents for the project: '{$this->project->title}'.";
 
+            SendNotification::dispatch(null, $adminMessage, $adminIds);
+
+            SendNotification::dispatch(
+                $this->user->id,
+                "Your project '{$this->project->title}' files have been processed successfully."
+            );
         } catch (Throwable $e) {
             Log::error("Job failed for Project ID {$this->project->id}: " . $e->getMessage());
             $this->fail($e);
@@ -173,10 +176,9 @@ class ProcessCapstoneManuscripts implements ShouldQueue
         // It ensures the entire temporary directory for the user is cleaned up.
         Storage::deleteDirectory("private/temp/{$this->user->id}");
 
-        Notification::create([
-            'user_id' => $this->user->id,
-            'message' => "Your project '{$this->project->title}' file processing failed. Please try again.",
-            'notification_date' => now(),
-        ]);
+        SendNotification::dispatch(
+            $this->user->id,
+            "Your project '{$this->project->title}' file processing failed. Please try again."
+        );
     }
 }
