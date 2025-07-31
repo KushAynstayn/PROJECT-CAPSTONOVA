@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
+use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
@@ -129,4 +130,9 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('capstone-projects/archived', [CapstoneProjectController::class, 'getArchived'])
         ->name('admin.capstone-projects.archived');
+});
+
+
+Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
+    Route::apiResource('users', UserController::class);
 });
