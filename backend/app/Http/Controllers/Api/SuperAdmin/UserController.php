@@ -99,30 +99,29 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, $id)
     {
-        $user = User::findOrFail($id);
         $validated = $request->validated();
+        $user = User::findOrFail($id);
 
-        DB::transaction(function () use ($user, $validated) {
-            $user->update($validated);
 
-            if (in_array($user->role, ['Proponent', 'Viewer'])) {
-                $userDetailData = [];
-                if (isset($validated['student_id'])) {
-                    $userDetailData['student_id'] = $validated['student_id'];
-                }
-                if (isset($validated['department'])) {
-                    $userDetailData['department'] = $validated['department'];
-                }
-                if (isset($validated['program'])) {
-                    $userDetailData['program'] = $validated['program'];
-                }
-                if (isset($validated['adviser_id'])) {
-                    $userDetailData['adviser_id'] = $validated['adviser_id'];
-                }
+        $userKeys = ['first_name', 'last_name', 'middle_name', 'email', 'role', 'status', 'password'];
+        $userData = array_intersect_key($validated, array_flip($userKeys));
 
-                if (!empty($userDetailData)) {
-                    UserDetail::updateOrCreate(['user_id' => $user->id], $userDetailData);
-                }
+
+        $userDetailKeys = ['student_id', 'department', 'program', 'adviser_id'];
+        $userDetailData = array_intersect_key($validated, array_flip($userDetailKeys));
+
+        DB::transaction(function () use ($user, $userData, $userDetailData) {
+
+            if (!empty($userData)) {
+                $user->update($userData);
+            }
+
+
+            if (in_array($user->role, ['Proponent', 'Viewer']) && !empty($userDetailData)) {
+                UserDetail::updateOrCreate(
+                    ['user_id' => $user->id],
+                    $userDetailData
+                );
             }
         });
 
@@ -138,7 +137,7 @@ class UserController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        // Prevent a user from restricting their own account
+
         if ($request->user()->id == $id) {
             return response()->json(['message' => 'Action forbidden: You cannot restrict your own account.'], 403);
         }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
+use App\Http\Controllers\Api\SuperAdmin\SuperAdminWhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
@@ -134,5 +135,12 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
 
 Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
-    Route::apiResource('users', UserController::class);
+
+
+    Route::apiResource('users', UserController::class)
+        ->names('super-admin.users');
+
+
+    Route::apiResource('whitelist', SuperAdminWhitelistController::class)
+        ->names('super-admin.whitelist');
 });

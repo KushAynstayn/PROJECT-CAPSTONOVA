@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\SuperAdmin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -32,6 +33,7 @@ class UpdateUserRequest extends FormRequest
             'last_name' => ['sometimes', 'required', 'string', 'max:100'],
             'middle_name' => ['nullable', 'string', 'max:100'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
+            'password' => ['sometimes', 'string', 'confirmed', Password::min(8)],
             'role' => ['sometimes', 'required', 'string', Rule::in(['Super Admin', 'Admin', 'Adviser', 'Proponent', 'Viewer'])],
             'student_id' => [Rule::requiredIf($isDetailRequired), 'nullable', 'string', 'max:50'],
             'department' => [Rule::requiredIf($isDetailRequired), 'nullable', 'string', 'max:50'],
