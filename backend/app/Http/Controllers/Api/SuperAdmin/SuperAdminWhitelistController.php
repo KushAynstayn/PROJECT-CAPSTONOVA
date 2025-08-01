@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api\SuperAdmin;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Whitelist;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 
 class SuperAdminWhitelistController extends Controller
 {
@@ -16,6 +17,10 @@ class SuperAdminWhitelistController extends Controller
      */
     public function index(Request $request)
     {
+
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $query = Whitelist::query()->with(['adviser:id,first_name,last_name,email']);
 
         $query->when($request->query('student_id'), function ($q, $student_id) {
@@ -48,6 +53,9 @@ class SuperAdminWhitelistController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $validator = Validator::make($request->all(), [
             'student_id' => ['required', 'integer', 'unique:whitelist,student_id'],
             'student_email' => ['required', 'string', 'email', 'max:255', 'unique:whitelist,student_email'],
@@ -74,6 +82,9 @@ class SuperAdminWhitelistController extends Controller
      */
     public function show($id)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $whitelistEntry = Whitelist::with('adviser')->findOrFail($id);
         return response()->json($whitelistEntry);
     }
@@ -83,6 +94,9 @@ class SuperAdminWhitelistController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $whitelistEntry = Whitelist::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -114,6 +128,9 @@ class SuperAdminWhitelistController extends Controller
      */
     public function destroy($id)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $whitelistEntry = Whitelist::findOrFail($id);
         $whitelistEntry->delete();
 

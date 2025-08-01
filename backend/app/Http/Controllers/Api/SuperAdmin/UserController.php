@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Api\SuperAdmin;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\SuperAdmin\StoreUserRequest;
-use App\Http\Requests\Api\SuperAdmin\UpdateUserRequest;
 use App\Models\User;
 use App\Models\UserDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\Api\SuperAdmin\StoreUserRequest;
+use App\Http\Requests\Api\SuperAdmin\UpdateUserRequest;
 
 class UserController extends Controller
 {
@@ -21,6 +22,9 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $query = User::query()
             ->with('userDetail:user_id,department,program')
             ->where('id', '!=', $request->user()->id);
@@ -52,6 +56,9 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $validated = $request->validated();
 
         $user = DB::transaction(function () use ($validated) {
@@ -86,6 +93,9 @@ class UserController extends Controller
      */
     public function show($id)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $user = User::with('userDetail')->findOrFail($id);
         return response()->json($user);
     }
@@ -99,6 +109,9 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, $id)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
         $validated = $request->validated();
         $user = User::findOrFail($id);
 
@@ -137,6 +150,9 @@ class UserController extends Controller
      */
     public function destroy(Request $request, $id)
     {
+        if (!Gate::allows('isSuperAdmin')) {
+            abort(403, 'Unauthorized - Super Admin access required');
+        }
 
         if ($request->user()->id == $id) {
             return response()->json(['message' => 'Action forbidden: You cannot restrict your own account.'], 403);
