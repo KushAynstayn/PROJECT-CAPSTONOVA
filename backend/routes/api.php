@@ -18,8 +18,10 @@ use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
+use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
+use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\SuperAdmin\SuperAdminWhitelistController;
@@ -137,7 +139,6 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
 Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
 
-
     Route::apiResource('users', UserController::class)
         ->names('super-admin.users');
 
@@ -149,4 +150,14 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
     Route::post('document-requests/{id}/approve', [DocumentRequestController::class, 'approve']);
 
     Route::post('document-requests/{id}/reject', [DocumentRequestController::class, 'reject']);
+});
+
+
+Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
+
+    Route::post('request-project/{project_id}', [RequestProjectController::class, 'store']);
+
+    Route::post('suggestions/{id}/interest', [SuggestionInterestController::class, 'expressInterest']);
+
+    Route::delete('suggestions/{id}/interest', [SuggestionInterestController::class, 'removeInterest']);
 });
