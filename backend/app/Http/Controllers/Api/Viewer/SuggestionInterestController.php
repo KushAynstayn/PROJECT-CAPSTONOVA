@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Suggestion;
 use Illuminate\Http\Request;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class SuggestionInterestController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Mark the authenticated user as interested in a suggestion.
      *
@@ -40,6 +43,9 @@ class SuggestionInterestController extends Controller
      */
     public function removeInterest(Request $request, $id)
     {
+        $suggestion = Suggestion::findOrFail($id);
+        $this->authorize('removeInterest', $suggestion);
+
         $suggestion = Suggestion::findOrFail($id);
         $viewerId = $request->user()->id;
 
