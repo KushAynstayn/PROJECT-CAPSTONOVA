@@ -13,13 +13,18 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
+use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
+use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
+use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
+use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
+use App\Http\Controllers\Api\SuperAdmin\SuperAdminWhitelistController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
 
@@ -129,4 +134,30 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('capstone-projects/archived', [CapstoneProjectController::class, 'getArchived'])
         ->name('admin.capstone-projects.archived');
+});
+
+
+Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
+
+    Route::apiResource('users', UserController::class)
+        ->names('super-admin.users');
+
+    Route::apiResource('whitelist', SuperAdminWhitelistController::class)
+        ->names('super-admin.whitelist');
+
+    Route::get('document-requests', [DocumentRequestController::class, 'index']);
+
+    Route::post('document-requests/{id}/approve', [DocumentRequestController::class, 'approve']);
+
+    Route::post('document-requests/{id}/reject', [DocumentRequestController::class, 'reject']);
+});
+
+
+Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
+
+    Route::post('request-project/{project_id}', [RequestProjectController::class, 'store']);
+
+    Route::post('suggestions/{id}/interest', [SuggestionInterestController::class, 'expressInterest']);
+
+    Route::delete('suggestions/{id}/interest', [SuggestionInterestController::class, 'removeInterest']);
 });
