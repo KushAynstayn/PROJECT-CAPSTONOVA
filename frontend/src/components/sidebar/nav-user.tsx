@@ -9,18 +9,22 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+// 1. Import the useSidebar hook
+import { useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 // Define the type for the user object
 interface User {
   name: string
   email: string
-  // The avatar property is optional, we can add a fallback
   avatar?: string
 }
 
 // Tell the component to expect a "user" prop of that type
 export function NavUser({ user }: { user: User }) {
-  // A helper to get the initials from the user's name for the avatar fallback
+  // 2. Get the sidebar's state using the hook
+  const { isOpen } = useSidebar();
+
   const getInitials = (name: string) => {
     const names = name.split(' ')
     if (names.length > 1) {
@@ -32,17 +36,21 @@ export function NavUser({ user }: { user: User }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <div className="flex items-center gap-3">
+        <div className={cn("flex items-center gap-3", !isOpen && "justify-center")}>
           <Avatar className="h-9 w-9">
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">{user.name}</span>
-            <span className="truncate text-xs text-muted-foreground">
-              {user.email}
-            </span>
-          </div>
+          
+          {/* 3. Conditionally render the name and email */}
+          {isOpen && (
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-semibold">{user.name}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
+            </div>
+          )}
         </div>
       </SidebarMenuItem>
     </SidebarMenu>

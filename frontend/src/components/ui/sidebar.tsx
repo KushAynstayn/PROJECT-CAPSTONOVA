@@ -71,7 +71,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     return (
       <div
         ref={ref}
-        className={cn(sidebarVariants({ variant, isOpen: open, className }))}
+        className={cn("flex h-full flex-col", sidebarVariants({ variant, isOpen: open, className }))}
         {...props}
       />
     )
@@ -97,7 +97,7 @@ const SidebarContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex-1 overflow-y-auto", className)}
+    className={cn("flex-1 overflow-y-auto overflow-x-hidden", className)}
     {...props}
   />
 ))
@@ -134,7 +134,7 @@ const SidebarMenuItem = React.forwardRef<
   <a
     ref={ref}
     className={cn(
-      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:bg-white/10 hover:text-white",
+      "flex items-center gap-3 px-3 py-1 text-sm font-medium text-gray-200 transition-colors transition-transform duration-150 ease-in-out hover:bg-white/10 hover:text-white hover:scale-110",
       className
     )}
     {...props}
