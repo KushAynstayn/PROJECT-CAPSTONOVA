@@ -1,45 +1,47 @@
-"use client" // <-- This is now a client component to access the URL path.
+"use client"
 
+import * as React from "react"; // Import React for useState
 import { AppSidebar, UserRole } from "@/components/sidebar/app-sidebar";
-import { usePathname } from 'next/navigation'; // <-- Import the hook to read the URL.
+import { SidebarProvider } from "@/components/ui/sidebar"; // 1. Import SidebarProvider
+import { usePathname } from 'next/navigation';
+import { cn } from "@/lib/utils"; // Import cn for conditional classes
 
-// This layout will wrap every page and dynamically change the sidebar.
 export default function UserRoleLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname(); // Gets the current URL path (e.g., "/adviser/dashboard")
+  const pathname = usePathname();
+  // 2. Add state to control the sidebar's open/closed status
+  const [isSidebarOpen, setSidebarOpen] = React.useState(true);
 
-  // --- LOGIC TO DETERMINE ROLE FROM URL ---
-  // This function checks the first part of the URL (like 'adviser' or 'admin')
-  // and selects the correct sidebar menu.
   const getRoleFromPath = (): UserRole => {
     if (pathname.startsWith('/admin')) return 'admin';
     if (pathname.startsWith('/super-admin')) return 'super-admin';
     if (pathname.startsWith('/proponent')) return 'proponent';
-    // If it's none of the above, we default to 'adviser'.
     return 'adviser';
   };
 
   const currentRole = getRoleFromPath();
 
   return (
-    // This main div creates the layout with the sidebar on the left.
-    <div className="grid h-screen w-full grid-cols-[260px_1fr]">
-      
-      {/* --- DYNAMIC SIDEBAR --- */}
-      {/* We now pass the 'currentRole' to the AppSidebar. */}
-      {/* It will automatically show the correct menu based on the URL. */}
-      <AppSidebar userRole={currentRole} />
+    // 3. Wrap everything in SidebarProvider, passing the state to it
+    <SidebarProvider isOpen={isSidebarOpen} setIsOpen={setSidebarOpen}>
+      {/* 4. Make the grid layout dynamic based on the sidebar state */}
+      <div className={cn(
+        "grid h-screen w-full transition-all duration-300",
+        isSidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[72px_1fr]"
+      )}>
+        
+        {/* 5. Pass the isOpen prop to the AppSidebar */}
+        <AppSidebar userRole={currentRole} isOpen={isSidebarOpen} />
 
-      {/* This is the main content area for your pages. */}
-      <div className="flex flex-col">
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* The content of your pages will appear here. */}
-          {children}
-        </main>
+        <div className="flex flex-col">
+          <main className="flex-1 overflow-y-auto p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   )
 }
