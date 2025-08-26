@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "name": "John Arado",
+    "idNumber": "1330600",
+    "dateRequested": "2025-08-10",
+    "requestedDoc": "Comprehensive Report on the Project Capstone OVA"
+  },
+  {
+    "id": 2,
+    "name": "Faye Gansen",
+    "idNumber": "1330600",
+    "dateRequested": "2025-08-11",
+    "requestedDoc": "Innovative Business Plan for a Laundry Rolling Link"
+  },
+  {
+    "id": 3,
+    "name": "Kingston Canalas",
+    "idNumber": "1330600",
+    "dateRequested": "2025-08-05",
+    "requestedDoc": "Advanced Athletic Training and Performance Analysis"
+  },
+  {
+    "id": 4,
+    "name": "Maa Jubahib",
+    "idNumber": "1330600",
+    "dateRequested": "2025-08-01",
+    "requestedDoc": "A Modern E-Commerce Solution for Small Businesses"
+  },
+  {
+    "id": 5,
+    "name": "Alex Smith",
+    "idNumber": "1330601",
+    "dateRequested": "2025-08-02",
+    "requestedDoc": "Analysis of Local Ecosystem Data and Trends"
+  },
+  {
+    "id": 6,
+    "name": "Bianca Gatchalian",
+    "idNumber": "1330602",
+    "dateRequested": "2025-08-03",
+    "requestedDoc": "Strategic Applications of AI in Digital Marketing"
+  },
+  {
+    "id": 7,
+    "name": "Carlos Rivera",
+    "idNumber": "1330603",
+    "dateRequested":"2025-08-21",
+    "requestedDoc": "Design and Development of a VR Simulator"
+  },
+  {
+    "id": 8,
+    "name": "Diana Lim",
+    "idNumber": "1330604",
+    "dateRequested": "2025-08-23",
+    "requestedDoc": "Building a Scalable and Secure E-Commerce Platform"
+  },
+  {
+    "id": 9,
+    "name": "Ethan Cruz",
+    "idNumber": "1330605",
+    "dateRequested": "2025-08-28",
+    "requestedDoc": "Fundamentals and Best Practices in Mobile App Development"
+  },
+  {
+    "id": 10,
+    "name": "Hannah Torres",
+    "idNumber": "1330606",
+    "dateRequested": "2025-08-17",
+    "requestedDoc": "Implementing Robust Security Measures in Cloud Computing"
+  },
+  {
+    "id": 11,
+    "name": "Ivan Dela Cruz",
+    "idNumber": "1330607",
+    "dateRequested": "2025-08-17",
+    "requestedDoc": "Modernizing Enterprise Network Infrastructure for Efficiency"
+  },
+  {
+    "id": 12,
+    "name": "Jasmine Santos",
+    "idNumber": "1330608",
+    "dateRequested": "2025-08-17",
+    "requestedDoc": "Exploring New and Effective Digital Marketing Strategies"
+  },
+  {
+    "id": 13,
+    "name": "Kenneth Ocampo",
+    "idNumber": "1330609",
+    "dateRequested": "2025-08-17",
+    "requestedDoc": "Optimizing Relational Database Management for Performance"
+  },
+  {
+    "id": 14,
+    "name": "Laura Ramirez",
+    "idNumber": "1330610",
+    "dateRequested": "2025-08-22",
+    "requestedDoc": "Principles of Modern Agile Software Engineering Practices"
+  },
+  {
+    "id": 15,
+    "name": "Marco Fernandez",
+    "idNumber": "1330611",
+    "dateRequested": "2025-08-22",
+    "requestedDoc": "Auditing and Enhancing Cybersecurity Protocols"
+  },
+  {
+    "id": 16,
+    "name": "Nicole Velez",
+    "idNumber": "1330612",
+    "dateRequested": "2025-08-22",
+    "requestedDoc": "Foundational Principles of Responsive Web Design"
+  },
+  {
+    "id": 17,
+    "name": "Oscar Mendoza",
+    "idNumber": "1330613",
+    "dateRequested": "2025-08-22",
+    "requestedDoc": "A Study on the Ethics of Artificial Intelligence"
+  },
+  {
+    "id": 18,
+    "name": "Paolo Reyes",
+    "idNumber": "1330614",
+    "dateRequested": "2025-08-12",
+    "requestedDoc": "Practical Applications of Blockchain Technology in Finance"
+  },
+  {
+    "id": 19,
+    "name": "Queen Esguerra",
+    "idNumber": "1330615",
+    "dateRequested": "2025-08-12",
+    "requestedDoc": "Advanced Predictive Models for Data Science Analytics"
+  },
+  {
+    "id": 20,
+    "name": "Ramon Sanchez",
+    "idNumber": "1330616",
+    "dateRequested": "2025-08-12",
+    "requestedDoc": "Innovations in Modern Robotics and Engineering Design"
+  }
+]

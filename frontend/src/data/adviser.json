@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "name": "Monkey Luffy",
+    "idNumber": "2021-12345",
+    "email": "m.luffy@university.edu",
+    "numberOfAdvisees": "5"
+  },
+  {
+    "id": 2,
+    "name": "Roronoa Zoro",
+    "idNumber": "2020-09876",
+    "email": "r.zoro@university.edu",
+    "numberOfAdvisees": "5"
+  },
+  {
+    "id": 3,
+    "name": "Sanji Vinsmoke",
+    "idNumber": "2019-54321",
+    "email": "s.vinsmoke@university.edu",
+    "numberOfAdvisees": "5"
+  },
+  {
+    "id": 4,
+    "name": "Trafalgar Law",
+    "idNumber": "2022-67890",
+    "email": "t.law@university.edu",
+    "numberOfAdvisees": "5"
+  },
+  {
+    "id": 5,
+    "name": "Nico Robin",
+    "idNumber": "2018-11223",
+    "email": "n.robin@university.edu",
+    "numberOfAdvisees": "5"
+  },
+  {
+    "id": 6,
+    "name": "Rob Lucci",
+    "idNumber": "2021-99887",
+    "email": "r.lucci@university.edu",
+    "numberOfAdvisees": "5"
+  },
+  {
+    "id": 7,
+    "name": "Dracule Mihawk",
+    "idNumber": "2020-45678",
+    "email": "d.mihawk@university.edu",
+    "numberOfAdvisees": "5"
+  }
+]
