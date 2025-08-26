@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartBarLabelCustom } from "@/components/chart-bar-label-custom";
-import { ChartLineLinear } from "@/components/chart-line-linear";
-import { ChartRadialText } from "@/components/chart-radial-text";
-import { ChartRadialShape } from "@/components/chart-radial-shape";
+import { ChartBarLabelCustom } from "@/components/ui/chart-bar-label-custom";
+import { ChartLineLinear } from "@/components/ui/chart-line-linear";
+import { ChartRadialText } from "@/components/ui/chart-radial-text";
+import { ChartRadialShape } from "@/components/ui/chart-radial-shape";
 import { Calendar22 } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { InputWithClear } from "@/components/ui/inputWithClear";

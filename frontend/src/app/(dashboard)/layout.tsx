@@ -1,10 +1,10 @@
 "use client"
 
-import * as React from "react"; // Import React for useState
+import * as React from "react";
 import { AppSidebar, UserRole } from "@/components/sidebar/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar"; // 1. Import SidebarProvider
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { usePathname } from 'next/navigation';
-import { cn } from "@/lib/utils"; // Import cn for conditional classes
+import { cn } from "@/lib/utils";
 
 export default function UserRoleLayout({
   children,
@@ -12,7 +12,6 @@ export default function UserRoleLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
-  // 2. Add state to control the sidebar's open/closed status
   const [isSidebarOpen, setSidebarOpen] = React.useState(true);
 
   const getRoleFromPath = (): UserRole => {
@@ -25,21 +24,30 @@ export default function UserRoleLayout({
   const currentRole = getRoleFromPath();
 
   return (
-    // 3. Wrap everything in SidebarProvider, passing the state to it
     <SidebarProvider isOpen={isSidebarOpen} setIsOpen={setSidebarOpen}>
-      {/* 4. Make the grid layout dynamic based on the sidebar state */}
       <div className={cn(
-        "grid h-screen w-full transition-all duration-300",
+        "grid h-screen w-full",
         isSidebarOpen ? "grid-cols-[260px_1fr]" : "grid-cols-[72px_1fr]"
       )}>
-        
-        {/* 5. Pass the isOpen prop to the AppSidebar */}
         <AppSidebar userRole={currentRole} isOpen={isSidebarOpen} />
+        
+        {/* Main Content Area with Fixed Header */}
+        <div className="flex flex-col overflow-hidden">
+        
+          {/* 1. Default Header (This part is fixed) */}
+          <header className="w-full px-6 pt-6 pb-4 flex-shrink-0">
+            <h1 className="text-left text-base font-semibold text-[#a7561f] opacity-50 md:text-lg">
+              Enhancing Capstone Archiving and Optimizing Data Intelligence with
+              Project CapstoNova
+            </h1>
+            <div className="h-[2px] w-full bg-gray-200 mt-5" />
+          </header>
 
-        <div className="flex flex-col">
+          {/* 2. Scrollable Page Content */}
           <main className="flex-1 overflow-y-auto p-6">
             {children}
           </main>
+          
         </div>
       </div>
     </SidebarProvider>

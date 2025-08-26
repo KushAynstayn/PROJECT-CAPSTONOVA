@@ -1,9 +1,11 @@
 import React from 'react'
 
 const SuperAdminSettingsPage = () => {
+  // The header is provided by layout.tsx.
+  // This page is intentionally blank for now.
   return (
     <div>
-      <h1 className="text-2xl font-bold">Account Settings</h1>
+        {/* Page content can be added here later */}
     </div>
   )
 }
