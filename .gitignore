@@ -12,3 +12,13 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Data Mining
+# Python virtual environment
+ml_service/venv/
+
+# Files and folders for static assets
+ml_service/static/
+
+# Files and folders for models
+ml_service/saved_models/

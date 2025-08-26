@@ -18,22 +18,26 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-const advisers = [
-  { value: "dr_reyes", label: "Dr. Reyes" },
-  { value: "prof_santos", label: "Prof. Santos" },
-  { value: "dr_cruz", label: "Dr. Cruz" },
-  { value: "prof_garcia", label: "Prof. Garcia" },
-  { value: "ms_ocampo", label: "Ms. Ocampo" },
-];
+interface ComboboxItem {
+  value: string;
+  label: string;
+}
 
-// MODIFIED: Component now accepts props to be controlled by a parent
-export default function Combobox({
-  value,
-  onValueChange,
-}: {
+interface ComboboxProps {
+  items: ComboboxItem[];
   value: string;
   onValueChange: (value: string) => void;
-}) {
+  placeholder: string;
+  searchPlaceholder?: string;
+}
+
+export default function Combobox({
+  items,
+  value,
+  onValueChange,
+  placeholder,
+  searchPlaceholder,
+}: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -50,23 +54,22 @@ export default function Combobox({
           )}
         >
           {value
-            ? advisers.find((adviser) => adviser.value === value)?.label
-            : "Select adviser"}
+            ? items.find((item) => item.value === value)?.label
+            : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder="Search adviser" />
+          <CommandInput placeholder={searchPlaceholder || `Search ${placeholder}`} />
           <CommandList>
-            <CommandEmpty>No adviser found.</CommandEmpty>
+            <CommandEmpty>No item found.</CommandEmpty>
             <CommandGroup>
-              {advisers.map((adviser) => (
+              {items.map((item) => (
                 <CommandItem
-                  key={adviser.value}
-                  value={adviser.value}
+                  key={item.value}
+                  value={item.value}
                   onSelect={(currentValue) => {
-                    // MODIFIED: Calls the parent's function instead of setting its own state
                     onValueChange(currentValue === value ? "" : currentValue);
                     setOpen(false);
                   }}
@@ -74,10 +77,10 @@ export default function Combobox({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === adviser.value ? "opacity-100" : "opacity-0"
+                      value === item.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {adviser.label}
+                  {item.label}
                 </CommandItem>
               ))}
             </CommandGroup>

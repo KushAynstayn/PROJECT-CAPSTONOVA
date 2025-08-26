@@ -1,13 +1,16 @@
+<<<<<<< HEAD
 
 import Image from "next/image"
 import { LoginForm } from "@/components/ui/login-form"
+=======
+import Image from "next/image";
+import { LoginForm } from "@/components/ui/login-form";
+>>>>>>> 928818290b60132c16950cc5cad6c6cd39f17b3f
 
 export default function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
-        
-        
         <div className="flex justify-center gap-2 md:justify-start">
           <div className="flex items-center gap-3">
             <Image
@@ -16,7 +19,9 @@ export default function LoginPage() {
               width={40} // Adjust size as needed
               height={40}
             />
-            <span className="font-bold text-xl text-brand-red">Project Capstonova</span>
+            <span className="font-bold text-xl text-brand-red">
+              Project Capstonova
+            </span>
           </div>
         </div>
 
@@ -35,5 +40,5 @@ export default function LoginPage() {
         />
       </div>
     </div>
-  )
+  );
 }
