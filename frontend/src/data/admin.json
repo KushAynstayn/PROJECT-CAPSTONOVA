@@ -1,0 +1,26 @@
+[
+  {
+    "id": 18,
+    "name": "Angel Locsin",
+    "idNumber": "2021-18018",
+    "email": "s.yap@student.edu",
+    "branch": "BIT-CT",
+    "department": "CCICT"
+  },
+  {
+    "id": 19,
+    "name": "Marian Rivera",
+    "idNumber": "2023-19019",
+    "email": "k.delacruz@student.edu",
+    "branch": "BSIT",
+    "department": "CCICT"
+  },
+  {
+    "id": 20,
+    "name": "Anne Curtis",
+    "idNumber": "2022-20020",
+    "email": "j.morales@student.edu",
+    "branch": "BSIS",
+    "department": "CCICT"
+  }
+]

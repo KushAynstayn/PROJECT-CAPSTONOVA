@@ -2,13 +2,14 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartBarLabelCustom } from "@/components/chart-bar-label-custom";
-import { ChartLineLinear } from "@/components/chart-line-linear";
-import { ChartRadialText } from "@/components/ui/chart-radial-text";
-import { ChartRadialShape } from "@/components/ui/chart-radial-shape";
+import { ChartBarLabelCustom } from "@/components/ui/chart-bar-label-custom";
+import { ChartLineLinear } from "@/components/ui/chart-line-linear";
 import { Calendar22 } from "@/components/ui/date-picker";
+import { ChartPieLabelList } from "@/components/ui/chart-pie-label-list";
+import { ChartBarLabel } from "@/components/ui/chart-bar-label";
 import { Button } from "@/components/ui/button";
 import { InputWithClear } from "@/components/ui/inputWithClear";
+import { LatestSubmission } from "@/components/ui/latest-submission-dashboard";
 
 const SuperAdminDashboardPage: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -16,16 +17,6 @@ const SuperAdminDashboardPage: React.FC = () => {
   return (
     // Use a React Fragment to place the header outside the main padded area
     <>
-      <div className="w-full">
-        <h1 className="p-1 text-left text-base font-semibold text-[#a7561f] opacity-50 md:text-lg">
-          Enhancing Capstone Archiving and Optimizing Data Intelligence with
-          Project CapstoNova
-        </h1>
-        {/* This div creates the blurred, full-width border */}
-        <div className="h-[2px] w-full bg-gray-200 " />
-      </div>
-       {/* END OF HEADER */}
-
       {/* Main content now has padding-top to create space below the header */}
       <main className="flex min-h-screen flex-col p-2 pt-2 sm:p-2 lg:p-4 lg:pt-0">
         <div className="mt-4">
@@ -44,7 +35,7 @@ const SuperAdminDashboardPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col items-stretch gap-6 md:flex-row">
+            <div className="flex flex-col items-stretch gap-2 md:flex-row">
               <div className="w-full md:w-2/3">
                 <ChartLineLinear />
               </div>
@@ -54,32 +45,16 @@ const SuperAdminDashboardPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-stretch gap-2 md:flex-row">
-              <div className="md:basis-1/4">
-                <ChartRadialText />
+               <div className="grow">
+                <ChartBarLabel />
               </div>
-              <div className="md:basis-1/4">
-                <ChartRadialShape />
+              
+              <div className=" md:w-1/4">
+               <ChartPieLabelList />
               </div>
-              <div className="grow">
-                <Card className="h-full">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Latest Submission</CardTitle>
-                    <Button variant="link" className="px-0">
-                      View All Projects
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Smart Library Management System with QR Code Integration
-                      <br />
-                      Submitted by Mark John C. Lucas
-                      <br />
-                      Adviser: Dr. Luke Tan
-                      <br />
-                      Date Submitted: November 20, 2024
-                    </p>
-                  </CardContent>
-                </Card>
+             
+              <div className=" md:w-1/4">
+                <LatestSubmission />
               </div>
             </div>
           </div>

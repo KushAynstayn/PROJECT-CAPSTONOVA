@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "firstName": "Alice",
+    "lastName": "Johnson",
+    "idNumber": "A12345",
+    "email": "alice.j@example.edu",
+    "adviser": "Samantha Jones",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 2,
+    "firstName": "Bob",
+    "lastName": "Williams",
+    "idNumber": "B67890",
+    "email": "bob.w@example.edu",
+    "adviser": "Michael Chen",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 3,
+    "firstName": "Charlie",
+    "lastName": "Brown",
+    "idNumber": "C11223",
+    "email": "charlie.b@example.edu",
+    "adviser": "Emily Carter",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 4,
+    "firstName": "Diana",
+    "lastName": "Prince",
+    "idNumber": "D44556",
+    "email": "diana.p@example.edu",
+    "adviser": "David Rodriguez",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 5,
+    "firstName": "Ethan",
+    "lastName": "Hunt",
+    "idNumber": "E77889",
+    "email": "ethan.h@example.edu",
+    "adviser": "Jessica Lee",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 6,
+    "firstName": "Fiona",
+    "lastName": "Glenanne",
+    "idNumber": "F99001",
+    "email": "fiona.g@example.edu",
+    "adviser": "Daniel Kim",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 7,
+    "firstName": "George",
+    "lastName": "Bailey",
+    "idNumber": "G22334",
+    "email": "george.b@example.edu",
+    "adviser": "Olivia Brown",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 8,
+    "firstName": "Hannah",
+    "lastName": "Abbott",
+    "idNumber": "H55667",
+    "email": "hannah.a@example.edu",
+    "adviser": "Samantha Jones",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 9,
+    "firstName": "Isaac",
+    "lastName": "Newton",
+    "idNumber": "I88990",
+    "email": "isaac.n@example.edu",
+    "adviser": "Michael Chen",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 10,
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "idNumber": "J11002",
+    "email": "jane.d@example.edu",
+    "adviser": "Emily Carter",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 11,
+    "firstName": "Kevin",
+    "lastName": "Flynn",
+    "idNumber": "K33445",
+    "email": "kevin.f@example.edu",
+    "adviser": "David Rodriguez",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 12,
+    "firstName": "Laura",
+    "lastName": "Palmer",
+    "idNumber": "L66778",
+    "email": "laura.p@example.edu",
+    "adviser": "Jessica Lee",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 13,
+    "firstName": "Michael",
+    "lastName": "Scott",
+    "idNumber": "M99001",
+    "email": "michael.s@example.edu",
+    "adviser": "Daniel Kim",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 14,
+    "firstName": "Nancy",
+    "lastName": "Drew",
+    "idNumber": "N22334",
+    "email": "nancy.d@example.edu",
+    "adviser": "Olivia Brown",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 15,
+    "firstName": "Oliver",
+    "lastName": "Queen",
+    "idNumber": "O55667",
+    "email": "oliver.q@example.edu",
+    "adviser": "Samantha Jones",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 16,
+    "firstName": "Pam",
+    "lastName": "Beesly",
+    "idNumber": "P88990",
+    "email": "pam.b@example.edu",
+    "adviser": "Michael Chen",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 17,
+    "firstName": "Quentin",
+    "lastName": "Coldwater",
+    "idNumber": "Q11223",
+    "email": "quentin.c@example.edu",
+    "adviser": "Emily Carter",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 18,
+    "firstName": "Rachel",
+    "lastName": "Green",
+    "idNumber": "R44556",
+    "email": "rachel.g@example.edu",
+    "adviser": "David Rodriguez",
+    "schedule": "Day Program"
+  },
+  {
+    "id": 19,
+    "firstName": "Steven",
+    "lastName": "Rogers",
+    "idNumber": "S77889",
+    "email": "steven.r@example.edu",
+    "adviser": "Jessica Lee",
+    "schedule": "Evening Program"
+  },
+  {
+    "id": 20,
+    "firstName": "Tina",
+    "lastName": "Belcher",
+    "idNumber": "T99001",
+    "email": "tina.b@example.edu",
+    "adviser": "Daniel Kim",
+    "schedule": "Day Program"
+  }
+]
