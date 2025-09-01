@@ -1,38 +1,26 @@
-import Image from "next/image";
 import { LoginForm } from "@/components/ui/login-form";
+import Image from "next/image";
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/images/capstonova_logo.png" // Path to your logo
-              alt="Project Capstonova Logo"
-              width={40} // Adjust size as needed
-              height={40}
-            />
-            <span className="font-bold text-xl text-brand-red">
-              Project Capstonova
-            </span>
-          </div>
-        </div>
+    <main className="relative flex items-center justify-center min-h-screen font-sans">
+      
+      {/* Background Image */}
+      <Image
+        alt="Background"
+        src="/images/capstonova-bground.jpg"
+        fill
+        className="-z-10 object-cover"
+      />
 
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm />
-          </div>
-        </div>
+      {/* Dark Overlay Layer */}
+      <div className="absolute inset-0 bg-black/30 -z-10"></div> {/* Added this div */}
+
+      {/* Login Form Container with blur effect */}
+      <div className="p-8 border rounded-lg shadow-xl bg-white/30 border-neutral-200/20 backdrop-blur-sm">
+        <LoginForm />
       </div>
-      <div className="bg-muted relative hidden lg:block">
-        <Image
-          src="/images/proponent1.jpg"
-          alt="CTU Building"
-          layout="fill"
-          objectFit="cover"
-        />
-      </div>
-    </div>
+      
+    </main>
   );
 }
