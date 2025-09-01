@@ -13,14 +13,11 @@ import EditGuestView from "../../../../components/user-manage/editGuest";
 import EditProponentView from "../../../../components/user-manage/edit-proponent";
 import EditAdviserView from "../../../../components/user-manage/edit-adviser";
 import EditAdminView from "../../../../components/user-manage/edit-admin";
-// ADDED: Import the new SuggestionView component
 import SuggestionView from "../../../../components/user-manage/view-suggestion";
 import guestData from "@/data/guest.json";
 import proponentData from "@/data/proponent.json";
 import adviserData from "@/data/adviser.json";
 import adminData from "@/data/admin.json";
-// REMOVED: Button is no longer used in this file, so we can remove the import
-// import { Button } from "@/components/ui/button";
 
 // --- Type and Interface definitions remain the same ---
 type Role = "Guest" | "Proponents" | "Advisers" | "Admin";
@@ -34,13 +31,21 @@ interface BaseUser {
 interface Guest extends BaseUser {
   course: string;
   dateRequested: string;
+  // ADDED: The 'program' property to match EditGuestView
+  program: string;
 }
 interface Proponent extends BaseUser {
   adviser: string;
   course: string;
+  // ADDED: New properties to match EditProponentView
+  capstoneTitle: string;
+  groupName: string;
+  program: string;
 }
 interface Adviser extends BaseUser {
   numberOfAdvisees: string;
+  // ADDED: The 'degreeProgram' property to match EditAdviserView
+  degreeProgram: string;
 }
 interface Admin extends BaseUser {
   branch: string;
@@ -62,11 +67,6 @@ const placeholderText = {
   Advisers: "Search Advisers Here",
   Admin: "Search Admins Here",
 };
-
-// ===================================================================
-// REMOVED: The inline definition of SuggestionsViewProps and the
-// SuggestionsView component has been deleted from this file.
-// ===================================================================
 
 const SuperAdminUserManagementPage = () => {
   const [currentRole, setCurrentRole] = useState<Role>("Guest");
@@ -209,30 +209,37 @@ const SuperAdminUserManagementPage = () => {
               adviser={viewingSuggestionsFor}
               onClose={handleCloseSuggestions}
             />
-          ) : editingUser && currentRole === "Guest" ? (
-            <EditGuestView
-              user={editingUser as Guest}
-              onSave={handleSaveUser}
-              onCancel={handleCancelEdit}
-            />
-          ) : editingUser && currentRole === "Proponents" ? (
-            <EditProponentView
-              user={editingUser as Proponent}
-              onSave={handleSaveUser}
-              onCancel={handleCancelEdit}
-            />
-          ) : editingUser && currentRole === "Advisers" ? (
-            <EditAdviserView
-              user={editingUser as Adviser}
-              onSave={handleSaveUser}
-              onCancel={handleCancelEdit}
-            />
-          ) : editingUser && currentRole === "Admin" ? (
-            <EditAdminView
-              user={editingUser as Admin}
-              onSave={handleSaveUser}
-              onCancel={handleCancelEdit}
-            />
+          ) : editingUser ? (
+            <>
+              {currentRole === "Guest" && (
+                <EditGuestView
+                  user={editingUser as Guest}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {currentRole === "Proponents" && (
+                <EditProponentView
+                  user={editingUser as Proponent}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {currentRole === "Advisers" && (
+                <EditAdviserView
+                  user={editingUser as Adviser}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {currentRole === "Admin" && (
+                <EditAdminView
+                  user={editingUser as Admin}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+            </>
           ) : (
             componentMap[currentRole]
           )}

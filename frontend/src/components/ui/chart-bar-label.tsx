@@ -67,7 +67,6 @@ export function ChartBarLabel() {
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
-                tickFormatter={(value) => value.slice(0, 10)}
               />
               <ChartTooltip
                 cursor={false}

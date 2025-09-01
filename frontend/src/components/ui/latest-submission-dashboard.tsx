@@ -19,7 +19,7 @@ export function LatestSubmission() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Latest Submission</CardTitle>
       </CardHeader>
-      
+
       {/* 3. Use flex-1 on CardContent to make it fill the remaining space */}
       <CardContent className="flex-1">
         <div className="flex flex-col space-y-3 text-sm text-muted-foreground">
@@ -36,7 +36,7 @@ export function LatestSubmission() {
 
       {/* 4. Move the Button into a semantic CardFooter */}
       <CardFooter>
-        <Button variant="link" className="px-0">
+        <Button variant="outline" className="w-full">
           View All Projects
         </Button>
       </CardFooter>

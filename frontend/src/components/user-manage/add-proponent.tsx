@@ -141,7 +141,7 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
               {/* Course Combobox */}
               <div className="grid w-full items-center gap-1.5">
                 <Label htmlFor="course" className="font-normal">
-                  Course
+                  Degree Program
                 </Label>
                 <Combobox
                   value={formData.course}
@@ -151,7 +151,7 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
                     { value: "BSIT", label: "BSIT" },
                     { value: "BIT-CT", label: "BIT-CT" },
                   ]}
-                  placeholder={"Select Course"}
+                  placeholder={"Select Degree Program"}
                 />
               </div>
               {/* Adviser Combobox */}

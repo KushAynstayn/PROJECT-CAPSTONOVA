@@ -12,52 +12,51 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
-// Import the AddAdviser component
-import AddAdviser from "./add-adviser";
+// REMOVED: Import of AddProponent component
 
-// Adviser interface for type safety
-interface Adviser {
+// Proponent interface for type safety
+interface Proponent {
   id: number;
   name: string;
-  idNumber: string;
   email: string;
-  numberOfAdvisees: string;
-  // ADDED: The 'degreeProgram' property to match the other files
-  degreeProgram: string;
+  idNumber: string;
+  course: string;
+  adviser: string;
+  capstoneTitle: string; // New field
+  groupName: string; // New field
+  program: string; // New field
 }
 
-interface AdviserViewProps {
+interface ProponentViewProps {
   searchQuery: string;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: Adviser[];
+  filteredUsers: Proponent[];
   onEditUser: (userId: number) => void;
-  onViewSuggestions: (adviser: Adviser) => void;
   startDate: Date | undefined;
   endDate: Date | undefined;
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
 }
 
-const AdviserView = ({
+const ProponentView = ({
   searchQuery,
   onSearchChange,
   onClear,
   placeholder,
   filteredUsers,
   onEditUser,
-  onViewSuggestions,
   startDate,
   endDate,
   onStartDateChange,
   onEndDateChange,
-}: AdviserViewProps) => {
+}: ProponentViewProps) => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  // State to manage the visibility of the AddAdviser modal
-  const [isAddAdviserModalOpen, setIsAddAdviserModalOpen] = useState(false);
+  // REMOVED: State for managing the AddProponent modal
+  // const [isAddProponentModalOpen, setIsAddProponentModalOpen] = useState(false);
 
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
@@ -89,23 +88,13 @@ const AdviserView = ({
     handleCloseModal();
   };
 
-  const handleViewSuggestions = (e: React.MouseEvent, userId: number) => {
-    e.stopPropagation();
-    const adviserToView = filteredUsers.find((user) => user.id === userId);
-    if (adviserToView) {
-      onViewSuggestions(adviserToView);
-    }
-  };
-
-  // This function will be called when the Add User button is clicked.
-  const handleOpenAddAdviserModal = () => {
-    setIsAddAdviserModalOpen(true);
-  };
-
-  // This function will be called to close the AddAdviser modal.
-  const handleCloseAddAdviserModal = () => {
-    setIsAddAdviserModalOpen(false);
-  };
+  // REMOVED: Handler functions for the AddProponent modal
+  // const handleOpenAddProponentModal = () => {
+  //   setIsAddProponentModalOpen(true);
+  // };
+  // const handleCloseAddProponentModal = () => {
+  //   setIsAddProponentModalOpen(false);
+  // };
 
   return (
     <div>
@@ -138,9 +127,9 @@ const AdviserView = ({
         }
       `}</style>
 
-      {/* Search bar + Add User */}
+      {/* Search bar */}
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="w-full grow md:max-w-md">
+        <div className="w-full grow">
           <InputWithClear
             type="search"
             placeholder={placeholder}
@@ -149,18 +138,6 @@ const AdviserView = ({
             onClear={onClear}
           />
         </div>
-
-        {/* Add User button, now with the correct onClick handler */}
-        <button
-          className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:rounded-[25px] hover:scale-110 hover:opacity-100"
-          onClick={handleOpenAddAdviserModal} // This now opens the modal
-        >
-          <img
-            src="/images/add-user.png"
-            alt="Add User"
-            className="h-12 w-12"
-          />
-        </button>
       </div>
 
       {/* Table */}
@@ -168,18 +145,21 @@ const AdviserView = ({
         ref={scrollContainerRef}
         className="relative max-h-[60vh] overflow-y-auto"
       >
-        <Table removeWrapper aria-label="Adviser user data table">
+        <Table removeWrapper aria-label="Proponent user data table">
           <TableHeader>
+            <TableColumn className="bg-[#EDB4B4] text-left">GROUP NAME</TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              CAPSTONE TITLE
+            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              ADVISER
+            </TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              ID NUMBER
-            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">ID NUMBER</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">COURSE</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
-              NUMBER OF ADVISEES
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              SUGGESTIONS
+              PROGRAM
             </TableColumn>
           </TableHeader>
           <TableBody emptyContent={"No users match the current filters."}>
@@ -193,6 +173,15 @@ const AdviserView = ({
                 onClick={(e) => handleRowClick(e, user.id)}
               >
                 <TableCell className="border-b border-gray-200">
+                  {user.groupName}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
+                  {user.capstoneTitle}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
+                  {user.adviser}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
                   {user.name}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
@@ -202,15 +191,10 @@ const AdviserView = ({
                   {user.email}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.numberOfAdvisees}
+                  {user.course}
                 </TableCell>
-                <TableCell className="border-b border-gray-200 w-10">
-                  <Button
-                    onClick={(e) => handleViewSuggestions(e, user.id)}
-                    className="bg-[#6b211d] text-white font-serif rounded-1px shadow-md hover:bg-[#8c2d29]"
-                  >
-                    View Suggestions
-                  </Button>
+                <TableCell className="border-b border-gray-200">
+                  {user.program}
                 </TableCell>
               </TableRow>
             ))}
@@ -271,12 +255,12 @@ const AdviserView = ({
         </div>
       )}
 
-      {/* Conditionally render the AddAdviser modal */}
-      {isAddAdviserModalOpen && (
-        <AddAdviser onClose={handleCloseAddAdviserModal} />
-      )}
+      {/* REMOVED: Conditionally render the AddProponent modal */}
+      {/* {isAddProponentModalOpen && (
+        <AddProponent onClose={handleCloseAddProponentModal} />
+      )} */}
     </div>
   );
 };
 
-export default AdviserView;
+export default ProponentView;

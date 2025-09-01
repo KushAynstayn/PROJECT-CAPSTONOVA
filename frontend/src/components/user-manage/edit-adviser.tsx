@@ -2,6 +2,13 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Corrected the User interface to be consistent with other files
 interface User {
@@ -10,6 +17,8 @@ interface User {
   idNumber: string;
   email: string;
   numberOfAdvisees: string;
+  // Add the new degreeProgram field
+  degreeProgram: string;
 }
 
 interface EditAdviserViewProps {
@@ -22,6 +31,7 @@ const EditAdviserView = ({ user, onSave, onCancel }: EditAdviserViewProps) => {
   // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
 
+  // Handler for standard text inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     // For number input, ensure value is parsed correctly
@@ -31,16 +41,23 @@ const EditAdviserView = ({ user, onSave, onCancel }: EditAdviserViewProps) => {
     }));
   };
 
+  // Handler for the ShadCN Select component
+  const handleSelectChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, degreeProgram: value }));
+  };
+
   const handleSave = () => {
     onSave(formData);
   };
+  
+  const degreePrograms = ["BSIS", "BSIT", "BIT-CT"];
 
   return (
     // Main container with border, rounded corners, and shadow
     <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
       {/* 1. IMAGE INSERTED HERE */}
       <img
-        src="/images/hands.jpg"
+        src="/images/ctubldg.png"
         alt="Header"
         className="w-full rounded-t-lg object-cover"
         style={{ height: "1.3in" }}
@@ -127,10 +144,33 @@ const EditAdviserView = ({ user, onSave, onCancel }: EditAdviserViewProps) => {
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
+          
+          {/* Degree Program Dropdown */}
+          <div>
+            <label
+              htmlFor="degreeProgram"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              Degree Program
+            </label>
+            <Select
+              value={formData.degreeProgram}
+              onValueChange={handleSelectChange}
+            >
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+                <SelectValue placeholder="Select Degree Program" />
+              </SelectTrigger>
+              <SelectContent>
+                {degreePrograms.map(program => (
+                  <SelectItem key={program} value={program}>{program}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Action Buttons with distinct styling and layout */}
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-8 flex justify-end gap-x-4">
           <Button
             variant="outline"
             onClick={onCancel}

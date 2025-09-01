@@ -2,6 +2,13 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Corrected the User interface to be consistent with other files
 interface User {
@@ -23,11 +30,15 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
   // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
   
+  const handleSelectChange = (fieldName: keyof User, value: string) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+  };
+
   const handleSave = () => {
     onSave(formData);
   };
@@ -41,7 +52,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
     <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
       {/* 1. IMAGE INSERTED HERE */}
       <img
-        src="/images/hands.jpg"
+        src="/images/ctubldg.png"
         alt="Header"
         className="w-full rounded-t-lg object-cover"
         style={{ height: "1.3in" }}
@@ -56,96 +67,96 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
           <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
         </div>
 
-        {/* REVISED: Form Fields using a Flexbox layout */}
-        <div className="flex flex-col gap-4">
-          {/* Row 1: Full Name and ID Number */}
-          <div className="flex flex-col gap-4 md:flex-row md:gap-6">
-            <div className="flex-1">
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-600">
-                Full Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor="idNumber" className="block text-sm font-semibold text-gray-600">
-                ID Number
-              </label>
-              <input
-                id="idNumber"
-                type="text"
-                name="idNumber"
-                value={formData.idNumber}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-              />
-            </div>
+        {/* REVISED: Form Fields using a Grid layout */}
+        <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+          {/* Full Name */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-semibold text-gray-600">
+              Full Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            />
           </div>
 
-          {/* Row 2: Email and Branch */}
-          <div className="flex flex-col gap-4 md:flex-row md:gap-6">
-            <div className="flex-1">
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-600">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor="branch" className="block text-sm font-semibold text-gray-600">
-                Branch
-              </label>
-              <select
-                id="branch"
-                name="branch"
-                value={formData.branch}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-              >
-                <option value="">Select a Branch</option>
+          {/* ID Number */}
+          <div>
+            <label htmlFor="idNumber" className="block text-sm font-semibold text-gray-600">
+              ID Number
+            </label>
+            <input
+              id="idNumber"
+              type="text"
+              name="idNumber"
+              value={formData.idNumber}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-600">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            />
+          </div>
+
+          {/* Branch Dropdown */}
+          <div>
+            <label htmlFor="branch" className="block text-sm font-semibold text-gray-600">
+              Degree Program
+            </label>
+            <Select
+              value={formData.branch}
+              onValueChange={(value) => handleSelectChange("branch", value)}
+            >
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+                <SelectValue placeholder="Select a Branch" />
+              </SelectTrigger>
+              <SelectContent>
                 {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
+                  <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Row 3: Department field in the middle */}
-          <div className="flex justify-center">
-            <div className="w-full md:w-1/2">
-              <label htmlFor="department" className="block text-sm font-semibold text-gray-600">
-                Department
-              </label>
-              <select
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-              >
-                <option value="">Select a Department</option>
+          {/* Department Dropdown */}
+          <div>
+            <label htmlFor="department" className="block text-sm font-semibold text-gray-600">
+              Department
+            </label>
+            <Select
+              value={formData.department}
+              onValueChange={(value) => handleSelectChange("department", value)}
+            >
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+                <SelectValue placeholder="Select a Department" />
+              </SelectTrigger>
+              <SelectContent>
                 {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Action Buttons with distinct styling and layout */}
-        <div className="mt-8 flex items-center justify-between">
+        {/* Action Buttons aligned to the right */}
+        <div className="mt-8 flex justify-end gap-4">
           <Button
             variant="outline"
             onClick={onCancel}
