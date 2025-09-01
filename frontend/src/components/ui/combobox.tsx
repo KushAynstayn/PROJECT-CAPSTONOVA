@@ -29,6 +29,7 @@ interface ComboboxProps {
   onValueChange: (value: string) => void;
   placeholder: string;
   searchPlaceholder?: string;
+  className?: string;
 }
 
 export default function Combobox({
@@ -37,6 +38,7 @@ export default function Combobox({
   onValueChange,
   placeholder,
   searchPlaceholder,
+  className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -48,9 +50,9 @@ export default function Combobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between rounded-none border-[rgba(0,0,0,0.5)]",
+            "w-full justify-between rounded-none border-[rgba(0,0,0,0.5)] h-auto min-h-12",
             "transition-shadow focus-visible:shadow-md focus-visible:shadow-gray-400/70",
-            !value && "text-muted-foreground font-normal"
+            !value.length && "text-muted-foreground font-normal", className
           )}
         >
           {value
@@ -61,7 +63,9 @@ export default function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder || `Search ${placeholder}`} />
+          <CommandInput
+            placeholder={searchPlaceholder || `Search ${placeholder}`}
+          />
           <CommandList>
             <CommandEmpty>No item found.</CommandEmpty>
             <CommandGroup>

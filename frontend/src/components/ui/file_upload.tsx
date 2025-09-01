@@ -62,7 +62,7 @@ const FileUpload = () => {
                    transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
                    active:shadow-lg active:shadow-gray-700/90"
       >
-        File Upload
+        Select File
       </Button>
 
       {/* Hidden Input */}

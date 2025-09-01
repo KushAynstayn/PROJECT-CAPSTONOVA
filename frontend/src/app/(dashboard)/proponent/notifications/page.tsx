@@ -1,10 +1,17 @@
 import React from 'react'
+import NotificationList from '@/components/ui/notification';
+
+const myNotifications = [
+    "Your files have been successfully submitted!",
+  ];
 
 const ProponentNotificationsPage = () => {
   return (
+    <>
     <div>
-      <h1 className="text-2xl font-bold">Notifications</h1>
+      <NotificationList notifications={myNotifications} />
     </div>
+    </>
   )
 }
 
