@@ -19,8 +19,8 @@ const SuperAdminDashboardPage: React.FC = () => {
     <>
       {/* Main content now has padding-top to create space below the header */}
       <main className="flex min-h-screen flex-col p-2 pt-2 sm:p-2 lg:p-4 lg:pt-0">
-        <div className="mt-4">
-          <h2 className="mb-4 text-2xl font-bold">Analytics Dashboard</h2>
+        <div className="mt-1">
+          <h2 className="mb-4 text-2xl font-bold">Dashboard</h2>
 
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <InputWithClear

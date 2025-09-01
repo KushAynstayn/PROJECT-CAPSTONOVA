@@ -2,8 +2,17 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+// Import the Select components from your UI library
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define a type for the user object for type safety
+// Added the new fields to the interface
 interface User {
   id: number;
   name: string;
@@ -11,6 +20,9 @@ interface User {
   idNumber: string;
   course: string;
   adviser: string;
+  capstoneTitle: string; // New field
+  groupName: string;      // New field
+  program: string;        // New field
 }
 
 interface EditProponentViewProps {
@@ -24,28 +36,34 @@ const EditProponentView = ({
   onSave,
   onCancel,
 }: EditProponentViewProps) => {
-  // State to manage the form data
+  // State to manage the form data, now includes the new fields
   const [formData, setFormData] = useState<User>(user);
 
-  const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-) => {
-  const { name, value } = e.target;
-  setFormData((prev) => ({ ...prev, [name]: value }));
-};
+  // Handler for standard text inputs
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handler for the ShadCN Select components
+  const handleSelectChange = (fieldName: keyof User, value: string) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+  };
 
   const handleSave = () => {
     onSave(formData);
   };
 
   const advisers = ["Monkey Luffy", "Roronoa Zoro", "Sanji Vinsmoke-CT", "Trafalgar Law", "Nico Robin", "Rob Lucci","Dracule Mihawk" ];
+  const courses = ["BSIS", "BSIT", "BIT-CT"];
+  const programs = ["Day Program", "Evening Program"];
 
   return (
     // Main container with border, rounded corners, and shadow
     <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
       {/* 1. IMAGE INSERTED HERE */}
       <img
-        src="/images/hands.jpg"
+        src="/images/ctubldg.png"
         alt="Header"
         className="w-full rounded-t-lg object-cover"
         style={{ height: "1.3in" }}
@@ -62,10 +80,46 @@ const EditProponentView = ({
 
         {/* Form Fields using a grid layout for alignment */}
         <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
-          {/* 2. REVISED LAYOUT for Full Name and Email using Flexbox */}
+          {/* Capstone Project Title (Full Width) - Now Typable */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="capstoneTitle"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              Capstone Project Title
+            </label>
+            <input
+              id="capstoneTitle"
+              type="text"
+              name="capstoneTitle"
+              value={formData.capstoneTitle}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            />
+          </div>
+          
+          {/* Group Name (Full Width) - Now Typable */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="groupName"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              Group Name
+            </label>
+            <input
+              id="groupName"
+              type="text"
+              name="groupName"
+              value={formData.groupName}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            />
+          </div>
+
+          {/* Full Name */}
           <div>
             <label
-              htmlFor="idNumber"
+              htmlFor="name"
               className="block text-sm font-semibold text-gray-600"
             >
               Full Name
@@ -75,14 +129,15 @@ const EditProponentView = ({
               type="text"
               name="name"
               value={formData.name}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
 
+          {/* CTU Email */}
           <div>
             <label
-              htmlFor="idNumber"
+              htmlFor="email"
               className="block text-sm font-semibold text-gray-600"
             >
               CTU Email
@@ -92,12 +147,12 @@ const EditProponentView = ({
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
 
-          {/* ID Number and Course remain the same as they align correctly in the grid */}
+          {/* ID Number */}
           <div>
             <label
               htmlFor="idNumber"
@@ -110,52 +165,84 @@ const EditProponentView = ({
               type="text"
               name="idNumber"
               value={formData.idNumber}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
 
+          {/* Course Dropdown */}
           <div>
             <label
               htmlFor="course"
               className="block text-sm font-semibold text-gray-600"
             >
-              Course
+              Degree Program
             </label>
-            <input
-              id="course"
-              type="text"
-              name="course"
+            <Select
               value={formData.course}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-            />
+              onValueChange={(value) => handleSelectChange("course", value)}
+            >
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+                <SelectValue placeholder="Select a Course" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map(course => (
+                  <SelectItem key={course} value={course}>{course}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Program Dropdown */}
+          <div>
+            <label
+              htmlFor="program"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              Program Schedule
+            </label>
+            <Select
+              value={formData.program}
+              onValueChange={(value) => handleSelectChange("program", value)}
+            >
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+                <SelectValue placeholder="Select a Program" />
+              </SelectTrigger>
+              <SelectContent>
+                {programs.map(program => (
+                  <SelectItem key={program} value={program}>{program}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="md:col-span-2 w-1/2 flex flex-col items-left ml-50">
+          {/* Adviser Dropdown */}
+          <div>
             <label
               htmlFor="adviser"
               className="block text-sm font-semibold text-gray-600"
             >
               Adviser
             </label>
-           <select
-                id="adviser"
-                name="adviser"
-                value={formData.adviser}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-              >
-                <option value="">Select a Branch</option>
+            <Select
+              value={formData.adviser}
+              // THIS LINE IS NOW FIXED
+              onValueChange={(value) => handleSelectChange("adviser", value)}
+            >
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+                <SelectValue placeholder="Select an Adviser" />
+              </SelectTrigger>
+              <SelectContent>
                 {advisers.map(adviser => (
-                  <option key={adviser} value={adviser}>{adviser}</option>
+                  <SelectItem key={adviser} value={adviser}>{adviser}</SelectItem>
                 ))}
-              </select>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Action Buttons with distinct styling and layout */}
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-8 flex justify-end gap-x-4">
           <Button
             variant="outline"
             onClick={onCancel}

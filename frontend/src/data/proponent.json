@@ -1,162 +1,57 @@
 [
   {
-    "id": 11,
-    "name": "Tom Hanks",
-    "idNumber": "2021-0110",
-    "email": "tom.hanks@ctu.edu.ph",
-    "course": "BSIT",
-    "adviser": "Monkey Luffy"
-  },
-  {
-    "id": 12,
-    "name": "Meryl Streep",
-    "idNumber": "2020-0225",
-    "email": "meryl.streep@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Roronoa Zoro"
-  },
-  {
-    "id": 13,
-    "name": "Leonardo DiCaprio",
-    "idNumber": "2022-0315",
-    "email": "leonardo.dicaprio@ctu.edu.ph",
+    "id": 1,
+    "name": "Luz",
+    "email": "luz@ctu.edu.ph",
+    "idNumber": "2020-0001",
     "course": "BSIS",
-    "adviser": "Sanji Vinsmoke"
+    "adviser": "Monkey Luffy",
+    "capstoneTitle": "Web-Based Library Management System",
+    "groupName": "Innovators",
+    "program": "Day"
   },
   {
-    "id": 14,
-    "name": "Scarlett Johansson",
-    "idNumber": "2021-0489",
-    "email": "scarlett.johansson@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Trafalgar Law"
-  },
-  {
-    "id": 15,
-    "name": "Denzel Washington",
-    "idNumber": "2020-0555",
-    "email": "denzel.washington@ctu.edu.ph",
+    "id": 2,
+    "name": "Luna",
+    "email": "luna@ctu.edu.ph",
+    "idNumber": "2020-0002",
     "course": "BSIT",
-    "adviser": "Monkey Luffy"
+    "adviser": "Roronoa Zoro",
+    "capstoneTitle": "Mobile-Based e-Commerce Platform",
+    "groupName": "Tech Titans",
+    "program": "Day"
   },
   {
-    "id": 16,
-    "name": "Zendaya Coleman",
-    "idNumber": "2023-0601",
-    "email": "zendaya.coleman@ctu.edu.ph",
+    "id": 3,
+    "name": "Sol",
+    "email": "sol@ctu.edu.ph",
+    "idNumber": "2020-0003",
     "course": "BIT-CT",
-    "adviser": "Roronoa Zoro"
+    "adviser": "Sanji Vinsmoke-CT",
+    "capstoneTitle": "IoT-Based Smart Home Automation",
+    "groupName": "The Core",
+    "program": "Evening"
   },
   {
-    "id": 17,
-    "name": "Brad Pitt",
-    "idNumber": "2020-0734",
-    "email": "brad.pitt@ctu.edu.ph",
+    "id": 4,
+    "name": "Apol",
+    "email": "apol@ctu.edu.ph",
+    "idNumber": "2020-0004",
     "course": "BSIS",
-    "adviser": "Sanji Vinsmoke"
+    "adviser": "Trafalgar Law",
+    "capstoneTitle": "AI-Powered Academic Advising System",
+    "groupName": "AI Wizards",
+    "program": "Day"
   },
   {
-    "id": 18,
-    "name": "Viola Davis",
-    "idNumber": "2021-0812",
-    "email": "viola.davis@ctu.edu.ph",
+    "id": 5,
+    "name": "Daphne",
+    "email": "daphne@ctu.edu.ph",
+    "idNumber": "2020-0005",
     "course": "BSIT",
-    "adviser": "Monkey Luffy"
-  },
-  {
-    "id": 19,
-    "name": "Ryan Reynolds",
-    "idNumber": "2022-0999",
-    "email": "ryan.reynolds@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Trafalgar Law"
-  },
-  {
-    "id": 20,
-    "name": "Jennifer Lawrence",
-    "idNumber": "2023-1021",
-    "email": "jennifer.lawrence@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Roronoa Zoro"
-  },
-  {
-    "id": 21,
-    "name": "Chris Hemsworth",
-    "idNumber": "2021-1145",
-    "email": "chris.hemsworth@ctu.edu.ph",
-    "course": "BSIT",
-    "adviser": "Monkey Luffy"
-  },
-  {
-    "id": 22,
-    "name": "Emma Stone",
-    "idNumber": "2022-1205",
-    "email": "emma.stone@ctu.edu.ph",
-    "course": "BSIS",
-    "adviser": "Sanji Vinsmoke"
-  },
-  {
-    "id": 23,
-    "name": "Will Smith",
-    "idNumber": "2020-0130",
-    "email": "will.smith@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Trafalgar Law"
-  },
-  {
-    "id": 24,
-    "name": "Margot Robbie",
-    "idNumber": "2023-0218",
-    "email": "margot.robbie@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Roronoa Zoro"
-  },
-  {
-    "id": 25,
-    "name": "Dwayne Johnson",
-    "idNumber": "2020-0388",
-    "email": "dwayne.johnson@ctu.edu.ph",
-    "course": "BSIT",
-    "adviser": "Monkey Luffy"
-  },
-  {
-    "id": 26,
-    "name": "Gal Gadot",
-    "idNumber": "2021-0456",
-    "email": "gal.gadot@ctu.edu.ph",
-    "course": "BSIS",
-    "adviser": "Sanji Vinsmoke"
-  },
-  {
-    "id": 27,
-    "name": "Keanu Reeves",
-    "idNumber": "2020-0523",
-    "email": "keanu.reeves@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Roronoa Zoro"
-  },
-  {
-    "id": 28,
-    "name": "Charlize Theron",
-    "idNumber": "2022-0691",
-    "email": "charlize.theron@ctu.edu.ph",
-    "course": "BIT-CT",
-    "adviser": "Trafalgar Law"
-  },
-  {
-    "id": 29,
-    "name": "Robert Downey Jr.",
-    "idNumber": "2020-0777",
-    "email": "robert.downeyjr@ctu.edu.ph",
-    "course": "BSIT",
-    "adviser": "Monkey Luffy"
-  },
-  {
-    "id": 30,
-    "name": "Sandra Bullock",
-    "idNumber": "2021-0832",
-    "email": "sandra.bullock@ctu.edu.ph",
-    "course": "BSIS",
-    "adviser": "Sanji Vinsmoke"
+    "adviser": "Nico Robin",
+    "capstoneTitle": "Cloud-Based Student Information Portal",
+    "groupName": "Cloud Ninjas",
+    "program": "Day"
   }
 ]

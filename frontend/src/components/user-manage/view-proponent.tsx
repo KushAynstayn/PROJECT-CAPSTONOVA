@@ -169,7 +169,7 @@ const ProponentView = ({
             <TableColumn className="bg-[#EDB4B4] text-left">
               ID NUMBER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">COURSE</TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">DEGREE PROGRAM</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
               ADVISER
             </TableColumn>
