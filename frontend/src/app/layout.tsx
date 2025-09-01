@@ -26,7 +26,7 @@ export default function RootLayout({
     // The "dark" class is removed from here as we are setting a light theme.
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased text-black`}
       >
         {children}
       </body>
