@@ -1,8 +1,8 @@
-// lib/api.ts
 import { authStore } from "./auth";
 
 const API_BASE = "http://127.0.0.1:8000/api";
 
+// Default headers for JSON data
 const defaultHeaders = {
   "Content-Type": "application/json",
   Accept: "application/json",
@@ -22,7 +22,6 @@ export const apiCall = async (
     ...(isForm ? formHeaders : defaultHeaders),
   };
 
-  // Add bearer token if authenticated
   const token = authStore.getToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -39,10 +38,17 @@ export const apiCall = async (
 
   const response = await fetch(`${API_BASE}${path}`, options);
 
-  // Handle auth errors
   if (response.status === 401) {
     authStore.clearAuth();
+
     throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: response.statusText }));
+    throw new Error(errorData.message || "An error occurred");
   }
 
   return await response.json();

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\User\ProfileController;
 use App\Http\Controllers\Api\Admin\AdviserController;
 
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Util\ResourceController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
@@ -160,4 +161,9 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
     Route::post('suggestions/{id}/interest', [SuggestionInterestController::class, 'expressInterest']);
 
     Route::delete('suggestions/{id}/interest', [SuggestionInterestController::class, 'removeInterest']);
+});
+
+Route::prefix('util')->group(function () {
+    Route::get('/keywords', [ResourceController::class, 'keywords']);
+    Route::get('/programming-languages', [ResourceController::class, 'programmingLanguages']);
 });
