@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ManuscriptUploadModal } from "../../../../components/proponent/upload-manuscript-modal";
 import { SourceCodeUploadModal } from "../../../../components/proponent/upload-source-code-modal";
-import { SubmittedManuscriptView } from "../../../../data/submitted-manuscript";
+import SubmittedManuscriptView from "../../../../components/proponent/submitted-manuscript-view";
 import { apiCall } from "@/lib/api";
 
 const UploadProjectPage = () => {
