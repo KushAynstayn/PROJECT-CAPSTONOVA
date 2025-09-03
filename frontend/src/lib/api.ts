@@ -1,8 +1,22 @@
+// (MODIFIED)
+// Location: frontend/src/lib/api.ts
 import { authStore } from "./auth";
 
 const API_BASE = "http://127.0.0.1:8000/api";
 
-// Default headers for JSON data
+// Custom Error class to handle API errors more gracefully
+export class ApiError extends Error {
+  public status: number;
+  public details: any;
+
+  constructor(message: string, status: number, details: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
 const defaultHeaders = {
   "Content-Type": "application/json",
   Accept: "application/json",
@@ -33,22 +47,31 @@ export const apiCall = async (
   };
 
   if (body) {
-    options.body = isForm ? body : JSON.stringify(body);
+    if (isForm) {
+        options.body = body;
+    } else {
+        options.body = JSON.stringify(body);
+        if (!headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+    }
   }
 
   const response = await fetch(`${API_BASE}${path}`, options);
 
   if (response.status === 401) {
     authStore.clearAuth();
-
-    throw new Error("Unauthorized");
+    throw new ApiError("Unauthorized", 401, { message: "Please log in again." });
   }
 
   if (!response.ok) {
-    const errorData = await response
-      .json()
-      .catch(() => ({ message: response.statusText }));
-    throw new Error(errorData.message || "An error occurred");
+    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    // Throw a custom error with status and details
+    throw new ApiError(
+      errorData.message || 'An error occurred during the API call.',
+      response.status,
+      errorData.errors || {}
+    );
   }
 
   return await response.json();

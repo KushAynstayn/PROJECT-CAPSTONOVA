@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
+use App\Http\Controllers\Api\Util\AdviserFetchController;
+use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
@@ -166,4 +168,5 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
 Route::prefix('util')->group(function () {
     Route::get('/keywords', [ResourceController::class, 'keywords']);
     Route::get('/programming-languages', [ResourceController::class, 'programmingLanguages']);
+    Route::get('/advisers', [FetchAdviserController::class, 'index']);
 });

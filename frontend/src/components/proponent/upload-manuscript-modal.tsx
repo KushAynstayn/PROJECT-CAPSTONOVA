@@ -1,5 +1,3 @@
-// (MODIFIED)
-// Location: frontend/src/components/proponent/upload-manuscript-modal.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -15,14 +13,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "../ui/textarea";
-import KeywordInput from "../ui/keyword-input"; // MODIFIED: Import new component
-import { apiCall } from "../../lib/api";
+import KeywordInput from "../ui/keyword-input";
+import { apiCall, ApiError } from "../../lib/api";
 
 interface ManuscriptUploadModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSuccess: () => void;
 }
+
+// Define a type for the error state
+type FormErrors = {
+  [key: string]: string[] | undefined;
+};
 
 export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
   isOpen,
@@ -41,12 +44,54 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
   const [manuscriptPdf, setManuscriptPdf] = useState<File | null>(null);
   const [acmPdf, setAcmPdf] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // Helper component to display errors
+  const ErrorMessage = ({ field }: { field: string }) => {
+    if (!errors[field]) return null;
+    return (
+      <p className="text-sm text-red-500 mt-1 col-start-2 col-span-3">
+        {errors[field]?.[0]}
+      </p>
+    );
+  };
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: React.Dispatch<React.SetStateAction<File | null>>,
+    fieldName: "manuscript_pdf" | "acm_pdf",
+    maxSizeMB: number
+  ) => {
+    const file = e.target.files?.[0] || null;
+    setErrors((prev) => ({ ...prev, [fieldName]: undefined })); // Clear previous error
+
+    if (file) {
+      if (file.type !== "application/pdf") {
+        setErrors((prev) => ({
+          ...prev,
+          [fieldName]: ["File must be a PDF."],
+        }));
+        setFile(null);
+        e.target.value = ""; // Clear the input
+        return;
+      }
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          [fieldName]: [`File must be less than ${maxSizeMB}MB.`],
+        }));
+        setFile(null);
+        e.target.value = ""; // Clear the input
+        return;
+      }
+    }
+    setFile(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setErrors({});
 
     const data = new FormData();
     data.append("title", formData.title);
@@ -66,13 +111,17 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
     }
 
     try {
-      await apiCall("/submit-project", "POST", data, true);
+      await apiCall("/proponent/submit-project", "POST", data, true);
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      setError(
-        error.message || "Failed to submit manuscript. Please try again."
-      );
+      if (error instanceof ApiError && error.status === 422) {
+        setErrors(error.details);
+      } else {
+        setErrors({
+          general: [error.message || "An unexpected error occurred."],
+        });
+      }
       console.error("Failed to submit manuscript:", error);
     } finally {
       setIsLoading(false);
@@ -80,12 +129,19 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        onOpenChange(open);
+        if (!open) setErrors({});
+      }}
+    >
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Upload Manuscript</DialogTitle>
           <DialogDescription>
-            Fill in the details and upload your manuscript files.
+            Fill in the details and upload your manuscript files. All fields are
+            required unless marked optional.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -103,9 +159,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 setFormData({ ...formData, title: e.target.value })
               }
               className="col-span-3"
-              required
             />
           </div>
+          <ErrorMessage field="title" />
+
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="abstract" className="text-right pt-2">
               Abstract
@@ -117,9 +174,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 setFormData({ ...formData, abstract: e.target.value })
               }
               className="col-span-3"
-              required
             />
           </div>
+          <ErrorMessage field="abstract" />
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="platform_type" className="text-right">
               Platform Type
@@ -131,14 +189,14 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 setFormData({ ...formData, platform_type: e.target.value })
               }
               className="col-span-3"
-              required
             />
           </div>
+          <ErrorMessage field="platform_type" />
+
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="keywords" className="text-right pt-2">
               Keywords
             </Label>
-            {/* MODIFIED: Replaced CreatableMultiSelect with KeywordInput */}
             <div className="col-span-3">
               <KeywordInput
                 fetchUrl="/util/keywords"
@@ -150,6 +208,8 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
               />
             </div>
           </div>
+          <ErrorMessage field="keywords" />
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hacker" className="text-right">
               Member 1
@@ -161,9 +221,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 setFormData({ ...formData, member_hacker: e.target.value })
               }
               className="col-span-3"
-              required
             />
           </div>
+          <ErrorMessage field="member_hacker" />
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hipster1" className="text-right">
               Member 2
@@ -175,9 +236,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 setFormData({ ...formData, member_hipster1: e.target.value })
               }
               className="col-span-3"
-              required
             />
           </div>
+          <ErrorMessage field="member_hipster1" />
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hipster2" className="text-right">
               Member 3 (Optional)
@@ -191,6 +253,8 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
               className="col-span-3"
             />
           </div>
+          <ErrorMessage field="member_hipster2" />
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="manuscript_pdf" className="text-right">
               Manuscript (PDF)
@@ -198,12 +262,15 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
             <Input
               id="manuscript_pdf"
               type="file"
-              onChange={(e) => setManuscriptPdf(e.target.files?.[0] || null)}
+              onChange={(e) =>
+                handleFileChange(e, setManuscriptPdf, "manuscript_pdf", 30)
+              }
               className="col-span-3"
               accept=".pdf"
-              required
             />
           </div>
+          <ErrorMessage field="manuscript_pdf" />
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="acm_pdf" className="text-right">
               ACM (PDF)
@@ -211,15 +278,17 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
             <Input
               id="acm_pdf"
               type="file"
-              onChange={(e) => setAcmPdf(e.target.files?.[0] || null)}
+              onChange={(e) => handleFileChange(e, setAcmPdf, "acm_pdf", 15)}
               className="col-span-3"
               accept=".pdf"
-              required
             />
           </div>
+          <ErrorMessage field="acm_pdf" />
         </form>
         <DialogFooter>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {errors.general && (
+            <p className="text-sm text-red-500">{errors.general[0]}</p>
+          )}
           <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
             {isLoading ? "Submitting..." : "Submit"}
           </Button>
