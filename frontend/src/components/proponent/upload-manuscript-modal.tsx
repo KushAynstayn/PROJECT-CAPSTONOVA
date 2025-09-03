@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "../ui/textarea";
-import CreatableMultiSelect from "../ui/creatable-multi-select";
+import KeywordInput from "../ui/keyword-input"; // MODIFIED: Import new component
 import { apiCall } from "../../lib/api";
 
 interface ManuscriptUploadModalProps {
@@ -106,8 +106,8 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
               required
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="abstract" className="text-right">
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="abstract" className="text-right pt-2">
               Abstract
             </Label>
             <Textarea
@@ -134,18 +134,21 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
               required
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="keywords" className="text-right">
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="keywords" className="text-right pt-2">
               Keywords
             </Label>
-            <CreatableMultiSelect
-              fetchUrl="/util/keywords"
-              value={formData.keywords}
-              onValueChange={(values) =>
-                setFormData({ ...formData, keywords: values })
-              }
-              className="col-span-3"
-            />
+            {/* MODIFIED: Replaced CreatableMultiSelect with KeywordInput */}
+            <div className="col-span-3">
+              <KeywordInput
+                fetchUrl="/util/keywords"
+                value={formData.keywords}
+                onValueChange={(values) =>
+                  setFormData({ ...formData, keywords: values })
+                }
+                placeholder="Type and press Enter or comma..."
+              />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hacker" className="text-right">

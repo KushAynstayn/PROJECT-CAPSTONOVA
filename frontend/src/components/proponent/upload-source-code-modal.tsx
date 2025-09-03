@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import CreatableMultiSelect from "../ui/creatable-multi-select";
+import KeywordInput from "../ui/keyword-input"; // MODIFIED: Import new component
 import { apiCall } from "../../lib/api";
 
 interface SourceCodeUploadModalProps {
@@ -149,16 +149,19 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="programming_languages" className="text-right">
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="programming_languages" className="text-right pt-2">
               Languages
             </Label>
-            <CreatableMultiSelect
-              fetchUrl="/util/programming-languages"
-              value={programmingLanguages}
-              onValueChange={setProgrammingLanguages}
-              className="col-span-3"
-            />
+            {/* MODIFIED: Replaced CreatableMultiSelect with KeywordInput */}
+            <div className="col-span-3">
+              <KeywordInput
+                fetchUrl="/util/programming-languages"
+                value={programmingLanguages}
+                onValueChange={setProgrammingLanguages}
+                placeholder="Type and press Enter or comma..."
+              />
+            </div>
           </div>
         </form>
         <DialogFooter>
