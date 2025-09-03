@@ -22,7 +22,6 @@ interface ManuscriptUploadModalProps {
   onSuccess: () => void;
 }
 
-// Define a type for the error state
 type FormErrors = {
   [key: string]: string[] | undefined;
 };
@@ -46,14 +45,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Helper component to display errors
+  // Helper component to display errors below the input
   const ErrorMessage = ({ field }: { field: string }) => {
     if (!errors[field]) return null;
-    return (
-      <p className="text-sm text-red-500 mt-1 col-start-2 col-span-3">
-        {errors[field]?.[0]}
-      </p>
-    );
+    return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
   const handleFileChange = (
@@ -63,7 +58,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
     maxSizeMB: number
   ) => {
     const file = e.target.files?.[0] || null;
-    setErrors((prev) => ({ ...prev, [fieldName]: undefined })); // Clear previous error
+    setErrors((prev) => ({ ...prev, [fieldName]: undefined }));
 
     if (file) {
       if (file.type !== "application/pdf") {
@@ -72,7 +67,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
           [fieldName]: ["File must be a PDF."],
         }));
         setFile(null);
-        e.target.value = ""; // Clear the input
+        e.target.value = "";
         return;
       }
       if (file.size > maxSizeMB * 1024 * 1024) {
@@ -81,7 +76,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
           [fieldName]: [`File must be less than ${maxSizeMB}MB.`],
         }));
         setFile(null);
-        e.target.value = ""; // Clear the input
+        e.target.value = "";
         return;
       }
     }
@@ -146,52 +141,55 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
         </DialogHeader>
         <form
           onSubmit={handleSubmit}
-          className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
+          className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
         >
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">
               Title
             </Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+              />
+              <ErrorMessage field="title" />
+            </div>
           </div>
-          <ErrorMessage field="title" />
 
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="abstract" className="text-right pt-2">
               Abstract
             </Label>
-            <Textarea
-              id="abstract"
-              value={formData.abstract}
-              onChange={(e) =>
-                setFormData({ ...formData, abstract: e.target.value })
-              }
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <Textarea
+                id="abstract"
+                value={formData.abstract}
+                onChange={(e) =>
+                  setFormData({ ...formData, abstract: e.target.value })
+                }
+              />
+              <ErrorMessage field="abstract" />
+            </div>
           </div>
-          <ErrorMessage field="abstract" />
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="platform_type" className="text-right">
               Platform Type
             </Label>
-            <Input
-              id="platform_type"
-              value={formData.platform_type}
-              onChange={(e) =>
-                setFormData({ ...formData, platform_type: e.target.value })
-              }
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <Input
+                id="platform_type"
+                value={formData.platform_type}
+                onChange={(e) =>
+                  setFormData({ ...formData, platform_type: e.target.value })
+                }
+              />
+              <ErrorMessage field="platform_type" />
+            </div>
           </div>
-          <ErrorMessage field="platform_type" />
 
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="keywords" className="text-right pt-2">
@@ -206,84 +204,89 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 }
                 placeholder="Type and press Enter or comma..."
               />
+              <ErrorMessage field="keywords" />
             </div>
           </div>
-          <ErrorMessage field="keywords" />
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hacker" className="text-right">
               Member 1
             </Label>
-            <Input
-              id="member_hacker"
-              value={formData.member_hacker}
-              onChange={(e) =>
-                setFormData({ ...formData, member_hacker: e.target.value })
-              }
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <Input
+                id="member_hacker"
+                value={formData.member_hacker}
+                onChange={(e) =>
+                  setFormData({ ...formData, member_hacker: e.target.value })
+                }
+              />
+              <ErrorMessage field="member_hacker" />
+            </div>
           </div>
-          <ErrorMessage field="member_hacker" />
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hipster1" className="text-right">
               Member 2
             </Label>
-            <Input
-              id="member_hipster1"
-              value={formData.member_hipster1}
-              onChange={(e) =>
-                setFormData({ ...formData, member_hipster1: e.target.value })
-              }
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <Input
+                id="member_hipster1"
+                value={formData.member_hipster1}
+                onChange={(e) =>
+                  setFormData({ ...formData, member_hipster1: e.target.value })
+                }
+              />
+              <ErrorMessage field="member_hipster1" />
+            </div>
           </div>
-          <ErrorMessage field="member_hipster1" />
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hipster2" className="text-right">
               Member 3 (Optional)
             </Label>
-            <Input
-              id="member_hipster2"
-              value={formData.member_hipster2}
-              onChange={(e) =>
-                setFormData({ ...formData, member_hipster2: e.target.value })
-              }
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <Input
+                id="member_hipster2"
+                value={formData.member_hipster2}
+                onChange={(e) =>
+                  setFormData({ ...formData, member_hipster2: e.target.value })
+                }
+              />
+              <ErrorMessage field="member_hipster2" />
+            </div>
           </div>
-          <ErrorMessage field="member_hipster2" />
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="manuscript_pdf" className="text-right">
               Manuscript (PDF)
             </Label>
-            <Input
-              id="manuscript_pdf"
-              type="file"
-              onChange={(e) =>
-                handleFileChange(e, setManuscriptPdf, "manuscript_pdf", 30)
-              }
-              className="col-span-3"
-              accept=".pdf"
-            />
+            <div className="col-span-3">
+              <Input
+                id="manuscript_pdf"
+                type="file"
+                onChange={(e) =>
+                  handleFileChange(e, setManuscriptPdf, "manuscript_pdf", 30)
+                }
+                accept=".pdf"
+              />
+              <ErrorMessage field="manuscript_pdf" />
+            </div>
           </div>
-          <ErrorMessage field="manuscript_pdf" />
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="acm_pdf" className="text-right">
               ACM (PDF)
             </Label>
-            <Input
-              id="acm_pdf"
-              type="file"
-              onChange={(e) => handleFileChange(e, setAcmPdf, "acm_pdf", 15)}
-              className="col-span-3"
-              accept=".pdf"
-            />
+            <div className="col-span-3">
+              <Input
+                id="acm_pdf"
+                type="file"
+                onChange={(e) => handleFileChange(e, setAcmPdf, "acm_pdf", 15)}
+                accept=".pdf"
+              />
+              <ErrorMessage field="acm_pdf" />
+            </div>
           </div>
-          <ErrorMessage field="acm_pdf" />
         </form>
         <DialogFooter>
           {errors.general && (

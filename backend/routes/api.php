@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\Api\Util\AdviserFetchController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Util\CheckManuscriptController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
@@ -169,4 +170,6 @@ Route::prefix('util')->group(function () {
     Route::get('/keywords', [ResourceController::class, 'keywords']);
     Route::get('/programming-languages', [ResourceController::class, 'programmingLanguages']);
     Route::get('/advisers', [FetchAdviserController::class, 'index']);
+    Route::post('/check-manuscript', [CheckManuscriptController::class, 'check'])
+        ->middleware('auth:sanctum');
 });

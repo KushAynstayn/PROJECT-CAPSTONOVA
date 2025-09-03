@@ -2,18 +2,38 @@
 // Location: frontend/src/app/(dashboard)/proponent/upload-project/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ManuscriptUploadModal } from "../../../../components/proponent/upload-manuscript-modal";
 import { SourceCodeUploadModal } from "../../../../components/proponent/upload-source-code-modal";
 import { SubmittedManuscriptView } from "../../../../data/submitted-manuscript";
+import { apiCall } from "@/lib/api";
 
 const UploadProjectPage = () => {
   const [isManuscriptModalOpen, setIsManuscriptModalOpen] = useState(false);
   const [isSourceCodeModalOpen, setIsSourceCodeModalOpen] = useState(false);
 
+  // States to track submission status
   const [manuscriptSubmitted, setManuscriptSubmitted] = useState(false);
   const [sourceCodeSubmitted, setSourceCodeSubmitted] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Check if a manuscript has already been submitted on page load
+  useEffect(() => {
+    const checkSubmissionStatus = async () => {
+      try {
+        const hasManuscript = await apiCall("/util/check-manuscript", "POST");
+        setManuscriptSubmitted(hasManuscript);
+      } catch (error) {
+        console.error("Failed to check manuscript status:", error);
+        // Optionally, show an error message to the user
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkSubmissionStatus();
+  }, []);
 
   const handleManuscriptSuccess = () => {
     setManuscriptSubmitted(true);
@@ -22,6 +42,14 @@ const UploadProjectPage = () => {
   const handleSourceCodeSuccess = () => {
     setSourceCodeSubmitted(true);
   };
+
+  if (isChecking) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p className="text-lg text-gray-600">Checking submission status...</p>
+      </div>
+    );
+  }
 
   if (manuscriptSubmitted && sourceCodeSubmitted) {
     return <SubmittedManuscriptView />;
@@ -55,10 +83,12 @@ const UploadProjectPage = () => {
             onClick={() => setIsManuscriptModalOpen(true)}
             disabled={manuscriptSubmitted}
             className={
-              manuscriptSubmitted ? "bg-green-600 hover:bg-green-700" : ""
+              manuscriptSubmitted
+                ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
+                : ""
             }
           >
-            {manuscriptSubmitted ? "Submitted ✓" : "Upload Manuscript"}
+            {manuscriptSubmitted ? "Already Submitted" : "Upload Manuscript"}
           </Button>
         </div>
 
@@ -75,9 +105,11 @@ const UploadProjectPage = () => {
           </p>
           <Button
             onClick={() => setIsSourceCodeModalOpen(true)}
-            disabled={sourceCodeSubmitted}
+            disabled={sourceCodeSubmitted || !manuscriptSubmitted}
             className={
-              sourceCodeSubmitted ? "bg-green-600 hover:bg-green-700" : ""
+              sourceCodeSubmitted
+                ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
+                : ""
             }
           >
             {sourceCodeSubmitted ? "Submitted ✓" : "Upload Source Code"}

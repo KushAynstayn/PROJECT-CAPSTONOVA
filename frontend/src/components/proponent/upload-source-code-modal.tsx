@@ -1,5 +1,3 @@
-// (MODIFIED)
-// Location: frontend/src/components/proponent/upload-source-code-modal.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -24,7 +22,6 @@ interface SourceCodeUploadModalProps {
   onSuccess: () => void;
 }
 
-// Define a type for the error state object
 type FormErrors = {
   [key: string]: string[] | undefined;
 };
@@ -44,19 +41,15 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Helper component to display errors for a specific field
+  // Helper component to display errors
   const ErrorMessage = ({ field }: { field: string }) => {
     if (!errors[field]) return null;
-    return (
-      <div className="col-start-2 col-span-3">
-        <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>
-      </div>
-    );
+    return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setErrors((prev) => ({ ...prev, source_code_tar: undefined })); // Clear previous error
+    setErrors((prev) => ({ ...prev, source_code_tar: undefined }));
 
     if (file) {
       if (!file.name.endsWith(".tar")) {
@@ -116,7 +109,7 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
-        if (!open) setErrors({}); // Clear errors when closing the modal
+        if (!open) setErrors({});
       }}
     >
       <DialogContent className="sm:max-w-[600px]">
@@ -128,75 +121,80 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
         </DialogHeader>
         <form
           onSubmit={handleSubmit}
-          className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
+          className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
         >
-          <RadioGroup
-            value={uploadType}
-            onValueChange={(value) => setUploadType(value as "github" | "tar")}
-            className="mb-4"
-          >
-            <Label>Upload Type</Label>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="github" id="github" />
-                <Label htmlFor="github">GitHub</Label>
+          <div>
+            <RadioGroup
+              value={uploadType}
+              onValueChange={(value) =>
+                setUploadType(value as "github" | "tar")
+              }
+              className="mb-1"
+            >
+              <Label>Upload Type</Label>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="github" id="github" />
+                  <Label htmlFor="github">GitHub</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="tar" id="tar" />
+                  <Label htmlFor="tar">.tar file</Label>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="tar" id="tar" />
-                <Label htmlFor="tar">.tar file</Label>
-              </div>
-            </div>
-          </RadioGroup>
-          <ErrorMessage field="upload_type" />
+            </RadioGroup>
+            <ErrorMessage field="upload_type" />
+          </div>
 
           {uploadType === "github" && (
-            <>
+            <div className="space-y-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="github_url" className="text-right">
                   GitHub URL
                 </Label>
-                <Input
-                  id="github_url"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  className="col-span-3"
-                  placeholder="https://github.com/user/repo"
-                />
+                <div className="col-span-3">
+                  <Input
+                    id="github_url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/user/repo"
+                  />
+                  <ErrorMessage field="github_url" />
+                </div>
               </div>
-              <ErrorMessage field="github_url" />
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="github_token" className="text-right">
                   Token (Optional)
                 </Label>
-                <Input
-                  id="github_token"
-                  value={githubToken}
-                  onChange={(e) => setGithubToken(e.target.value)}
-                  className="col-span-3"
-                  placeholder="ghp_..."
-                />
+                <div className="col-span-3">
+                  <Input
+                    id="github_token"
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    placeholder="ghp_..."
+                  />
+                  <ErrorMessage field="github_token" />
+                </div>
               </div>
-              <ErrorMessage field="github_token" />
-            </>
+            </div>
           )}
 
           {uploadType === "tar" && (
-            <>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="source_code_tar" className="text-right">
-                  .tar file
-                </Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="source_code_tar" className="text-right">
+                .tar file
+              </Label>
+              <div className="col-span-3">
                 <Input
                   id="source_code_tar"
                   type="file"
                   onChange={handleFileChange}
-                  className="col-span-3"
                   accept=".tar"
                 />
+                <ErrorMessage field="source_code_tar" />
               </div>
-              <ErrorMessage field="source_code_tar" />
-            </>
+            </div>
           )}
 
           <div className="grid grid-cols-4 items-start gap-4">
@@ -210,9 +208,9 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
                 onValueChange={setProgrammingLanguages}
                 placeholder="Type and press Enter or comma..."
               />
+              <ErrorMessage field="programming_languages" />
             </div>
           </div>
-          <ErrorMessage field="programming_languages" />
         </form>
         <DialogFooter>
           {errors.general && (
