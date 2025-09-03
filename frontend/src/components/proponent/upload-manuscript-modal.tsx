@@ -10,11 +10,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, InputProps } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "../ui/textarea";
 import KeywordInput from "../ui/keyword-input";
 import { apiCall, ApiError } from "../../lib/api";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ManuscriptUploadModalProps {
   isOpen: boolean;
@@ -24,6 +26,66 @@ interface ManuscriptUploadModalProps {
 
 type FormErrors = {
   [key: string]: string[] | undefined;
+};
+
+const PlatformTypeInput = ({
+  value,
+  onValueChange,
+  className,
+  ...props
+}: Omit<InputProps, "value" | "onChange"> & {
+  value: string;
+  onValueChange: (value: string) => void;
+}) => {
+  const [inputValue, setInputValue] = React.useState(value);
+  const suggestions = ["Mobile", "Web", "IoT", "Desktop"];
+
+  React.useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleSuggestionClick = (suggestion: string) => {
+    onValueChange(suggestion);
+    setInputValue(suggestion);
+  };
+
+  const filteredSuggestions = suggestions.filter(
+    (s) =>
+      s.toLowerCase().includes(inputValue.toLowerCase()) &&
+      s.toLowerCase() !== inputValue.toLowerCase()
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Input
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          onValueChange(e.target.value);
+        }}
+        className={cn(
+          "flex-1 bg-transparent outline-none shadow-none focus-visible:ring-0 p-0 h-auto",
+          className
+        )}
+        {...props}
+      />
+      <div className="flex flex-wrap gap-2">
+        <span className="text-sm text-muted-foreground">Suggestions:</span>
+        {(inputValue === "" ? suggestions : filteredSuggestions).map(
+          (suggestion) => (
+            <Badge
+              key={suggestion}
+              variant="outline"
+              onMouseDown={() => handleSuggestionClick(suggestion)}
+              className="cursor-pointer hover:bg-secondary"
+            >
+              {suggestion}
+            </Badge>
+          )
+        )}
+      </div>
+    </div>
+  );
 };
 
 export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
@@ -180,11 +242,11 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
               Platform Type
             </Label>
             <div className="col-span-3">
-              <Input
+              <PlatformTypeInput
                 id="platform_type"
                 value={formData.platform_type}
-                onChange={(e) =>
-                  setFormData({ ...formData, platform_type: e.target.value })
+                onValueChange={(value) =>
+                  setFormData({ ...formData, platform_type: value })
                 }
               />
               <ErrorMessage field="platform_type" />

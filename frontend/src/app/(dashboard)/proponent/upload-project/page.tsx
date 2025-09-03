@@ -24,8 +24,10 @@ const UploadProjectPage = () => {
       try {
         const hasManuscript = await apiCall("/util/check-manuscript", "POST");
         setManuscriptSubmitted(hasManuscript);
+        const hasSourceCode = await apiCall("/util/check-source-code", "POST");
+        setSourceCodeSubmitted(hasSourceCode);
       } catch (error) {
-        console.error("Failed to check manuscript status:", error);
+        console.error("Failed to check submission status:", error);
         // Optionally, show an error message to the user
       } finally {
         setIsChecking(false);
