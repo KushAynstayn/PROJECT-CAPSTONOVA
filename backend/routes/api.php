@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
+use App\Http\Controllers\API\User\NotificationController;
 use App\Http\Controllers\Api\Util\AdviserFetchController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
@@ -65,6 +66,8 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
 
     Route::get('/download/source-code/{source_code}', DownloadSourceCodeController::class)
         ->name('user.source-code.download');
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
 });
 
 
