@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,28 +19,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface ComboboxItem {
-  value: string;
-  label: string;
-}
-
 interface ComboboxProps {
-  items: ComboboxItem[];
+  items: { value: string; label: string }[];
   value: string;
   onValueChange: (value: string) => void;
   placeholder: string;
-  searchPlaceholder?: string;
-  className?: string;
+  onFocus?: (e: React.FocusEvent<HTMLButtonElement>) => void;
 }
 
-export default function Combobox({
+export const Combobox: React.FC<ComboboxProps> = ({
   items,
   value,
   onValueChange,
   placeholder,
-  searchPlaceholder,
-  className,
-}: ComboboxProps) {
+  onFocus,
+}) => {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -49,11 +43,8 @@ export default function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn(
-            "w-full justify-between rounded-none border-[rgba(0,0,0,0.5)] h-auto min-h-12",
-            "transition-shadow focus-visible:shadow-md focus-visible:shadow-gray-400/70",
-            !value.length && "text-muted-foreground font-normal", className
-          )}
+          className="w-full justify-between rounded-none border-[rgba(0,0,0,0.5)]"
+          onFocus={onFocus}
         >
           {value
             ? items.find((item) => item.value === value)?.label
@@ -61,11 +52,9 @@ export default function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent className="w-full p-0">
         <Command>
-          <CommandInput
-            placeholder={searchPlaceholder || `Search ${placeholder}`}
-          />
+          <CommandInput placeholder="Search..." />
           <CommandList>
             <CommandEmpty>No item found.</CommandEmpty>
             <CommandGroup>
@@ -93,4 +82,4 @@ export default function Combobox({
       </PopoverContent>
     </Popover>
   );
-}
+};

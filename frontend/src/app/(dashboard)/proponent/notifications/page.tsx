@@ -1,18 +1,14 @@
-import React from 'react'
-import NotificationList from '@/components/ui/notification';
-
-const myNotifications = [
-    "Your files have been successfully submitted!",
-  ];
+import React from "react";
+import NotificationList from "@/components/ui/notification";
 
 const ProponentNotificationsPage = () => {
   return (
     <>
-    <div>
-      <NotificationList notifications={myNotifications} />
-    </div>
+      <div>
+        <NotificationList />
+      </div>
     </>
-  )
-}
+  );
+};
 
-export default ProponentNotificationsPage
+export default ProponentNotificationsPage;
