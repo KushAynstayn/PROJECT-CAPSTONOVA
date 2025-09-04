@@ -1,20 +1,12 @@
-// components/SubmittedManuscriptView.tsx
+
 import React from "react";
 
-const SubmittedManuscriptView: React.FC = () => {
+const ViewFullDocument: React.FC = () => {
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-bold justify-left">
-          File Uploaded (Manuscript)
-        </h1>
-        <h1 className="text-1xl font-normal justify-left">
-          Your source code has been successfully uploaded in the repository.
-        </h1>
-      </div>
-      <div className="overflow-y-auto mt- 10 bg-white p-8 md:p-12 lg:p-16 rounded-lg shadow-lg max-w-4xl mx-auto my-10">
+      <div className="overflow-y-auto mt-2 bg-white p-4 md:p:4 lg:p-10 rounded-lg shadow-lg max-w-5xl h-full mx-auto my-0">
         {/* Title Page */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-5">
           <h1 className="text-4xl font-bold mb-4">
             ENHANCING CAPSTONE ARCHIVING AND OPTIMIZING DATA INTELLIGENCE WITH
             PROJECT CAPSTONOVA
@@ -223,4 +215,4 @@ const SubmittedManuscriptView: React.FC = () => {
   );
 };
 
-export { SubmittedManuscriptView };
+export { ViewFullDocument };
