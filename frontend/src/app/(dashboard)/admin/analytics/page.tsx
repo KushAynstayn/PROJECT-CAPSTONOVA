@@ -4,12 +4,12 @@ import React, { useState } from "react";
 import DataAnalyticsNavbar, {
   AnalyticsRole,
 } from "@/components/ui/data-analytics-navbar";
-import AdvisoryLoadView from "../../../../components/data-analytics/view-advisory-load"; // 1. Import the new view
+import AdvisoryLoadView from "../../../../components/admin-data-analytics/view-adviser-projects"; // 1. Import the new view
 import ProjectTypeView from "../../../../components/data-analytics/view-project-type";
 import EnvironmentTrendView from "../../../../components/data-analytics/view-environment-trend";
 import ProjectToolsView from "../../../../components/data-analytics/view-project-tools";
 
-const SuperAdminAnalyticsPage = () => {
+const AdminAnalyticsPage = () => {
   const [currentRole, setCurrentRole] =
     useState<AnalyticsRole>("Advisory Load");
 
@@ -38,4 +38,4 @@ const SuperAdminAnalyticsPage = () => {
   );
 };
 
-export default SuperAdminAnalyticsPage;
+export default AdminAnalyticsPage;

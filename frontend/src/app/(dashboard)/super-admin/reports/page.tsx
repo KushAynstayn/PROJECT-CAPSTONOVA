@@ -7,29 +7,49 @@ import { AdminDistributionChart } from "@/components/ui/chart-pie-label";
 import { AdviserDistributionChart } from "@/components/ui/chart-pie-interactive";
 import { GuestDistributionChart } from "@/components/ui/chart-bar-interactive";
 import { ProponentDistributionChart } from "@/components/ui/chart-pie-stacked";
+import { YearPicker } from "@/components/ui/year-picker";
+import { Button } from "@/components/ui/button";
 
 const SuperAdminReportsPage = () => {
     const [activeTab, setActiveTab] = useState('project');
-    const [startYear, setStartYear] = useState(2020);
-    const [endYear, setEndYear] = useState(new Date().getFullYear());
     
+    // State for the new YearPicker
+    const currentYear = new Date().getFullYear();
+    const [pickerMode, setPickerMode] = useState<'single' | 'range'>('single');
+    const [singleYear, setSingleYear] = useState<number | undefined>(currentYear);
+    const [startYear, setStartYear] = useState<number | undefined>();
+    const [endYear, setEndYear] = useState<number | undefined>();
+    const fromYear = 2020;
+    const toYear = currentYear;
+
     const legendData = [
         { course: "BIT-CT", color: "#cc3333" }, // Red
         { course: "BSIS", color: "#0c284d" },   // Dark Blue
         { course: "BSIT", color: "#fec832" },   // Yellow/Gold
     ];
-    
-    const generateYears = () => {
-        const years = [];
-        const currentYear = new Date().getFullYear();
-        for (let year = currentYear; year >= 2020; year--) {
-            years.push(year);
+
+    // Handlers for the YearPicker
+    const handleModeToggle = () => {
+        const newMode = pickerMode === 'single' ? 'range' : 'single';
+        setPickerMode(newMode);
+
+        if (newMode === 'range') {
+            setStartYear(fromYear);
+            setEndYear(toYear);
+        } else {
+            setSingleYear(toYear);
+            setStartYear(undefined);
+            setEndYear(undefined);
         }
-        return years;
     };
-
-    const availableYears = generateYears();
-
+    
+    const handleStartYearChange = (year: number | undefined) => {
+        setStartYear(year);
+        if (endYear && year && endYear < year) {
+            setEndYear(undefined);
+        }
+    };
+    
     return (
         <div>
             <div className="flex justify-start space-x-8">
@@ -62,46 +82,38 @@ const SuperAdminReportsPage = () => {
             {/* Content for Project Reports Tab */}
             {activeTab === 'project' && (
                 <div className="mt-8">
-                    <div className="inline-flex items-center gap-4 border border-gray-300 bg-white p-3 mb-8">
+                    <div className="inline-flex items-center gap-4 mb-8">
                         <span className="text-gray-700 font-bold">Select Year:</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-700">From:</span>
-                            <div className="relative">
-                                <select
-                                    value={startYear}
-                                    onChange={(e) => setStartYear(parseInt(e.target.value))}
-                                    className="border border-gray-400 py-2 pl-4 pr-8 focus:outline-none appearance-none"
-                                >
-                                    {availableYears.map((year) => (
-                                        <option key={`start-${year}`} value={year}>
-                                            {year}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-700">
-                            <span>To:</span>
-                            <div className="relative">
-                                <select
-                                    value={endYear}
-                                    onChange={(e) => setEndYear(parseInt(e.target.value))}
-                                    className="border border-gray-400 py-2 pl-4 pr-8 focus:outline-none appearance-none"
-                                >
-                                    {availableYears.map((year) => (
-                                        <option key={`end-${year}`} value={year}>
-                                            {year}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                </div>
-                            </div>
-                        </div>
+                        {pickerMode === 'single' ? (
+                            <YearPicker
+                                year={singleYear}
+                                setYear={setSingleYear}
+                                placeholder="Select year"
+                                fromYear={fromYear}
+                                toYear={toYear}
+                            />
+                        ) : (
+                            <>
+                                <YearPicker
+                                    year={startYear}
+                                    setYear={handleStartYearChange}
+                                    placeholder="Start year"
+                                    fromYear={fromYear}
+                                    toYear={toYear}
+                                />
+                                <YearPicker
+                                    year={endYear}
+                                    setYear={setEndYear}
+                                    placeholder="End year"
+                                    fromYear={startYear || fromYear}
+                                    toYear={toYear}
+                                    disabled={!startYear}
+                                />
+                            </>
+                        )}
+                        <Button variant="outline" onClick={handleModeToggle}>
+                            {pickerMode === 'single' ? 'Select Range' : 'Select Single Year'}
+                        </Button>
                     </div>
                     
                     <div className="grid grid-cols-[max-content_min-content] grid-rows-2 gap-8">
@@ -144,46 +156,38 @@ const SuperAdminReportsPage = () => {
             {/* Content for User Account Report Tab */}
             {activeTab === 'user' && (
                 <div className="mt-8">
-                    <div className="inline-flex items-center gap-4 border border-gray-300 bg-white p-3 mb-8">
+                    <div className="inline-flex items-center gap-4 mb-8">
                         <span className="text-gray-700 font-bold">Select Year:</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-700">From:</span>
-                            <div className="relative">
-                                <select
-                                    value={startYear}
-                                    onChange={(e) => setStartYear(parseInt(e.target.value))}
-                                    className="border border-gray-400 py-2 pl-4 pr-8 focus:outline-none appearance-none"
-                                >
-                                    {availableYears.map((year) => (
-                                        <option key={`start-${year}`} value={year}>
-                                            {year}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-700">
-                            <span>To:</span>
-                            <div className="relative">
-                                <select
-                                    value={endYear}
-                                    onChange={(e) => setEndYear(parseInt(e.target.value))}
-                                    className="border border-gray-400 py-2 pl-4 pr-8 focus:outline-none appearance-none"
-                                >
-                                    {availableYears.map((year) => (
-                                        <option key={`end-${year}`} value={year}>
-                                            {year}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                </div>
-                            </div>
-                        </div>
+                        {pickerMode === 'single' ? (
+                            <YearPicker
+                                year={singleYear}
+                                setYear={setSingleYear}
+                                placeholder="Select year"
+                                fromYear={fromYear}
+                                toYear={toYear}
+                            />
+                        ) : (
+                            <>
+                                <YearPicker
+                                    year={startYear}
+                                    setYear={handleStartYearChange}
+                                    placeholder="Start year"
+                                    fromYear={fromYear}
+                                    toYear={toYear}
+                                />
+                                <YearPicker
+                                    year={endYear}
+                                    setYear={setEndYear}
+                                    placeholder="End year"
+                                    fromYear={startYear || fromYear}
+                                    toYear={toYear}
+                                    disabled={!startYear}
+                                />
+                            </>
+                        )}
+                        <Button variant="outline" onClick={handleModeToggle}>
+                            {pickerMode === 'single' ? 'Select Range' : 'Select Single Year'}
+                        </Button>
                     </div>
                     
                     <div className="flex flex-row items-start gap-8">
