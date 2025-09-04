@@ -10,12 +10,19 @@ use App\Http\Controllers\Api\User\ProfileController;
 use App\Http\Controllers\Api\Admin\AdviserController;
 
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Util\ResourceController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
+use App\Http\Controllers\API\User\NotificationController;
+use App\Http\Controllers\Api\Util\AdviserFetchController;
+use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Util\UserManuscriptController;
+use App\Http\Controllers\Api\Util\CheckManuscriptController;
+use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
@@ -59,6 +66,8 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
 
     Route::get('/download/source-code/{source_code}', DownloadSourceCodeController::class)
         ->name('user.source-code.download');
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
 });
 
 
@@ -160,4 +169,16 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
     Route::post('suggestions/{id}/interest', [SuggestionInterestController::class, 'expressInterest']);
 
     Route::delete('suggestions/{id}/interest', [SuggestionInterestController::class, 'removeInterest']);
+});
+
+Route::prefix('util')->group(function () {
+    Route::get('/keywords', [ResourceController::class, 'keywords']);
+    Route::get('/programming-languages', [ResourceController::class, 'programmingLanguages']);
+    Route::get('/advisers', [FetchAdviserController::class, 'index']);
+    Route::post('/check-manuscript', [CheckManuscriptController::class, 'check'])
+        ->middleware('auth:sanctum');
+    Route::post('/check-source-code', [CheckSourceCodeController::class, 'check'])
+        ->middleware('auth:sanctum');
+    Route::get('/my-manuscript-id', [UserManuscriptController::class, 'getMyManuscriptId'])
+        ->middleware('auth:sanctum');
 });

@@ -1,0 +1,364 @@
+"use client";
+
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input, InputProps } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "../ui/textarea";
+import KeywordInput from "../ui/keyword-input";
+import { apiCall, ApiError } from "../../lib/api";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+interface ManuscriptUploadModalProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onSuccess: () => void;
+}
+
+type FormErrors = {
+  [key: string]: string[] | undefined;
+};
+
+const PlatformTypeInput = ({
+  value,
+  onValueChange,
+  className,
+  ...props
+}: Omit<InputProps, "value" | "onChange"> & {
+  value: string;
+  onValueChange: (value: string) => void;
+}) => {
+  const [inputValue, setInputValue] = React.useState(value);
+  const suggestions = ["Mobile", "Web", "IoT", "Desktop"];
+
+  React.useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleSuggestionClick = (suggestion: string) => {
+    onValueChange(suggestion);
+    setInputValue(suggestion);
+  };
+
+  const filteredSuggestions = suggestions.filter(
+    (s) =>
+      s.toLowerCase().includes(inputValue.toLowerCase()) &&
+      s.toLowerCase() !== inputValue.toLowerCase()
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Input
+        value={inputValue}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          onValueChange(e.target.value);
+        }}
+        className={cn(
+          "flex-1 bg-transparent outline-none shadow-none focus-visible:ring-0 p-0 h-auto",
+          className
+        )}
+        {...props}
+      />
+      <div className="flex flex-wrap gap-2">
+        <span className="text-sm text-muted-foreground">Suggestions:</span>
+        {(inputValue === "" ? suggestions : filteredSuggestions).map(
+          (suggestion) => (
+            <Badge
+              key={suggestion}
+              variant="outline"
+              onMouseDown={() => handleSuggestionClick(suggestion)}
+              className="cursor-pointer hover:bg-secondary"
+            >
+              {suggestion}
+            </Badge>
+          )
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
+  isOpen,
+  onOpenChange,
+  onSuccess,
+}) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    abstract: "",
+    platform_type: "",
+    keywords: [] as string[],
+    member_hacker: "",
+    member_hipster1: "",
+    member_hipster2: "",
+  });
+  const [manuscriptPdf, setManuscriptPdf] = useState<File | null>(null);
+  const [acmPdf, setAcmPdf] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // Helper component to display errors below the input
+  const ErrorMessage = ({ field }: { field: string }) => {
+    if (!errors[field]) return null;
+    return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
+  };
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: React.Dispatch<React.SetStateAction<File | null>>,
+    fieldName: "manuscript_pdf" | "acm_pdf",
+    maxSizeMB: number
+  ) => {
+    const file = e.target.files?.[0] || null;
+    setErrors((prev) => ({ ...prev, [fieldName]: undefined }));
+
+    if (file) {
+      if (file.type !== "application/pdf") {
+        setErrors((prev) => ({
+          ...prev,
+          [fieldName]: ["File must be a PDF."],
+        }));
+        setFile(null);
+        e.target.value = "";
+        return;
+      }
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          [fieldName]: [`File must be less than ${maxSizeMB}MB.`],
+        }));
+        setFile(null);
+        e.target.value = "";
+        return;
+      }
+    }
+    setFile(file);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrors({});
+
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("abstract", formData.abstract);
+    data.append("platform_type", formData.platform_type);
+    formData.keywords.forEach((keyword) => data.append("keywords[]", keyword));
+    data.append("member_hacker", formData.member_hacker);
+    data.append("member_hipster1", formData.member_hipster1);
+    if (formData.member_hipster2) {
+      data.append("member_hipster2", formData.member_hipster2);
+    }
+    if (manuscriptPdf) {
+      data.append("manuscript_pdf", manuscriptPdf);
+    }
+    if (acmPdf) {
+      data.append("acm_pdf", acmPdf);
+    }
+
+    try {
+      await apiCall("/proponent/submit-project", "POST", data, true);
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: any) {
+      if (error instanceof ApiError && error.status === 422) {
+        setErrors(error.details);
+      } else {
+        setErrors({
+          general: [error.message || "An unexpected error occurred."],
+        });
+      }
+      console.error("Failed to submit manuscript:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        onOpenChange(open);
+        if (!open) setErrors({});
+      }}
+    >
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Upload Manuscript</DialogTitle>
+          <DialogDescription>
+            Fill in the details and upload your manuscript files. All fields are
+            required unless marked optional.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
+        >
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="title" className="text-right">
+              Title
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+              />
+              <ErrorMessage field="title" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="abstract" className="text-right pt-2">
+              Abstract
+            </Label>
+            <div className="col-span-3">
+              <Textarea
+                id="abstract"
+                value={formData.abstract}
+                onChange={(e) =>
+                  setFormData({ ...formData, abstract: e.target.value })
+                }
+              />
+              <ErrorMessage field="abstract" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="platform_type" className="text-right">
+              Platform Type
+            </Label>
+            <div className="col-span-3">
+              <PlatformTypeInput
+                id="platform_type"
+                value={formData.platform_type}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, platform_type: value })
+                }
+              />
+              <ErrorMessage field="platform_type" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="keywords" className="text-right pt-2">
+              Keywords
+            </Label>
+            <div className="col-span-3">
+              <KeywordInput
+                fetchUrl="/util/keywords"
+                value={formData.keywords}
+                onValueChange={(values) =>
+                  setFormData({ ...formData, keywords: values })
+                }
+                placeholder="Type and press Enter or comma..."
+              />
+              <ErrorMessage field="keywords" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="member_hacker" className="text-right">
+              Member 1
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="member_hacker"
+                value={formData.member_hacker}
+                onChange={(e) =>
+                  setFormData({ ...formData, member_hacker: e.target.value })
+                }
+              />
+              <ErrorMessage field="member_hacker" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="member_hipster1" className="text-right">
+              Member 2
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="member_hipster1"
+                value={formData.member_hipster1}
+                onChange={(e) =>
+                  setFormData({ ...formData, member_hipster1: e.target.value })
+                }
+              />
+              <ErrorMessage field="member_hipster1" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="member_hipster2" className="text-right">
+              Member 3 (Optional)
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="member_hipster2"
+                value={formData.member_hipster2}
+                onChange={(e) =>
+                  setFormData({ ...formData, member_hipster2: e.target.value })
+                }
+              />
+              <ErrorMessage field="member_hipster2" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="manuscript_pdf" className="text-right">
+              Manuscript (PDF)
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="manuscript_pdf"
+                type="file"
+                onChange={(e) =>
+                  handleFileChange(e, setManuscriptPdf, "manuscript_pdf", 30)
+                }
+                accept=".pdf"
+              />
+              <ErrorMessage field="manuscript_pdf" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="acm_pdf" className="text-right">
+              ACM (PDF)
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="acm_pdf"
+                type="file"
+                onChange={(e) => handleFileChange(e, setAcmPdf, "acm_pdf", 15)}
+                accept=".pdf"
+              />
+              <ErrorMessage field="acm_pdf" />
+            </div>
+          </div>
+        </form>
+        <DialogFooter>
+          {errors.general && (
+            <p className="text-sm text-red-500">{errors.general[0]}</p>
+          )}
+          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? "Submitting..." : "Submit"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

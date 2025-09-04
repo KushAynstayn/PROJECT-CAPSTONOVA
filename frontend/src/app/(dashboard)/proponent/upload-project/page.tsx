@@ -1,174 +1,141 @@
-// pages/UploadProjectPage.tsx
+// (MODIFIED)
+// Location: frontend/src/app/(dashboard)/proponent/upload-project/page.tsx
 "use client";
 
-import React, { useState } from "react";
-import MultiSelectCombobox from "@/components/ui/multi-select-combobox";
-import Combobox from "@/components/ui/combobox";
-import { FileUpload } from "@/components/ui/file_upload";
-import { SubmitSucessfully } from "@/components/ui/submit-successfully";
-import { SubmittedManuscriptView } from "@/data/submitted-manuscript";
-
-// Define the User type to resolve "Cannot find name 'User'" error.
-interface User {
-  themes: string[];
-  platform: string[];
-  repository: string;
-}
-
-const Label = ({ htmlFor, className, children }: any) => (
-  <label htmlFor={htmlFor} className={`font-bold ${className}`}>
-    {children}
-  </label>
-);
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ManuscriptUploadModal } from "../../../../components/proponent/upload-manuscript-modal";
+import { SourceCodeUploadModal } from "../../../../components/proponent/upload-source-code-modal";
+import SubmittedManuscriptView from "../../../../components/proponent/submitted-manuscript-view";
+import { apiCall } from "@/lib/api";
 
 const UploadProjectPage = () => {
-  const [formData, setFormData] = useState<User>({
-    themes: [],
-    platform: [],
-    repository: "",
-  });
+  const [isManuscriptModalOpen, setIsManuscriptModalOpen] = useState(false);
+  const [isSourceCodeModalOpen, setIsSourceCodeModalOpen] = useState(false);
 
-  const [submissionCompleted, setSubmissionCompleted] = useState(false); // New state to control visibility
+  // States to track submission status
+  const [manuscriptSubmitted, setManuscriptSubmitted] = useState(false);
+  const [sourceCodeSubmitted, setSourceCodeSubmitted] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
-  const handleThemesChange = (values: string[]) => {
-    setFormData({ ...formData, themes: values });
+  // Check if a manuscript has already been submitted on page load
+  useEffect(() => {
+    const checkSubmissionStatus = async () => {
+      try {
+        const hasManuscript = await apiCall("/util/check-manuscript", "POST");
+        setManuscriptSubmitted(hasManuscript);
+        const hasSourceCode = await apiCall("/util/check-source-code", "POST");
+        setSourceCodeSubmitted(hasSourceCode);
+      } catch (error) {
+        console.error("Failed to check submission status:", error);
+        // Optionally, show an error message to the user
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkSubmissionStatus();
+  }, []);
+
+  const handleManuscriptSuccess = () => {
+    setManuscriptSubmitted(true);
   };
 
-  const handlePlatformChange = (values: string[]) => {
-    setFormData({ ...formData, platform: values });
+  const handleSourceCodeSuccess = () => {
+    setSourceCodeSubmitted(true);
   };
 
-  const handleRepositoryChange = (value: string) => {
-    setFormData({ ...formData, repository: value });
-  };
+  if (isChecking) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p className="text-lg text-gray-600">Checking submission status...</p>
+      </div>
+    );
+  }
 
-  const handleSubmissionSuccess = () => {
-    setSubmissionCompleted(true); // Set state to show the manuscript view
-  };
-
-  // Conditionally render the entire page content based on submission status
-  if (submissionCompleted) {
+  if (manuscriptSubmitted && sourceCodeSubmitted) {
     return <SubmittedManuscriptView />;
   }
 
   return (
-    <div className="pl-50 pr-50">
-      {/*--Upload manuscript container--*/}
-      <div className="ml-15 mr-15 border-4 border-dashed border-gray p-8 flex flex-col items-center space-y-4 rounded-lg">
-        <img src="/images/folder.png" className="h-15 w-15" />
-        <h2 className="text-2xl font-bold">Upload Capstone Manuscript File</h2>
-        <h1 className="text-1xl font-normal">
-          Drag and drop your file here or select a file
+    <div className="container mx-auto p-4">
+      <div className="text-center mb-12">
+        <h1 className="text-3xl font-bold text-gray-800">
+          Upload Your Project
         </h1>
-        <FileUpload />
+        <p className="text-muted-foreground mt-2">
+          Please upload both your manuscript and source code to complete your
+          submission.
+        </p>
       </div>
 
-      {/*  Study Theme Keywords - MultiSelect Combobox */}
-      <div className="mt-6">
-        <Label className="block mb-2 text-1xl font-bold text-gray-800">
-          Study Theme Keywords
-        </Label>
-        <MultiSelectCombobox
-          value={formData.themes}
-          onValueChange={handleThemesChange}
-          items={[
-            { value: "agriculture", label: "Agriculture" },
-            { value: "commerce", label: "Commerce" },
-            { value: "disaster_management", label: "Disaster Management" },
-            { value: "education", label: "Education" },
-            { value: "environment", label: "Environment" },
-            { value: "governance", label: "Governance" },
-            { value: "health_care", label: "Health Care" },
-            { value: "home", label: "Home" },
-            { value: "livelihood", label: "Livelihood" },
-            { value: "media_entertainment", label: "Media and Entertainment" },
-            {
-              value: "lifestyle_people_on_the_go",
-              label: "Lifestyle / People-on-the-Go",
-            },
-            { value: "power_energy", label: "Power and Energy" },
-            { value: "social_sciences", label: "Social Sciences" },
-            { value: "telecommunications", label: "Telecommunications" },
-            { value: "tourism", label: "Tourism" },
-            { value: "transportation", label: "Transportation" },
-          ]}
-          placeholder="Select study themes"
-          className="text-1xl font-semibold rounded-md"
-        />
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+        {/* Upload Manuscript Section */}
+        <div className="border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center space-y-4 rounded-lg text-center">
+          <img
+            src="/images/folder.png"
+            alt="Manuscript Folder"
+            className="h-20 w-20"
+          />
+          <h2 className="text-2xl font-bold">Capstone Manuscript</h2>
+          <p className="text-muted-foreground">
+            Submit your project details, manuscript, and ACM file.
+          </p>
+          <Button
+            onClick={() => setIsManuscriptModalOpen(true)}
+            disabled={manuscriptSubmitted}
+            className={
+              manuscriptSubmitted
+                ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
+                : ""
+            }
+          >
+            {manuscriptSubmitted ? "Already Submitted" : "Upload Manuscript"}
+          </Button>
+        </div>
 
-      {/*  Platform type - MultiSelect Combobox */}
-      <div className="mt-6">
-        <Label className="block mb-2 text-1xl font-bold text-gray-800">
-          Platform Type
-        </Label>
-        <MultiSelectCombobox
-          value={formData.platform}
-          onValueChange={handlePlatformChange}
-          items={[
-            { value: "web", label: "Website Application" },
-            { value: "mobile", label: "Mobile Application" },
-            { value: "hybrid", label: "Web and Mobile App" },
-            { value: "IoT", label: "Internet of Things" },
-            { value: "web1", label: "Software" },
-            { value: "mobile2", label: "Hardware" },
-            { value: "hybrid3", label: "System" },
-            { value: "IoT4", label: "Traditional" },
-          ]}
-          placeholder="Select platform type"
-          className="text-1xl font-semibold rounded-md"
-        />
-      </div>
-
-      <div className="mt-15">
-        {/*--Upload source code container--*/}
-        <div className="ml-15 mr-15 border-4 border-dashed border-gray p-8 flex flex-col items-center space-y-4 rounded-lg">
-          <img src="/images/folder.png" className="h-15 w-15" />
-          <h2 className="text-2xl font-bold">
-            Upload Capstone Source Code File
-          </h2>
-          <h1 className="text-5m font-normal">
-            Drag and drop your file here or select a file
-          </h1>
-          <FileUpload />
+        {/* Upload Source Code Section */}
+        <div className="border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center space-y-4 rounded-lg text-center">
+          <img
+            src="/images/folder.png"
+            alt="Source Code Folder"
+            className="h-20 w-20"
+          />
+          <h2 className="text-2xl font-bold">Source Code</h2>
+          <p className="text-muted-foreground">
+            Provide a link to your GitHub repository or upload a .tar file.
+          </p>
+          <Button
+            onClick={() => setIsSourceCodeModalOpen(true)}
+            disabled={sourceCodeSubmitted || !manuscriptSubmitted}
+            className={
+              sourceCodeSubmitted
+                ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
+                : ""
+            }
+          >
+            {sourceCodeSubmitted ? "Submitted ✓" : "Upload Source Code"}
+          </Button>
         </div>
       </div>
 
-      {/*  Repository URL - Combobox */}
-      <div className="mt-6">
-        <Label className="block mb-2 text-1xl font-bold text-gray-800">
-          Repository URL
-        </Label>
-        <Combobox
-          value={formData.repository}
-          onValueChange={handleRepositoryChange}
-          items={[
-            { value: "r1", label: "Github.com/project-a" },
-            { value: "r2", label: "Github.com/project-b" },
-            { value: "r3", label: "Github.com/project-c" },
-            { value: "r4", label: "Github.com/project-d" },
-            { value: "r5", label: "Github.com/project-e" },
-            { value: "r6", label: "Github.com/project-f" },
-            { value: "r7", label: "Github.com/project-g" },
-            { value: "r8", label: "Github.com/project-h" },
-            { value: "r9", label: "Github.com/project-i" },
-            { value: "r10", label: "Github.com/project-x" },
-          ]}
-          placeholder="Github.com/project-x"
-          className="text-1xl font-semibold rounded-md"
-        />
-      </div>
+      <ManuscriptUploadModal
+        isOpen={isManuscriptModalOpen}
+        onOpenChange={setIsManuscriptModalOpen}
+        onSuccess={handleManuscriptSuccess}
+      />
+      <SourceCodeUploadModal
+        isOpen={isSourceCodeModalOpen}
+        onOpenChange={setIsSourceCodeModalOpen}
+        onSuccess={handleSourceCodeSuccess}
+      />
 
-      <div className="flex justify-center items-center gap-2 mt-30">
-        <img src="/images/warning.png" className="h-8 w-8" />
-        <h1 className="text-1xl text-red-500 font-bold">
-          Please check before submitting. You won't be able to change this once
-          submitted.
+      <div className="flex justify-center items-center gap-2 mt-20">
+        <img src="/images/warning.png" alt="Warning" className="h-8 w-8" />
+        <h1 className="text-lg text-red-500 font-bold">
+          Please check your files before submitting. You won&apos;t be able to
+          change them after submission.
         </h1>
-      </div>
-
-      <div className="w-full flex justify-end mt-10">
-        <SubmitSucessfully onSuccess={handleSubmissionSuccess} />
       </div>
     </div>
   );

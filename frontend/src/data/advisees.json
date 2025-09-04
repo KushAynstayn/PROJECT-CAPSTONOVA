@@ -1,0 +1,146 @@
+[
+{
+"id": 1,
+"name": "Jane Doe",
+"idNumber": "2023-12345",
+"ctuEmail": "jane.doe@ctu.edu.ph"
+},
+{
+"id": 2,
+"name": "John Smith",
+"idNumber": "2023-67890",
+"ctuEmail": "john.smith@ctu.edu.ph"
+},
+{
+"id": 3,
+"name": "Maria Cruz",
+"idNumber": "2022-54321",
+"ctuEmail": "maria.cruz@ctu.edu.ph"
+},
+{
+"id": 4,
+"name": "Roberto Lim",
+"idNumber": "2024-98765",
+"ctuEmail": "roberto.lim@ctu.edu.ph"
+},
+{
+"id": 5,
+"name": "Michael Brown",
+"idNumber": "2024-11223",
+"ctuEmail": "michael.brown@ctu.edu.ph"
+},
+{
+"id": 6,
+"name": "Jessica Garcia",
+"idNumber": "2023-44556",
+"ctuEmail": "jessica.garcia@ctu.edu.ph"
+},
+{
+"id": 7,
+"name": "David Wilson",
+"idNumber": "2022-77889",
+"ctuEmail": "david.wilson@ctu.edu.ph"
+},
+{
+"id": 8,
+"name": "Emily Davis",
+"idNumber": "2024-33445",
+"ctuEmail": "emily.davis@ctu.edu.ph"
+},
+{
+"id": 9,
+"name": "Christopher Evans",
+"idNumber": "2023-66778",
+"ctuEmail": "christopher.evans@ctu.edu.ph"
+},
+{
+"id": 10,
+"name": "Olivia Rodriguez",
+"idNumber": "2022-99001",
+"ctuEmail": "olivia.rodriguez@ctu.edu.ph"
+},
+{
+"id": 11,
+"name": "Daniel Martinez",
+"idNumber": "2024-10203",
+"ctuEmail": "daniel.martinez@ctu.edu.ph"
+},
+{
+"id": 12,
+"name": "Sophia Lee",
+"idNumber": "2023-40506",
+"ctuEmail": "sophia.lee@ctu.edu.ph"
+},
+{
+"id": 13,
+"name": "Alexander Lopez",
+"idNumber": "2022-70809",
+"ctuEmail": "alexander.lopez@ctu.edu.ph"
+},
+{
+"id": 14,
+"name": "Ava Perez",
+"idNumber": "2024-30405",
+"ctuEmail": "ava.perez@ctu.edu.ph"
+},
+{
+"id": 15,
+"name": "James Hernandez",
+"idNumber": "2023-60708",
+"ctuEmail": "james.hernandez@ctu.edu.ph"
+},
+{
+"id": 16,
+"name": "Mia Gonzalez",
+"idNumber": "2022-90102",
+"ctuEmail": "mia.gonzalez@ctu.edu.ph"
+},
+{
+"id": 17,
+"name": "William Scott",
+"idNumber": "2024-11335",
+"ctuEmail": "william.scott@ctu.edu.ph"
+},
+{
+"id": 18,
+"name": "Elizabeth Green",
+"idNumber": "2023-44668",
+"ctuEmail": "elizabeth.green@ctu.edu.ph"
+},
+{
+"id": 19,
+"name": "Joseph Adams",
+"idNumber": "2022-77990",
+"ctuEmail": "joseph.adams@ctu.edu.ph"
+},
+{
+"id": 20,
+"name": "Charlotte King",
+"idNumber": "2024-33557",
+"ctuEmail": "charlotte.king@ctu.edu.ph"
+},
+{
+"id": 21,
+"name": "Benjamin Wright",
+"idNumber": "2023-66880",
+"ctuEmail": "benjamin.wright@ctu.edu.ph"
+},
+{
+"id": 22,
+"name": "Amelia Hall",
+"idNumber": "2022-99224",
+"ctuEmail": "amelia.hall@ctu.edu.ph"
+},
+{
+"id": 23,
+"name": "Henry Turner",
+"idNumber": "2024-10406",
+"ctuEmail": "henry.turner@ctu.edu.ph"
+},
+{
+"id": 24,
+"name": "Evelyn Rivera",
+"idNumber": "2023-40709",
+"ctuEmail": "evelyn.rivera@ctu.edu.ph"
+}
+]
