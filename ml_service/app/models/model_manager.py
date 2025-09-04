@@ -3,7 +3,8 @@
 
 import os
 import joblib
-from typing import Any, List, Tuple
+import json
+from typing import Any, List, Tuple, Dict
 from app.config import SAVED_MODELS_DIR
 
 def save_model_artifacts(model: Any, columns: List[str], model_name: str):
@@ -62,3 +63,49 @@ def load_model_artifacts(model_name: str) -> Tuple[Any, List[str]]:
     except Exception as e:
         print(f"Error loading model '{model_name}': {e}")
         return None, []
+
+
+def save_json_artifact(data: Dict[str, Any], model_name: str) -> str:
+    """
+    Saves a JSON artifact to disk.
+
+    Args:
+        data (Dict[str, Any]): The dictionary to save as JSON.
+        model_name (str): The name of the model for file naming.
+
+    Returns:
+        str: The path to the saved JSON file.
+    """
+    artifact_path = os.path.join(SAVED_MODELS_DIR, f"{model_name}_rules.json")
+    try:
+        with open(artifact_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        print(f"JSON artifact for '{model_name}' saved to {artifact_path}")
+        return artifact_path
+    except IOError as e:
+        print(f"Error saving JSON artifact for '{model_name}': {e}")
+        raise
+
+
+def load_json_artifact(model_name: str) -> Dict[str, Any]:
+    """
+    Loads a JSON artifact from disk.
+
+    Args:
+        model_name (str): The name of the model to load.
+
+    Returns:
+        Dict[str, Any]: The loaded dictionary from the JSON file.
+    """
+    artifact_path = os.path.join(SAVED_MODELS_DIR, f"{model_name}_rules.json")
+    if not os.path.exists(artifact_path):
+        print(f"JSON artifact for '{model_name}' not found.")
+        return {}
+    try:
+        with open(artifact_path, 'r') as f:
+            data = json.load(f)
+        print(f"JSON artifact for '{model_name}' loaded from {artifact_path}")
+        return data
+    except (IOError, json.JSONDecodeError) as e:
+        print(f"Error loading JSON artifact for '{model_name}': {e}")
+        return {}

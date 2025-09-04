@@ -9,7 +9,7 @@ interface Notification {
   status: string;
 }
 
-const SuperAdminNotificationsPage = () => {
+const AdminNotificationsPage = () => {
   const allNotifications: Notification[] = [
     { title: "Request full document access by guest John Arado", date: "August 23, 2025", status: "New" },
     { title: "New Whitelist Uploaded by Admin 1", date: "August 22, 2025", status: "Viewed" },
@@ -96,4 +96,4 @@ const SuperAdminNotificationsPage = () => {
   );
 };
 
-export default SuperAdminNotificationsPage;
+export default AdminNotificationsPage;

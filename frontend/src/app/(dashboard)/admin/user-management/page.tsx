@@ -50,8 +50,8 @@ interface Adviser extends BaseUser {
 }
 // REMOVED: The Admin interface is no longer needed
 // interface Admin extends BaseUser {
-//   branch: string;
-//   department: string;
+//   branch: string;
+//   department: string;
 // }
 // UPDATED: The 'Admin' role has been removed from the User type
 type User = Guest | Proponent | Adviser;
@@ -71,7 +71,7 @@ const placeholderText = {
   Advisers: "Search Advisers Here",
 };
 
-const SuperAdminUserManagementPage = () => {
+const AdminUserManagementPage = () => {
   const [currentRole, setCurrentRole] = useState<Role>("Guest");
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -233,4 +233,4 @@ const SuperAdminUserManagementPage = () => {
   );
 };
 
-export default SuperAdminUserManagementPage;
+export default AdminUserManagementPage;

@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image'; 
-import { Input } from "@/components/ui/input"; 
-import { Label } from "@/components/ui/label"; 
-import EditProfile from '../../../../components/settings/editprofile'; // Import the new component
+import Image from 'next/image';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import EditProfile from '../../../../components/settings/editprofile';
 
-// Initial data for the user. We'll use this to initialize state.
 const initialUserData = {
   firstName: 'Angel',
   middleName: '',
@@ -16,15 +15,15 @@ const initialUserData = {
   email: 's.yap@student.edu',
   contactNumber: '+63 917 123 4567',
   department: 'CCICT',
-  // Password fields are initialized as empty
   currentPassword: '',
   newPassword: '',
   confirmPassword: '',
 };
 
-const SuperAdminSettingsPage = () => {
+const AdminSettingsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(initialUserData);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -42,11 +41,11 @@ const SuperAdminSettingsPage = () => {
 
   const handleEditClick = () => {
     setIsEditing(true);
-    setIsMenuOpen(false);
+    setIsMenuOpen(false); // Ensure menu closes when editing starts
   };
 
   const handleCancel = () => {
-    setFormData(initialUserData); // Revert any changes
+    setFormData(initialUserData);
     setIsEditing(false);
   };
 
@@ -56,8 +55,7 @@ const SuperAdminSettingsPage = () => {
       return;
     }
     console.log("Saving data:", formData);
-    // After saving, reset password fields for security and switch back to view mode
-    setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: ''}));
+    setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
     setIsEditing(false);
   };
 
@@ -73,7 +71,7 @@ const SuperAdminSettingsPage = () => {
   return (
     <div className="p-4 sm:pt-8 sm:px-8 flex justify-center">
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-xl overflow-hidden relative">
-        
+
         <div className="relative w-full h-40">
           <Image
             src="/images/ctubldg.png"
@@ -84,32 +82,37 @@ const SuperAdminSettingsPage = () => {
           />
         </div>
 
-        <div ref={menuRef} className="absolute top-[168px] right-4 z-10"> 
-          <div onClick={() => setIsMenuOpen(!isMenuOpen)} className="cursor-pointer">
-            <Image
-              src="/images/dots_icon.png"
-              alt="More options"
-              width={24}
-              height={24}
-            />
-          </div>
-          {isMenuOpen && (
-            <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-              <div className="py-1">
-                <button onClick={handleEditClick} className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Edit Profile
-                </button>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Logout
-                </a>
-              </div>
+        {/* --- UPDATED: Changed top-4 to top-[168px] to move the menu down --- */}
+        {!isEditing && (
+          <div ref={menuRef} className="absolute top-[168px] right-4 z-10">
+            <div onClick={() => setIsMenuOpen(!isMenuOpen)} className="cursor-pointer p-2 rounded-full hover:bg-gray-100">
+              <Image
+                src="/images/dots_icon.png"
+                alt="More options"
+                width={24}
+                height={24}
+              />
             </div>
-          )}
-        </div>
+            {isMenuOpen && (
+              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                <div className="py-1">
+                  <button onClick={handleEditClick} className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Edit Profile
+                  </button>
+                  <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Logout
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {/* --- END OF UPDATE --- */}
+
 
         <div className="p-8 md:p-12">
           {isEditing ? (
-            <EditProfile 
+            <EditProfile
               formData={formData}
               onInputChange={handleInputChange}
               onSelectChange={handleSelectChange}
@@ -160,4 +163,6 @@ const ViewProfile = ({ userData }: { userData: typeof initialUserData }) => {
   );
 }
 
-export default SuperAdminSettingsPage;
+export default AdminSettingsPage;
+
+  

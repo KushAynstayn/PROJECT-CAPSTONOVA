@@ -12,7 +12,7 @@ const SubmittedManuscriptView: React.FC = () => {
           Your source code has been successfully uploaded in the repository.
         </h1>
       </div>
-      <div className="mt- 10 bg-white p-8 md:p-12 lg:p-16 rounded-lg shadow-lg max-w-4xl mx-auto my-10">
+      <div className="overflow-y-auto mt- 10 bg-white p-8 md:p-12 lg:p-16 rounded-lg shadow-lg max-w-4xl mx-auto my-10">
         {/* Title Page */}
         <div className="text-center mb-20">
           <h1 className="text-4xl font-bold mb-4">
