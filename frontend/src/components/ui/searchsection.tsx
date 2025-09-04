@@ -38,7 +38,7 @@ const HeroSection = () => {
             <input
               type="text"
               placeholder="Search Here"
-              className="w-full py-2 pl-6 pr-12 text-white bg-gradient-to-r from-yellow-600/80 to-amber-700/80 placeholder:text-gray-200 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full py-2 pl-6 pr-12 text-gray-900 bg-white/100 placeholder:text-gray-200 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-5">
               <svg 
@@ -59,7 +59,7 @@ const HeroSection = () => {
           </div>
           <div className="mt-4 flex justify-center">
             {/* --- 2. USE THE SHADCN BUTTON COMPONENT --- */}
-            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white">
+            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-black">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 className="h-4 w-4 mr-2" // Added margin-right for spacing
