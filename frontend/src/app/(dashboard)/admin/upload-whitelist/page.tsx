@@ -31,7 +31,7 @@ interface User {
   schedule: string;
 }
 
-const SuperAdminUploadWhitelistPage = () => {
+const AdminUploadWhitelistPage = () => {
   const initialFormState = {
     firstName: "",
     lastName: "",
@@ -230,7 +230,7 @@ const SuperAdminUploadWhitelistPage = () => {
               <FileUpload />
               <Button
                 onClick={handleClearAll}
-                 className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
               transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
               active:shadow-lg active:shadow-gray-700/90"
               >
@@ -283,4 +283,4 @@ const SuperAdminUploadWhitelistPage = () => {
   );
 };
 
-export default SuperAdminUploadWhitelistPage;
+export default AdminUploadWhitelistPage;

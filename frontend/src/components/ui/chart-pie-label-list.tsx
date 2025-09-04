@@ -70,7 +70,7 @@ export function ChartPieLabelList() {
                 dataKey="count"
                 nameKey="role"
                 innerRadius="60%" // Use percentages for responsive radius
-                outerRadius="80%"
+                outerRadius="90%"
               >
                 <LabelList
                   dataKey="count"

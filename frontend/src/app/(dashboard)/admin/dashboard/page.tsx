@@ -10,15 +10,13 @@ import { ChartBarLabel } from "@/components/ui/chart-bar-label";
 import { Button } from "@/components/ui/button";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { LatestSubmission } from "@/components/ui/latest-submission-dashboard";
-import { LatestSuggestion } from "@/components/ui/latest-suggestion-dashboardAdmin"; // Import the new component
+import { LatestSuggestion } from "@/components/ui/latest-suggestion-dashboardAdmin";
 
-const SuperAdminDashboardPage: React.FC = () => {
+const AdminDashboardPage: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
 
   return (
-    // Use a React Fragment to place the header outside the main padded area
     <>
-      {/* Main content now has padding-top to create space below the header */}
       <main className="flex min-h-screen flex-col p-2 pt-2 sm:p-2 lg:p-4 lg:pt-0">
         <div className="mt-1">
           <h2 className="mb-4 text-2xl font-bold">Dashboard</h2>
@@ -30,35 +28,38 @@ const SuperAdminDashboardPage: React.FC = () => {
               className="w-full"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              onClear={() => setSearchValue("")} // Function to clear the input
+              onClear={() => setSearchValue("")}
             />
             <Calendar22 />
           </div>
 
           <div className="flex flex-col gap-6">
+            {/* --- CHANGE #1: The two components in this row have been swapped --- */}
             <div className="flex flex-col items-stretch gap-2 md:flex-row">
-              <div className="w-full md:w-2/3">
-                <ChartLineLinear />
-              </div>
               <div className="w-full md:w-1/3">
-                <ChartBarLabelCustom />
+                <ChartBarLabelCustom /> {/* MOVED HERE */}
+              </div>
+              <div className="w-full md:w-2/3">
+                <ChartLineLinear /> {/* MOVED HERE */}
               </div>
             </div>
 
+            {/* --- CHANGE #2: The four components in this row are now equally sized --- */}
             <div className="flex flex-col items-stretch gap-2 md:flex-row">
-              <div className="grow">
+              <div className="w-full md:w-1/4"> {/* RESIZED FROM "grow" */}
                 <ChartBarLabel />
               </div>
-              
-              <div className="md:w-1/4">
+
+              <div className="w-full md:w-1/4">
                 <ChartPieLabelList />
               </div>
-              
-              <div className="md:w-1/4">
+
+              <div className="w-full md:w-1/4">
                 <LatestSubmission />
               </div>
-              <div className="md:w-1/4">
-                <LatestSuggestion /> {/* Add the new component here */}
+              
+              <div className="w-full md:w-1/4">
+                <LatestSuggestion />
               </div>
             </div>
           </div>
@@ -68,4 +69,4 @@ const SuperAdminDashboardPage: React.FC = () => {
   );
 };
 
-export default SuperAdminDashboardPage;
+export default AdminDashboardPage;
