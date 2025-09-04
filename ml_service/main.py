@@ -3,7 +3,7 @@
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.routes import project_size_regression  # This now contains the generic router
+from app.routes import project_size_regression, tech_stack_association
 from app.config import STATIC_DIR
 import os
 
@@ -23,6 +23,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # Include the now-generic router. The prefix makes all model routes
 # available under /models/ e.g., /models/project_size_regression/train
 app.include_router(project_size_regression.router, prefix="/models", tags=["Machine Learning Models"])
+app.include_router(tech_stack_association.router, prefix="/data_mining/tech_stack_association", tags=["Technology Stack Association"])
 
 @app.get("/", tags=["Root"])
 async def read_root():
