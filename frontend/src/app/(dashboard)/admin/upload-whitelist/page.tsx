@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { InputWithClear } from "@/components/ui/inputWithClear";
-import Combobox from "@/components/ui/combobox";
+// Combobox component is temporarily disabled - needs to be fixed
 import WhitelistNavigationBar from "@/components/ui/whitelist-navbar";
 import WhitelistView from "../../../../components/whitelist/view-whitelist";
 import whitelistData from "@/data/whitelist.json";
 import EditWhitelistView from "../../../../components/whitelist/edit-whitelist";
-import { FileUpload } from "@/components/ui/file_upload";
+// FileUpload component is temporarily disabled - needs to be fixed
 import { UploadWhitelistConfirm } from "@/components/ui/upload_confirm";
 
 // A simple local component for Label
@@ -65,12 +65,12 @@ const AdminUploadWhitelistPage = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleAdviserChange = (value: any) => {
-    setFormData({ ...formData, adviser: value });
+  const handleAdviserChange = (e: any) => {
+    setFormData({ ...formData, adviser: e.target.value });
   };
 
-  const handleScheduleChange = (value: any) => {
-    setFormData({ ...formData, schedule: value });
+  const handleScheduleChange = (e: any) => {
+    setFormData({ ...formData, schedule: e.target.value });
   };
 
   const handleClearAll = () => {
@@ -86,7 +86,7 @@ const AdminUploadWhitelistPage = () => {
     setSearchQuery("");
     setStartDate(undefined);
     setEndDate(undefined);
-    setEditingUser(null); // REVISED: Reset editing state on view change
+    setEditingUser(null);
   };
 
   const handleEditUser = (userId: number) => {
@@ -96,19 +96,17 @@ const AdminUploadWhitelistPage = () => {
     }
   };
 
-  // REVISED: New handler for saving the updated user
   const handleSaveUser = (updatedUser: User) => {
     setUsers((prevUsers) =>
       prevUsers.map((user) => (user.id === updatedUser.id ? updatedUser : user))
     );
     setEditingUser(null);
-    setCurrentView("Whitelist"); // REVISED: Switch back to the whitelist view
+    setCurrentView("Whitelist");
   };
 
-  // REVISED: New handler for canceling the edit
   const handleCancelEdit = () => {
     setEditingUser(null);
-    setCurrentView("Whitelist"); // REVISED: Switch back to the whitelist view
+    setCurrentView("Whitelist");
   };
 
   const placeholderText = {
@@ -188,46 +186,43 @@ const AdminUploadWhitelistPage = () => {
                       className="rounded-none border-[rgba(0,0,0,0.5)]"
                     />
                   </div>
-                  {/* Adviser Combobox */}
+                  {/* Adviser Input (replaced Combobox) */}
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="adviser" className="font-normal">
                       Adviser
                     </Label>
-                    <Combobox
+                    <input
+                      id="adviser"
+                      placeholder="Select Adviser"
                       value={formData.adviser}
-                      onValueChange={handleAdviserChange}
-                      items={[
-                        { value: "adviser1", label: "Monkey Luffy" },
-                        { value: "adviser2", label: "Roronoa Zoro" },
-                        { value: "adviser3", label: "Sanji Vinsmoke" },
-                        { value: "adviser4", label: "Trafalgar Law" },
-                        { value: "adviser5", label: "Nico Robin" },
-                        { value: "adviser6", label: "Rob Lucci" },
-                        { value: "adviser7", label: "Dracule Mihawk" },
-                      ]}
-                      placeholder={"Select Adviser"}
+                      onChange={handleAdviserChange}
+                      className="rounded-none border-[rgba(0,0,0,0.5)] p-2 border w-full"
                     />
                   </div>
-                  {/* Class Program Combobox */}
+                  {/* Class Program Input (replaced Combobox) */}
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="schedule" className="font-normal">
                       Class Program
                     </Label>
-                    <Combobox
+                    <input
+                      id="schedule"
+                      placeholder="Select Program"
                       value={formData.schedule}
-                      onValueChange={handleScheduleChange}
-                      items={[
-                        { value: "day", label: "Day Program" },
-                        { value: "evening", label: "Evening Program" },
-                      ]}
-                      placeholder={"Select Program"}
+                      onChange={handleScheduleChange}
+                      className="rounded-none border-[rgba(0,0,0,0.5)] p-2 border w-full"
                     />
                   </div>
                 </div>
               </form>
             </CardContent>
             <div className="flex justify-center gap-4 mt-6">
-              <FileUpload />
+              {/* File Upload Input (replaced FileUpload component) */}
+              <input
+                type="file"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80 p-2
+                transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
+                active:shadow-lg active:shadow-gray-700/90 cursor-pointer"
+              />
               <Button
                 onClick={handleClearAll}
                 className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
@@ -236,8 +231,8 @@ const AdminUploadWhitelistPage = () => {
               >
                 Clear Information
               </Button>
-              
-            <UploadWhitelistConfirm />
+
+              <UploadWhitelistConfirm />
             </div>
           </Card>
         </div>
@@ -267,10 +262,9 @@ const AdminUploadWhitelistPage = () => {
           onSelectView={handleSelectView}
         />
         <div className="mt-6 p-1">
-          {/* REVISED: Corrected conditional rendering logic */}
           {editingUser ? (
             <EditWhitelistView
-              user={editingUser as User} // REVISED: Corrected type name
+              user={editingUser as User}
               onSave={handleSaveUser}
               onCancel={handleCancelEdit}
             />
