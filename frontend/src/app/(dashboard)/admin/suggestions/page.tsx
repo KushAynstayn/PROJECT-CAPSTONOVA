@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,11 @@ import { SearchIcon, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import AdviserSuggestionsDetails from "@/components/admin-suggestions/suggestions-details";
 
 interface Suggestion {
@@ -19,6 +23,8 @@ interface Suggestion {
   suggestion: string;
   date: string;
   isArchived: boolean;
+  // Add an optional adviserId for the new flow
+  adviserId?: number;
 }
 
 const mockSuggestions: Suggestion[] = [
@@ -27,183 +33,51 @@ const mockSuggestions: Suggestion[] = [
     id: 1,
     adviser: "Monkey D. Luffy",
     adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Consider integrating a real-time collaboration feature to allow multiple students to edit the proposal simultaneously. This will greatly improve the team's efficiency and communication.",
+    suggestion:
+      "Consider integrating a real-time collaboration feature to allow multiple students to edit the proposal simultaneously. This will greatly improve the team's efficiency and communication.",
     date: "March 26, 2025",
     isArchived: false,
+    adviserId: 1,
   },
   {
     id: 2,
     adviser: "Roronoa Zoro",
     adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Your project scope is too broad. Focus on a specific aspect of the 'Smart Library System' to ensure a more manageable and high-quality outcome.",
+    suggestion:
+      "Your project scope is too broad. Focus on a specific aspect of the 'Smart Library System' to ensure a more manageable and high-quality outcome.",
     date: "March 25, 2025",
     isArchived: false,
+    adviserId: 2,
   },
-  {
-    id: 3,
-    adviser: "Nami",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The user interface mockups are good, but they lack accessibility features. Make sure to include proper contrast and navigation for all users.",
-    date: "March 24, 2025",
-    isArchived: false,
-  },
-  {
-    id: 4,
-    adviser: "Usopp",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The database schema needs optimization. Normalizing the tables will prevent data redundancy and improve performance.",
-    date: "March 23, 2025",
-    isArchived: false,
-  },
-  {
-    id: 5,
-    adviser: "Sanji",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Review the project's security protocols. Implement proper input validation and user authentication to protect against common web vulnerabilities.",
-    date: "March 22, 2025",
-    isArchived: false,
-  },
-  {
-    id: 6,
-    adviser: "Tony Tony Chopper",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Ensure the project documentation is thorough and well-organized. This will be crucial for future maintenance and scalability.",
-    date: "March 21, 2025",
-    isArchived: false,
-  },
-  {
-    id: 7,
-    adviser: "Franky",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The project's code structure could be more modular. Break down large functions into smaller, reusable components for better readability.",
-    date: "March 20, 2025",
-    isArchived: false,
-  },
-  {
-    id: 8,
-    adviser: "Brook",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Your presentation slides are a great start, but they need to be more concise. Use bullet points and images to convey key information quickly.",
-    date: "March 19, 2025",
-    isArchived: false,
-  },
-  {
-    id: 9,
-    adviser: "Jimbei",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The project's testing plan is incomplete. Add more unit tests and integration tests to ensure the application is robust and reliable.",
-    date: "March 18, 2025",
-    isArchived: false,
-  },
-  {
-    id: 10,
-    adviser: "Edward Teach",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The project's performance is sluggish. Consider optimizing database queries and implementing caching to speed up data retrieval.",
-    date: "March 17, 2025",
-    isArchived: false,
-  },
-
-  // Added 10 New Suggestions, some are archived
-  {
-    id: 11,
-    adviser: "Monkey D. Luffy",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Your problem statement is clear, but consider adding a section on the potential impact of your project on the community or end-users.",
-    date: "March 16, 2025",
-    isArchived: true,
-  },
-  {
-    id: 12,
-    adviser: "Roronoa Zoro",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The project timeline seems ambitious. Break down larger milestones into smaller, more manageable tasks to better track your progress.",
-    date: "March 15, 2025",
-    isArchived: true,
-  },
-  {
-    id: 13,
-    adviser: "Nami",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Add a user feedback mechanism to your application. Gathering input from early testers will help you refine the final product.",
-    date: "March 14, 2025",
-    isArchived: false,
-  },
-  {
-    id: 14,
-    adviser: "Usopp",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The literature review is missing a few key modern references. Be sure to include recent papers from the last two years.",
-    date: "March 13, 2025",
-    isArchived: false,
-  },
-  {
-    id: 15,
-    adviser: "Sanji",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The system's architecture diagram is unclear. Use standard symbols and labels to make it easier for others to understand.",
-    date: "March 12, 2025",
-    isArchived: true,
-  },
-  {
-    id: 16,
-    adviser: "Tony Tony Chopper",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Ensure your code follows a consistent style guide. This will make it easier for your team members to collaborate and read the code.",
-    date: "March 11, 2025",
-    isArchived: true,
-  },
-  {
-    id: 17,
-    adviser: "Franky",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Your project's main feature needs a clear value proposition. How does it solve the problem more efficiently than existing solutions?",
-    date: "March 10, 2025",
-    isArchived: false,
-  },
-  {
-    id: 18,
-    adviser: "Brook",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The user flow diagram is too simple. Add more detail, including error states and alternative paths, to fully map out the user experience.",
-    date: "March 9, 2025",
-    isArchived: false,
-  },
-  {
-    id: 19,
-    adviser: "Jimbei",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "For your deployment plan, consider using a CI/CD pipeline. Automating tests and deployment will save you a lot of time and effort.",
-    date: "March 8, 2025",
-    isArchived: true,
-  },
-  {
-    id: 20,
-    adviser: "Edward Teach",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Your project's budget analysis needs to be more detailed. Include a breakdown of costs for software, hardware, and any third-party services.",
-    date: "March 7, 2025",
-    isArchived: true,
-  },
+  // Add adviserId to other mock suggestions if needed
 ];
 
 const AdminSuggestionsPage = () => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState("list");
-  const [selectedAdviser, setSelectedAdviser] = useState<string | null>(null);
+  const [selectedAdviser, setSelectedAdviser] = useState<{
+    id?: number;
+    name: string;
+  } | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
   const filteredSuggestions = mockSuggestions
-    .filter(s =>
-      (date ? format(new Date(s.date), "PPP") === format(date, "PPP") : true) &&
-      s.adviser.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
-      s.isArchived === showArchived
+    .filter(
+      (s) =>
+        (date
+          ? format(new Date(s.date), "PPP") === format(date, "PPP")
+          : true) &&
+        s.adviser.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
+        s.isArchived === showArchived
     )
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const handleSeeMoreClick = (adviserName: string) => {
-    setSelectedAdviser(adviserName);
+  const handleSeeMoreClick = (
+    adviser: Suggestion["adviser"],
+    adviserId?: Suggestion["adviserId"]
+  ) => {
+    setSelectedAdviser({ name: adviser, id: adviserId });
     setView("details");
   };
 
@@ -213,7 +87,7 @@ const AdminSuggestionsPage = () => {
   };
 
   const handleToggleArchive = () => {
-    setShowArchived(prev => !prev);
+    setShowArchived((prev) => !prev);
     setSearchQuery("");
     setDate(undefined);
   };
@@ -280,7 +154,7 @@ const AdminSuggestionsPage = () => {
               </Button>
             </div>
           </div>
-          
+
           <div className="p-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-6">
               {showArchived ? "Archived Suggestions" : "Active Suggestions"}
@@ -304,7 +178,13 @@ const AdminSuggestionsPage = () => {
                     </CardContent>
                     <div className="px-6 pb-6 text-sm">
                       <p className="text-gray-500">Uploaded: {s.date}</p>
-                      <Button variant="link" className="px-0 pt-0 text-blue-500" onClick={() => handleSeeMoreClick(s.adviser)}>
+                      <Button
+                        variant="link"
+                        className="px-0 pt-0 text-blue-500"
+                        onClick={() =>
+                          handleSeeMoreClick(s.adviser, s.adviserId)
+                        }
+                      >
                         See more suggestions from this adviser
                       </Button>
                     </div>
@@ -312,7 +192,9 @@ const AdminSuggestionsPage = () => {
                 ))
               ) : (
                 <p className="col-span-full text-center text-gray-500">
-                  {showArchived ? "No archived suggestions found." : "No suggestions found for this date."}
+                  {showArchived
+                    ? "No archived suggestions found."
+                    : "No suggestions found for this date."}
                 </p>
               )}
             </div>
@@ -320,7 +202,10 @@ const AdminSuggestionsPage = () => {
         </>
       ) : (
         selectedAdviser && (
-          <AdviserSuggestionsDetails adviserName={selectedAdviser} onGoBack={handleGoBack} />
+          <AdviserSuggestionsDetails
+            adviser={selectedAdviser}
+            onGoBack={handleGoBack}
+          />
         )
       )}
     </div>

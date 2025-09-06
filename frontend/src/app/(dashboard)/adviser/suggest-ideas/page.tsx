@@ -1,16 +1,27 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SearchIcon, CalendarIcon, PlusCircle, ArrowLeft, MoreVertical, ChevronDown } from "lucide-react";
+import {
+  SearchIcon,
+  CalendarIcon,
+  PlusCircle,
+  ArrowLeft,
+  MoreVertical,
+  ChevronDown,
+} from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,51 +29,127 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AdviserSuggestionsDetails from "@/components/admin-suggestions/suggestions-details";
+import { apiCall } from "@/lib/api";
+import { authStore } from "@/lib/auth";
+import Pagination from "@/components/ui/pagination";
+
+//==============================================================================
+// INTERFACES
+//==============================================================================
+interface Adviser {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+interface Suggestion {
+  suggestion_id: number;
+  adviser: Adviser;
+  title: string;
+  suggestion_text: string;
+  submission_date: string;
+  is_archived: boolean;
+}
+
+interface PaginatedSuggestions {
+  data: Suggestion[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}
 
 //==============================================================================
 // ADD SUGGESTION PAGE COMPONENT
 //==============================================================================
 interface AddSuggestionPageProps {
   onGoBack: () => void;
+  onSuggestionAdded: () => void;
 }
 
-const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({ onGoBack }) => {
-  const [suggestion, setSuggestion] = useState('');
+const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
+  onGoBack,
+  onSuggestionAdded,
+}) => {
+  const [title, setTitle] = useState("");
+  const [suggestionText, setSuggestionText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = () => {
-    if (suggestion.trim()) {
-      console.log('Suggestion submitted:', suggestion);
-      onGoBack();
+  const handleSubmit = async () => {
+    if (title.trim() && suggestionText.trim()) {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await apiCall("/adviser/suggestions", "POST", {
+          title,
+          suggestion_text: suggestionText,
+        });
+        onSuggestionAdded();
+        onGoBack();
+      } catch (err: any) {
+        setError(err.message || "Failed to submit suggestion.");
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      console.log("Suggestion cannot be empty.");
+      setError("Title and suggestion text cannot be empty.");
     }
   };
 
   return (
     <div className="p-4 md:p-1">
       <div className="flex items-center mb-6 -mt-2">
-        <Button variant="ghost" size="icon" onClick={onGoBack} className="rounded-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onGoBack}
+          className="rounded-full"
+        >
           <ArrowLeft className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl md:text-2xl font-bold ml-2 md:ml-1 text-gray-800">Suggest Capstone Ideas</h1>
+        <h1 className="text-xl md:text-2xl font-bold ml-2 md:ml-1 text-gray-800">
+          Suggest Capstone Ideas
+        </h1>
       </div>
       <div className="max-w-4xl mx-auto">
         <div className="bg-white p-10 rounded-lg shadow-lg">
           <div className="relative flex justify-center items-center mb-4">
-            <h2 className="text-2xl font-semibold text-gray-700">Have amazing capstone ideas?</h2>
+            <h2 className="text-2xl font-semibold text-gray-700">
+              Have amazing capstone ideas?
+            </h2>
           </div>
+          <Input
+            placeholder="Title"
+            className="w-full mb-4 p-4 border-gray-300 rounded-md focus:ring-2 focus:ring-[#6b0000]"
+            value={title}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setTitle(e.target.value)
+            }
+          />
           <Textarea
             placeholder="Suggest here"
             className="w-full h-56 p-4 border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-[#6b0000]"
-            value={suggestion}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSuggestion(e.target.value)}
+            value={suggestionText}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setSuggestionText(e.target.value)
+            }
           />
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" className="bg-gray-200 hover:bg-gray-300" onClick={onGoBack}>
+            <Button
+              variant="outline"
+              className="bg-gray-200 hover:bg-gray-300"
+              onClick={onGoBack}
+            >
               Cancel
             </Button>
-            <Button className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-semibold" onClick={handleSubmit}>
-              Suggest
+            <Button
+              className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-semibold"
+              onClick={handleSubmit}
+              disabled={isLoading}
+            >
+              {isLoading ? "Submitting..." : "Suggest"}
             </Button>
           </div>
         </div>
@@ -74,124 +161,93 @@ const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({ onGoBack }) => {
 //==============================================================================
 // MAIN SUGGESTIONS PAGE COMPONENT
 //==============================================================================
-interface Suggestion {
-  id: number;
-  adviser: string;
-  adviserImage: string;
-  suggestion: string;
-  date: string;
-  status: 'active' | 'archived';
-}
-
-const mockSuggestions: Suggestion[] = [
-  {
-    id: 1,
-    adviser: "Monkey D. Luffy",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Consider integrating a real-time collaboration feature.",
-    date: "March 26, 2025",
-    status: 'active',
-  },
-  {
-    id: 2,
-    adviser: "Roronoa Zoro",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Your project scope is too broad. Focus on a specific aspect.",
-    date: "March 25, 2025",
-    status: 'active',
-  },
-  {
-    id: 3,
-    adviser: "Nami",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The user interface mockups lack accessibility features.",
-    date: "March 24, 2025",
-    status: 'archived',
-  },
-  {
-    id: 4,
-    adviser: "Usopp",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The database schema needs optimization.",
-    date: "March 23, 2025",
-    status: 'active',
-  },
-  {
-    id: 5,
-    adviser: "Sanji",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Review the project's security protocols.",
-    date: "March 22, 2025",
-    status: 'active',
-  },
-  {
-    id: 6,
-    adviser: "Tony Tony Chopper",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "Ensure the project documentation is thorough and well-organized.",
-    date: "March 21, 2025",
-    status: 'archived',
-  },
-  {
-    id: 7,
-    adviser: "Monkey D. Luffy",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "The project's code structure could be more modular.",
-    date: "March 20, 2025",
-    status: 'active',
-  },
-  { // Added this item for demonstration
-    id: 8,
-    adviser: "Monkey D. Luffy",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
-    suggestion: "This is an archived idea about a pirate ship dashboard.",
-    date: "March 19, 2025",
-    status: 'archived',
-  },
-];
-
 const AdviserSuggestionsPage = () => {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState("list");
-  const [selectedAdviser, setSelectedAdviser] = useState<string | null>(null);
-  const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'archived'>('all');
+  const [selectedAdviser, setSelectedAdviser] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [filterMode, setFilterMode] = useState<"all" | "mine" | "archived">(
+    "all"
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const currentUser = "Monkey D. Luffy";
+  const currentUser = authStore.getUser();
 
-  const filteredSuggestions = mockSuggestions
-    .filter(s => {
-      // ** UPDATED FILTER LOGIC **
-      if (filterMode === 'mine') {
-        if (s.adviser !== currentUser || s.status !== 'active') return false;
-      } else if (filterMode === 'archived') {
-        // Now checks for archived status AND current user
-        if (s.status !== 'archived' || s.adviser !== currentUser) return false;
-      } else { // 'all' mode
-        if (s.status !== 'active') return false;
+  const fetchSuggestions = useCallback(
+    async (page = 1) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          per_page: "9",
+        });
+
+        if (filterMode === "mine") {
+          params.append("my_suggestions", "true");
+          params.append("is_archived", "false");
+        } else if (filterMode === "archived") {
+          params.append("my_archived_suggestions", "true");
+        } else {
+          // 'all' mode
+          params.append("is_archived", "false");
+        }
+
+        if (date) {
+          params.append("date", format(date, "yyyy-MM-dd"));
+        }
+        if (searchQuery) {
+          params.append("adviser_name", searchQuery);
+        }
+
+        const response = await apiCall(
+          `/user/suggestions?${params.toString()}`
+        );
+        setSuggestions(response.data.data);
+        setCurrentPage(response.data.current_page);
+        setTotalPages(response.data.last_page);
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch suggestions.");
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [date, searchQuery, filterMode]
+  );
 
-      // Secondary filters
-      if (date && format(new Date(s.date), "PPP") !== format(date, "PPP")) return false;
-      if (!s.adviser.toLowerCase().startsWith(searchQuery.toLowerCase())) return false;
+  useEffect(() => {
+    fetchSuggestions(1); // Reset to page 1 on filter change
+  }, [fetchSuggestions]);
 
-      return true;
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchSuggestions(page);
+  };
 
   const getFilterButtonText = () => {
     switch (filterMode) {
-      case 'mine':
-        return 'My Suggestions';
-      case 'archived':
-        return 'My Archive'; // <-- Text changed
+      case "mine":
+        return "My Suggestions";
+      case "archived":
+        return "My Archive";
       default:
-        return 'All Suggestions';
+        return "All Suggestions";
     }
   };
 
-  const handleSeeMoreClick = (adviserName: string) => {
-    setSelectedAdviser(adviserName);
+  const handleSeeMoreClick = (adviser: Adviser) => {
+    setSelectedAdviser({
+      id: adviser.id,
+      name: `${adviser.first_name} ${adviser.last_name}`,
+    });
     setView("details");
   };
 
@@ -199,17 +255,31 @@ const AdviserSuggestionsPage = () => {
     setView("list");
     setSelectedAdviser(null);
   };
-  
+
   const handleAddClick = () => {
     setView("add");
   };
 
-  if (view === 'add') {
-    return <AddSuggestionPage onGoBack={handleGoBack} />;
+  const onSuggestionAdded = () => {
+    fetchSuggestions(); // Refetch suggestions after adding a new one
+  };
+
+  if (view === "add") {
+    return (
+      <AddSuggestionPage
+        onGoBack={handleGoBack}
+        onSuggestionAdded={onSuggestionAdded}
+      />
+    );
   }
 
-  if (view === 'details' && selectedAdviser) {
-    return <AdviserSuggestionsDetails adviserName={selectedAdviser} onGoBack={handleGoBack} />;
+  if (view === "details" && selectedAdviser) {
+    return (
+      <AdviserSuggestionsDetails
+        adviser={selectedAdviser}
+        onGoBack={handleGoBack}
+      />
+    );
   }
 
   return (
@@ -244,7 +314,12 @@ const AdviserSuggestionsPage = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
               </PopoverContent>
             </Popover>
             {date && (
@@ -266,56 +341,91 @@ const AdviserSuggestionsPage = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => setFilterMode('all')}>
+              <DropdownMenuItem onSelect={() => setFilterMode("all")}>
                 All Suggestions
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setFilterMode('mine')}>
+              <DropdownMenuItem onSelect={() => setFilterMode("mine")}>
                 My Suggestions
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setFilterMode('archived')}>
-                My Archive {/* <-- Text changed */}
+              <DropdownMenuItem onSelect={() => setFilterMode("archived")}>
+                My Archive
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <Button onClick={handleAddClick} className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-bold w-full md:w-auto flex items-center gap-2">
+
+          <Button
+            onClick={handleAddClick}
+            className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-bold w-full md:w-auto flex items-center gap-2"
+          >
             <PlusCircle size={18} />
             Add Suggestion
           </Button>
         </div>
       </div>
       <div className="p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSuggestions.length > 0 ? (
-            filteredSuggestions.map((s) => (
-              <Card key={s.id} className="flex flex-col">
-                <CardHeader className="flex flex-row items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage src={s.adviserImage} alt={s.adviser} />
-                    <AvatarFallback>{s.adviser[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{s.adviser}</CardTitle>
-                    <p className="text-sm text-gray-500">Adviser</p>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 pb-6">
-                  <p className="italic text-gray-700">"{s.suggestion}"</p>
-                </CardContent>
-                <div className="px-6 pb-6 text-sm">
-                  <p className="text-gray-500">Uploaded: {s.date}</p>
-                  <Button variant="link" className="px-0 pt-0 text-blue-500" onClick={() => handleSeeMoreClick(s.adviser)}>
-                    See more suggestions from this adviser
-                  </Button>
-                </div>
-              </Card>
-            ))
-          ) : (
-            <p className="col-span-full text-center text-gray-500">
-              No suggestions found.
-            </p>
-          )}
-        </div>
+        {isLoading ? (
+          <p className="col-span-full text-center text-gray-500">
+            Loading suggestions...
+          </p>
+        ) : error ? (
+          <p className="col-span-full text-center text-red-500">{error}</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {suggestions.length > 0 ? (
+                suggestions.map((s) => (
+                  <Card key={s.suggestion_id} className="flex flex-col">
+                    <CardHeader className="flex flex-row items-center space-x-4">
+                      <Avatar>
+                        <AvatarImage
+                          src={`https://i.pravatar.cc/150?u=${s.adviser.email}`}
+                          alt={s.adviser.first_name}
+                        />
+                        <AvatarFallback>
+                          {s.adviser.first_name?.[0]}
+                          {s.adviser.last_name?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">
+                          {s.adviser.first_name} {s.adviser.last_name}
+                        </CardTitle>
+                        <p className="text-sm text-gray-500">Adviser</p>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 pb-6">
+                      <p className="font-bold text-gray-800">{s.title}</p>
+                      <p className="italic text-gray-700">
+                        "{s.suggestion_text}"
+                      </p>
+                    </CardContent>
+                    <div className="px-6 pb-6 text-sm">
+                      <p className="text-gray-500">
+                        Uploaded: {format(new Date(s.submission_date), "PPP")}
+                      </p>
+                      <Button
+                        variant="link"
+                        className="px-0 pt-0 text-blue-500"
+                        onClick={() => handleSeeMoreClick(s.adviser)}
+                      >
+                        See more suggestions from this adviser
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <p className="col-span-full text-center text-gray-500">
+                  No suggestions found.
+                </p>
+              )}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
+        )}
       </div>
     </div>
   );

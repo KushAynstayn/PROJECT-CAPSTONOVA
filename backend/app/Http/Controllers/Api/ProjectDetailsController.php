@@ -21,6 +21,7 @@ class ProjectDetailsController extends Controller
     {
         // 1. Find the project by ID and eager-load all necessary relationships.
         $project = CapstoneProject::with([
+            'adviser', // Load the adviser relationship
             'projectResearcher.user', // Load researcher info and the leader (user)
             'keywords',
             'manuscript', // Eager-load the manuscript relationship
@@ -39,6 +40,7 @@ class ProjectDetailsController extends Controller
             'submission_year' => $project->submission_year,
             'platform_type' => $project->platform_type,
             'is_archived' => (bool) $project->is_archived,
+            'adviser' => $project->adviser ? "{$project->adviser->first_name} {$project->adviser->last_name}" : null,
             'manuscript_id' => $project->manuscript?->manuscript_id,
             'source_code_id' => $project->sourceCode?->id,
             'team_roles' => [

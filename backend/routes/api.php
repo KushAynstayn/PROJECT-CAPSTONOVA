@@ -68,6 +68,10 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
         ->name('user.source-code.download');
 
     Route::get('/notifications', [NotificationController::class, 'index']);
+
+    //whitelist routes general purpose
+    Route::get('/suggestions', [\App\Http\Controllers\Api\User\SuggestionController::class, 'index']);
+    Route::get('/suggestions/{id}', [\App\Http\Controllers\Api\User\SuggestionController::class, 'show']);
 });
 
 
@@ -172,6 +176,7 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
 });
 
 Route::prefix('util')->group(function () {
+
     //Form routes
     Route::get('/keywords', [ResourceController::class, 'keywords']);
     Route::get('/programming-languages', [ResourceController::class, 'programmingLanguages']);

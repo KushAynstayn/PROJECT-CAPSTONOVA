@@ -20,8 +20,8 @@ import { apiCall } from "@/lib/api";
 interface Proponent {
   id: number;
   full_name: string;
-  department: string;
-  program: string;
+  department: string | null;
+  program: string | null;
   team_roles: {
     hacker: string;
     hipster1: string;
@@ -62,10 +62,11 @@ const AdviseesPage = () => {
   const filteredAdvisees = useMemo(() => {
     return advisees.filter((advisee) => {
       const searchLower = searchQuery.toLowerCase();
+      // FIX: Add checks for null values before calling .toLowerCase()
       return (
-        advisee.full_name.toLowerCase().includes(searchLower) ||
-        advisee.department.toLowerCase().includes(searchLower) ||
-        advisee.program.toLowerCase().includes(searchLower)
+        (advisee.full_name || "").toLowerCase().includes(searchLower) ||
+        (advisee.department || "").toLowerCase().includes(searchLower) ||
+        (advisee.program || "").toLowerCase().includes(searchLower)
       );
     });
   }, [searchQuery, advisees]);
