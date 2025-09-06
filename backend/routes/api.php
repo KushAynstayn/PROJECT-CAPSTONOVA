@@ -172,9 +172,12 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
 });
 
 Route::prefix('util')->group(function () {
+    //Form routes
     Route::get('/keywords', [ResourceController::class, 'keywords']);
     Route::get('/programming-languages', [ResourceController::class, 'programmingLanguages']);
     Route::get('/advisers', [FetchAdviserController::class, 'index']);
+
+    //Proponent util routes
     Route::post('/check-manuscript', [CheckManuscriptController::class, 'check'])
         ->middleware('auth:sanctum');
     Route::post('/check-source-code', [CheckSourceCodeController::class, 'check'])

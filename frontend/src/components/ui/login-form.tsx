@@ -27,9 +27,10 @@ export function LoginForm({
     setError(null);
 
     try {
+      // Call the login method from the authStore
       const { user } = await authStore.login(email, password);
 
-      // Redirect based on user role
+      // Redirect based on the user's role from the API response
       switch (user.role.toLowerCase()) {
         case "super admin":
           router.push("/super-admin/dashboard");
@@ -48,6 +49,7 @@ export function LoginForm({
       }
     } catch (err: any) {
       if (err instanceof ApiError) {
+        // Handle validation errors (e.g., incorrect credentials)
         if (err.status === 422 && err.details.email) {
           setError(err.details.email[0]);
         } else {
@@ -82,6 +84,7 @@ export function LoginForm({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
         </div>
         <div className="grid gap-3">
@@ -94,6 +97,7 @@ export function LoginForm({
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
         </div>
 
@@ -113,7 +117,7 @@ export function LoginForm({
 
         <Button
           type="submit"
-          className="w-full bg-amber-500 text-black hover:bg-black hover:text-white mt-4"
+          className="w-full bg-red-800 text-white hover:bg-red-900 mt-4"
           disabled={isLoading}
         >
           {isLoading ? "Logging in..." : "Login"}

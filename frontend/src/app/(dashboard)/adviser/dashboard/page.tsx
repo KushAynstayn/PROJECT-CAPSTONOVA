@@ -7,9 +7,11 @@ import { Calendar22 } from "@/components/ui/date-picker";
 import AdviserSuggestionLog from "@/components/adviser/adviser-suggestion-log";
 import AdviserProjectAdvisory from "@/components/adviser/adviser-project-advisory";
 import { ViewFullDocument } from "@/data/view-full-document";
+import AdviserOverviewData from "@/components/adviser/adviser-overview-data"; // Import the new component
 
 // Import mock projects
 import { mockProjects, Project } from "@/data/adviser-search";
+import Link from "next/link";
 
 export default function AdviserDashboardPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -153,9 +155,12 @@ export default function AdviserDashboardPage() {
                 <h2 className="text-xl font-bold text-gray-800">
                   Your Suggestion Log
                 </h2>
-                <button className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out">
+                <Link
+                  href="/adviser/suggest-ideas"
+                  className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out"
+                >
                   See More
-                </button>
+                </Link>
               </div>
               <div className="overflow-y-auto flex-1">
                 <AdviserSuggestionLog />
@@ -168,9 +173,12 @@ export default function AdviserDashboardPage() {
                 <h2 className="text-xl font-bold text-gray-800">
                   Your Project Advisory
                 </h2>
-                <button className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out">
+                <Link
+                  href="/adviser/projects"
+                  className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out"
+                >
                   See More
-                </button>
+                </Link>
               </div>
               <div className="overflow-y-auto flex-1">
                 <AdviserProjectAdvisory />
@@ -178,53 +186,8 @@ export default function AdviserDashboardPage() {
             </div>
 
             {/**Division 3**/}
-            <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-50 min-h-0 gap-4">
-              <div className="flex justify-between items-center w-full mb-2 p-4">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Your Overview Data
-                </h2>
-                <button className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out">
-                  See More
-                </button>
-              </div>
-
-              {/* The three overview boxes, adjusted for flex-1 */}
-              <div className="flex-1 flex flex-col gap-4 p-4 pl-10 bg-gray-100 rounded-md justify-center items-center">
-                <div className="flex flex-row ">
-                  <img src="/images/advisees.png" className="w-5 h-5" />
-                  <h3 className="text-1xl pl-5 font-semibold text-gray-800">
-                    Advisees
-                  </h3>
-                </div>
-                <div className="justify-center">
-                  <h1 className="text-4xl font-semibold text-gray-800">20</h1>
-                </div>
-              </div>
-
-              <div className="flex-1 flex flex-col gap-4 p-4 pl-10 bg-gray-100 rounded-md justify-center items-center">
-                <div className="flex flex-row ">
-                  <img src="/images/suggestion-log.png" className="w-5 h-5" />
-                  <h3 className="text-1xl pl-5 font-semibold text-gray-800">
-                    Suggestion Log
-                  </h3>
-                </div>
-                <div className="justify-center">
-                  <h1 className="text-4xl font-semibold text-gray-800">20</h1>
-                </div>
-              </div>
-
-              <div className="flex-1 flex flex-col gap-4 p-4 pl-10 bg-gray-100 rounded-md justify-center items-center">
-                <div className="flex flex-row ">
-                  <img src="/images/project-advisory.png" className="w-5 h-5" />
-                  <h3 className="text-1xl pl-5 font-semibold text-gray-800">
-                    Project Advisory
-                  </h3>
-                </div>
-                <div className="justify-center">
-                  <h1 className="text-4xl font-semibold text-gray-800">20</h1>
-                </div>
-              </div>
-            </div>
+            {/* Replace the hardcoded block with the new component */}
+            <AdviserOverviewData />
           </div>
         )}
       </div>
