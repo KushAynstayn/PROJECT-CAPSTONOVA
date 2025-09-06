@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, CalendarIcon } from "lucide-react";
@@ -19,20 +18,16 @@ import AdviserSuggestionsDetails from "@/components/admin-suggestions/suggestion
 interface Suggestion {
   id: number;
   adviser: string;
-  adviserImage: string;
   suggestion: string;
   date: string;
   isArchived: boolean;
-  // Add an optional adviserId for the new flow
   adviserId?: number;
 }
 
 const mockSuggestions: Suggestion[] = [
-  // Existing Suggestions
   {
     id: 1,
     adviser: "Monkey D. Luffy",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
     suggestion:
       "Consider integrating a real-time collaboration feature to allow multiple students to edit the proposal simultaneously. This will greatly improve the team's efficiency and communication.",
     date: "March 26, 2025",
@@ -42,14 +37,12 @@ const mockSuggestions: Suggestion[] = [
   {
     id: 2,
     adviser: "Roronoa Zoro",
-    adviserImage: "https://i.ibb.co/L8dYt3Y/Luffy.jpg",
     suggestion:
       "Your project scope is too broad. Focus on a specific aspect of the 'Smart Library System' to ensure a more manageable and high-quality outcome.",
     date: "March 25, 2025",
     isArchived: false,
     adviserId: 2,
   },
-  // Add adviserId to other mock suggestions if needed
 ];
 
 const AdminSuggestionsPage = () => {
@@ -162,25 +155,31 @@ const AdminSuggestionsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSuggestions.length > 0 ? (
                 filteredSuggestions.map((s) => (
-                  <Card key={s.id} className="flex flex-col">
-                    <CardHeader className="flex flex-row items-center space-x-4">
-                      <Avatar>
-                        <AvatarImage src={s.adviserImage} alt={s.adviser} />
-                        <AvatarFallback>{s.adviser[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{s.adviser}</CardTitle>
-                        <p className="text-sm text-gray-500">Adviser</p>
-                      </div>
+                  <Card
+                    key={s.id}
+                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
+                  >
+                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
+                      <CardTitle className="text-xl font-extrabold tracking-wide">
+                        {s.adviser}
+                      </CardTitle>
+                      <p className="text-sm opacity-90">Adviser</p>
                     </CardHeader>
-                    <CardContent className="flex-1 pb-6">
-                      <p className="italic text-gray-700">"{s.suggestion}"</p>
+                    <CardContent className="flex-1 p-6 space-y-4">
+                      <p className="italic text-lg text-gray-700 leading-relaxed">
+                        "{s.suggestion}"
+                      </p>
                     </CardContent>
-                    <div className="px-6 pb-6 text-sm">
-                      <p className="text-gray-500">Uploaded: {s.date}</p>
+                    <div className="px-6 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
+                      <p className="font-medium">
+                        Uploaded:{" "}
+                        <span className="text-gray-700">
+                          {format(new Date(s.date), "MMM d, yyyy")}
+                        </span>
+                      </p>
                       <Button
                         variant="link"
-                        className="px-0 pt-0 text-blue-500"
+                        className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
                         onClick={() =>
                           handleSeeMoreClick(s.adviser, s.adviserId)
                         }

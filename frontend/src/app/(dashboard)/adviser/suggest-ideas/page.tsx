@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +10,6 @@ import {
   CalendarIcon,
   PlusCircle,
   ArrowLeft,
-  MoreVertical,
   ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -374,38 +372,34 @@ const AdviserSuggestionsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {suggestions.length > 0 ? (
                 suggestions.map((s) => (
-                  <Card key={s.suggestion_id} className="flex flex-col">
-                    <CardHeader className="flex flex-row items-center space-x-4">
-                      <Avatar>
-                        <AvatarImage
-                          src={`https://i.pravatar.cc/150?u=${s.adviser.email}`}
-                          alt={s.adviser.first_name}
-                        />
-                        <AvatarFallback>
-                          {s.adviser.first_name?.[0]}
-                          {s.adviser.last_name?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">
-                          {s.adviser.first_name} {s.adviser.last_name}
-                        </CardTitle>
-                        <p className="text-sm text-gray-500">Adviser</p>
-                      </div>
+                  <Card
+                    key={s.suggestion_id}
+                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
+                  >
+                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
+                      <CardTitle className="text-xl font-extrabold tracking-wide">
+                        {s.adviser.first_name} {s.adviser.last_name}
+                      </CardTitle>
+                      <p className="text-sm opacity-90">Adviser</p>
                     </CardHeader>
-                    <CardContent className="flex-1 pb-6">
-                      <p className="font-bold text-gray-800">{s.title}</p>
-                      <p className="italic text-gray-700">
+                    <CardContent className="flex-1 p-6 space-y-4">
+                      <p className="font-bold text-lg text-gray-800">
+                        {s.title}
+                      </p>
+                      <p className="italic text-gray-700 leading-relaxed">
                         "{s.suggestion_text}"
                       </p>
                     </CardContent>
-                    <div className="px-6 pb-6 text-sm">
-                      <p className="text-gray-500">
-                        Uploaded: {format(new Date(s.submission_date), "PPP")}
+                    <div className="px-6 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
+                      <p className="font-medium">
+                        Uploaded:{" "}
+                        <span className="text-gray-700">
+                          {format(new Date(s.submission_date), "MMM d, yyyy")}
+                        </span>
                       </p>
                       <Button
                         variant="link"
-                        className="px-0 pt-0 text-blue-500"
+                        className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
                         onClick={() => handleSeeMoreClick(s.adviser)}
                       >
                         See more suggestions from this adviser
