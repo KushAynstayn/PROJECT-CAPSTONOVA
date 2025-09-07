@@ -15,16 +15,20 @@ use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
+use App\Http\Controllers\Api\Util\ProjectTypeController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\API\User\NotificationController;
 use App\Http\Controllers\Api\Util\AdviserFetchController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
+use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
+use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
 use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
+use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
@@ -176,6 +180,13 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
 });
 
 Route::prefix('util')->group(function () {
+
+    //Analytics routes
+    Route::get('/project-types', ProjectTypeController::class);
+    Route::get('/environment-trends', EnvironmentTrendController::class);
+    Route::get('/project-tools', ProjectToolsController::class);
+    //Adviser analytics route
+    Route::get('/adviser-overview', AdviserOverviewController::class)->middleware('auth:sanctum');
 
     //Form routes
     Route::get('/keywords', [ResourceController::class, 'keywords']);
