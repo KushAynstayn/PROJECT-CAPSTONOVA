@@ -35,7 +35,10 @@ const AdviserSettingsPage = () => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const fetchProfile = useCallback(async () => {
-    if (!authStore.isAuthenticated()) {
+    if (
+      !authStore.isAuthenticated() ||
+      authStore.getUser()?.role.toLowerCase() !== "adviser"
+    ) {
       router.push("/login");
       return;
     }

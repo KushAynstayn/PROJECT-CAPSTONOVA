@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -57,14 +58,14 @@ interface PaginatedSuggestions {
   total: number;
 }
 
-//==============================================================================
-// ADD SUGGESTION PAGE COMPONENT
-//==============================================================================
 interface AddSuggestionPageProps {
   onGoBack: () => void;
   onSuggestionAdded: () => void;
 }
 
+//==============================================================================
+// ADD SUGGESTION PAGE COMPONENT
+//==============================================================================
 const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
   onGoBack,
   onSuggestionAdded,
@@ -160,6 +161,7 @@ const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
 // MAIN SUGGESTIONS PAGE COMPONENT
 //==============================================================================
 const AdviserSuggestionsPage = () => {
+  const router = useRouter();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +177,16 @@ const AdviserSuggestionsPage = () => {
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const user = authStore.getUser();
+    if (
+      !authStore.isAuthenticated() ||
+      user?.role.toLowerCase() !== "adviser"
+    ) {
+      router.push("/login");
+    }
+  }, [router]);
 
   const currentUser = authStore.getUser();
 

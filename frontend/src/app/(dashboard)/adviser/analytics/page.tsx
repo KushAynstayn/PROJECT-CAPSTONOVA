@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authStore } from "@/lib/auth";
 import DataAnalyticsNavbar, {
   AnalyticsRole,
 } from "@/components/ui/adviser-data-analytics-navbar";
@@ -10,8 +12,19 @@ import EnvironmentTrendView from "../../../../components/data-analytics/view-env
 import ProjectToolsView from "../../../../components/data-analytics/view-project-tools";
 
 const AdviserAnalyticsPage = () => {
+  const router = useRouter();
   const [currentRole, setCurrentRole] =
     useState<AnalyticsRole>("Adviser's Overview");
+
+  useEffect(() => {
+    const user = authStore.getUser();
+    if (
+      !authStore.isAuthenticated() ||
+      user?.role.toLowerCase() !== "adviser"
+    ) {
+      router.push("/login");
+    }
+  }, [router]);
 
   const componentMap = {
     "Adviser's Overview": <AdviserOverviewView />,

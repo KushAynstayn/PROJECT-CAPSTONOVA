@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authStore } from "@/lib/auth";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { Calendar22 } from "@/components/ui/date-picker";
 import AdviserSuggestionLog from "@/components/adviser/adviser-suggestion-log";
@@ -32,6 +34,7 @@ interface ProjectDetails extends SearchResult {
 }
 
 export default function AdviserDashboardPage() {
+  const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(
@@ -39,6 +42,16 @@ export default function AdviserDashboardPage() {
   );
   const [showFullDocument, setShowFullDocument] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const user = authStore.getUser();
+    if (
+      !authStore.isAuthenticated() ||
+      user?.role.toLowerCase() !== "adviser"
+    ) {
+      router.push("/login");
+    }
+  }, [router]);
 
   // Debounce search input
   useEffect(() => {

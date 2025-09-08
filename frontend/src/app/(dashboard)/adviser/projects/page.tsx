@@ -36,7 +36,10 @@ const ProjectsPage = () => {
 
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!authStore.isAuthenticated()) {
+      if (
+        !authStore.isAuthenticated() ||
+        authStore.getUser()?.role.toLowerCase() !== "adviser"
+      ) {
         router.push("/login");
         return;
       }
