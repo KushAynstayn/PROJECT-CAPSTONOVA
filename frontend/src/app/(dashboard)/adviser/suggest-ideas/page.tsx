@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import {
   PlusCircle,
   ArrowLeft,
   ChevronDown,
+  Settings,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -28,9 +28,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AdviserSuggestionsDetails from "@/components/admin-suggestions/suggestions-details";
-import { apiCall } from "@/lib/api";
+import { apiCall, ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import Pagination from "@/components/ui/pagination";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "@/components/ui/label";
 
 //==============================================================================
 // INTERFACES
@@ -44,10 +55,10 @@ interface Adviser {
 
 interface Suggestion {
   suggestion_id: number;
-  adviser: Adviser;
+  adviser?: Adviser; // Optional for edit modal
   title: string;
   suggestion_text: string;
-  submission_date: string;
+  submission_date?: string;
   is_archived: boolean;
 }
 
@@ -58,14 +69,231 @@ interface PaginatedSuggestions {
   total: number;
 }
 
+//==============================================================================
+// EDIT SUGGESTION MODAL
+//==============================================================================
+interface EditSuggestionModalProps {
+  suggestion: Suggestion | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const EditSuggestionModal: React.FC<EditSuggestionModalProps> = ({
+  suggestion,
+  isOpen,
+  onClose,
+  onSuccess,
+}) => {
+  const [suggestionText, setSuggestionText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (suggestion) {
+      setSuggestionText(suggestion.suggestion_text);
+    }
+  }, [suggestion]);
+
+  const handleSave = async () => {
+    if (!suggestion) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      await apiCall(`/adviser/suggestions/${suggestion.suggestion_id}`, "PUT", {
+        title: suggestion.title, // Title is required but not changed
+        suggestion_text: suggestionText,
+      });
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to update suggestion.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!suggestion) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Suggestion</DialogTitle>
+          <DialogDescription>
+            You can only edit the content of your suggestion.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <Label htmlFor="title">Title (Read-only)</Label>
+            <Input id="title" value={suggestion.title} readOnly disabled />
+          </div>
+          <div>
+            <Label htmlFor="suggestion_text">Suggestion</Label>
+            <Textarea
+              id="suggestion_text"
+              value={suggestionText}
+              onChange={(e) => setSuggestionText(e.target.value)}
+              className="min-h-[150px]"
+            />
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+//==============================================================================
+// MANAGE SUGGESTIONS MODAL
+//==============================================================================
+interface ManageSuggestionsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [mySuggestions, setMySuggestions] = useState<Suggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingSuggestion, setEditingSuggestion] = useState<Suggestion | null>(
+    null
+  );
+
+  const fetchMySuggestions = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall("/adviser/suggestions");
+      setMySuggestions(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load your suggestions.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchMySuggestions();
+    }
+  }, [isOpen, fetchMySuggestions]);
+
+  const handleArchive = async (suggestionId: number) => {
+    if (confirm("Are you sure you want to archive this suggestion?")) {
+      try {
+        await apiCall(`/adviser/suggestions/${suggestionId}/archive`, "PATCH");
+        fetchMySuggestions();
+      } catch (err: any) {
+        setError(err.message || "Failed to archive suggestion.");
+      }
+    }
+  };
+
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Your Suggestions</DialogTitle>
+            <DialogDescription>
+              Here you can edit or archive your submitted ideas.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] border rounded-md p-4">
+            {isLoading && <p>Loading...</p>}
+            {error && <p className="text-red-500">{error}</p>}
+            {!isLoading && mySuggestions.length === 0 && (
+              <p>You have not submitted any suggestions yet.</p>
+            )}
+            <div className="space-y-4">
+              {mySuggestions.map((suggestion) => (
+                <div
+                  key={suggestion.suggestion_id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                >
+                  <div>
+                    <p
+                      className={`font-semibold ${
+                        suggestion.is_archived
+                          ? "text-gray-400 line-through"
+                          : ""
+                      }`}
+                    >
+                      {suggestion.title}
+                    </p>
+                    <p
+                      className={`text-sm text-gray-600 ${
+                        suggestion.is_archived ? "text-gray-400" : ""
+                      }`}
+                    >
+                      {suggestion.suggestion_text.substring(0, 50)}...
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingSuggestion(suggestion)}
+                      disabled={suggestion.is_archived}
+                    >
+                      Update
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleArchive(suggestion.suggestion_id)}
+                      disabled={suggestion.is_archived}
+                    >
+                      Archive
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <EditSuggestionModal
+        isOpen={!!editingSuggestion}
+        onClose={() => setEditingSuggestion(null)}
+        suggestion={editingSuggestion}
+        onSuccess={() => {
+          setEditingSuggestion(null);
+          fetchMySuggestions();
+        }}
+      />
+    </>
+  );
+};
+
+//==============================================================================
+// ADD SUGGESTION PAGE COMPONENT
+//==============================================================================
 interface AddSuggestionPageProps {
   onGoBack: () => void;
   onSuggestionAdded: () => void;
 }
 
-//==============================================================================
-// ADD SUGGESTION PAGE COMPONENT
-//==============================================================================
 const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
   onGoBack,
   onSuggestionAdded,
@@ -177,6 +405,7 @@ const AdviserSuggestionsPage = () => {
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
   useEffect(() => {
     const user = authStore.getUser();
@@ -187,8 +416,6 @@ const AdviserSuggestionsPage = () => {
       router.push("/login");
     }
   }, [router]);
-
-  const currentUser = authStore.getUser();
 
   const fetchSuggestions = useCallback(
     async (page = 1) => {
@@ -206,7 +433,6 @@ const AdviserSuggestionsPage = () => {
         } else if (filterMode === "archived") {
           params.append("my_archived_suggestions", "true");
         } else {
-          // 'all' mode
           params.append("is_archived", "false");
         }
 
@@ -234,7 +460,7 @@ const AdviserSuggestionsPage = () => {
   );
 
   useEffect(() => {
-    fetchSuggestions(1); // Reset to page 1 on filter change
+    fetchSuggestions(1);
   }, [fetchSuggestions]);
 
   const handlePageChange = (page: number) => {
@@ -271,7 +497,7 @@ const AdviserSuggestionsPage = () => {
   };
 
   const onSuggestionAdded = () => {
-    fetchSuggestions(); // Refetch suggestions after adding a new one
+    fetchSuggestions();
   };
 
   if (view === "add") {
@@ -299,7 +525,7 @@ const AdviserSuggestionsPage = () => {
       </div>
       <div className="bg-white p-4 rounded-b-md shadow-md flex">
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-          <div className="relative w-full flex-grow">
+          <div className="relative flex-grow">
             <Input
               type="search"
               placeholder="Search adviser by name..."
@@ -309,13 +535,13 @@ const AdviserSuggestionsPage = () => {
             />
             <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           </div>
-          <div className="relative w-full md:w-auto">
+          <div className="relative w-full md:w-auto flex-shrink-0">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full md:w-[240px] justify-start text-left font-normal",
+                    "w-full md:w-auto justify-start text-left font-normal",
                     !date && "text-muted-foreground"
                   )}
                 >
@@ -343,33 +569,45 @@ const AdviserSuggestionsPage = () => {
             )}
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                {getFilterButtonText()}
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => setFilterMode("all")}>
-                All Suggestions
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setFilterMode("mine")}>
-                My Suggestions
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setFilterMode("archived")}>
-                My Archive
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex-shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full md:w-auto">
+                  {getFilterButtonText()}
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => setFilterMode("all")}>
+                  All Suggestions
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setFilterMode("mine")}>
+                  My Suggestions
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setFilterMode("archived")}>
+                  My Archive
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-          <Button
-            onClick={handleAddClick}
-            className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-bold w-full md:w-auto flex items-center gap-2"
-          >
-            <PlusCircle size={18} />
-            Add Suggestion
-          </Button>
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <Button
+              onClick={() => setIsManageModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings size={18} />
+              Manage
+            </Button>
+            <Button
+              onClick={handleAddClick}
+              className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-bold flex items-center gap-2"
+            >
+              <PlusCircle size={18} />
+              Add Suggestion
+            </Button>
+          </div>
         </div>
       </div>
       <div className="p-8">
@@ -390,7 +628,7 @@ const AdviserSuggestionsPage = () => {
                   >
                     <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
                       <CardTitle className="text-xl font-extrabold tracking-wide">
-                        {s.adviser.first_name} {s.adviser.last_name}
+                        {s.adviser?.first_name} {s.adviser?.last_name}
                       </CardTitle>
                       <p className="text-sm opacity-90">Adviser</p>
                     </CardHeader>
@@ -406,16 +644,20 @@ const AdviserSuggestionsPage = () => {
                       <p className="font-medium">
                         Uploaded:{" "}
                         <span className="text-gray-700">
-                          {format(new Date(s.submission_date), "MMM d, yyyy")}
+                          {s.submission_date
+                            ? format(new Date(s.submission_date), "MMM d, yyyy")
+                            : "N/A"}
                         </span>
                       </p>
-                      <Button
-                        variant="link"
-                        className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
-                        onClick={() => handleSeeMoreClick(s.adviser)}
-                      >
-                        See more suggestions from this adviser
-                      </Button>
+                      {s.adviser && (
+                        <Button
+                          variant="link"
+                          className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
+                          onClick={() => handleSeeMoreClick(s.adviser!)}
+                        >
+                          See more suggestions from this adviser
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 ))
@@ -433,6 +675,10 @@ const AdviserSuggestionsPage = () => {
           </>
         )}
       </div>
+      <ManageSuggestionsModal
+        isOpen={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
+      />
     </div>
   );
 };
