@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { TopLoader } from "@/components/ui/top-loader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Project Capstonova",
-  description: "A smart, secure platform designed to streamline capstone project management.",
+  description:
+    "A smart, secure platform designed to streamline capstone project management.",
 };
 
 export default function RootLayout({
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-black`}
       >
+        <TopLoader />
         {children}
       </body>
     </html>

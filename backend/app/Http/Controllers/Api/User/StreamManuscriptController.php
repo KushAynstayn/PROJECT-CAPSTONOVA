@@ -23,7 +23,7 @@ class StreamManuscriptController extends Controller
     public function __invoke(CapstoneManuscript $manuscript)
     {
 
-        $this->authorize('view', $manuscript);
+
         $filePath = $manuscript->file_path;
 
         if (!Storage::exists($filePath)) {

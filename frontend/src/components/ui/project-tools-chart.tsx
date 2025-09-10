@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  Legend,
+  Cell,
 } from "recharts";
 import {
   Card,
@@ -18,32 +18,42 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-type ChartData = {
-  year: string;
-  [tool: string]: number | string;
+// Define the shape of the data points the chart will receive
+type ChartDataPoint = {
+  name: string;
+  count: number;
 };
 
 interface ProjectToolsChartProps {
-  data: ChartData[];
+  data: ChartDataPoint[];
   projectType: string;
-  layerType: string;
 }
 
-// Mock config for a single maroon color
-const chartConfig = {
-  default: {
-    color: "hsl(0, 70%, 40%)", // A consistent maroon color
-    label: "Tool Usage",
-  },
-};
+// A vibrant, varied color palette for the chart bars
+const COLOR_PALETTE = [
+  "#800000",
+  "#9A2A2A",
+  "#B35353",
+  "#CC7D7D",
+  "#E6A6A6",
+  "#8B4513",
+  "#A0522D",
+  "#CD853F",
+  "#D2B48C",
+  "#F5DEB3",
+];
 
-export function ProjectToolsChart({ data, projectType, layerType }: ProjectToolsChartProps) {
-  if (data.length === 0) {
+export function ProjectToolsChart({
+  data,
+  projectType,
+}: ProjectToolsChartProps) {
+  if (!data || data.length === 0) {
     return (
       <Card className="border-none shadow-none">
         <CardHeader>
@@ -56,72 +66,54 @@ export function ProjectToolsChart({ data, projectType, layerType }: ProjectTools
     );
   }
 
-  const isSingleYearView = data.length === 1;
+  // Dynamically create chart configuration based on the data received
+  const chartConfig = data.reduce((acc, item, index) => {
+    acc[item.name] = {
+      label: item.name,
+      color: COLOR_PALETTE[index % COLOR_PALETTE.length],
+    };
+    return acc;
+  }, {} as ChartConfig);
 
-  // Determine the correct data keys for the bars from the first data object
-  const toolKeys = Object.keys(data?.[0] || {}).filter((key) => key !== "year");
-
-  // Transform data for the single-year view to match the chart's needs
-  const singleYearData = isSingleYearView
-    ? toolKeys.map((key) => ({
-        name: key,
-        value: data?.[0]?.[key] as number,
-      }))
-    : [];
+  // Add the fill color to each data point for the chart cells
+  const chartDataWithColor = data.map((item) => ({
+    ...item,
+    fill: chartConfig[item.name].color,
+  }));
 
   return (
     <Card className="border-none shadow-none">
       <CardHeader>
-        <CardTitle>
-          {projectType} - {layerType} Tools
-        </CardTitle>
+        <CardTitle>{projectType} - Tools Usage</CardTitle>
         <CardDescription>
-          Showing tool usage from {data?.[0]?.year} to {data?.[data.length - 1]?.year}.
+          Comparing total usage of different programming languages and tools.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center">
         <ChartContainer config={chartConfig} className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            {isSingleYearView ? (
-              // Single-year view with tools on the X-Axis and a single bar
-              <BarChart data={singleYearData} margin={{ bottom: 50 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  angle={-45}
-                  textAnchor="end"
-                  interval={0}
-                />
-                <YAxis />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Bar dataKey="value" fill={chartConfig.default.color} radius={8} />
-              </BarChart>
-            ) : (
-              // Multi-year view with year on the X-Axis and multiple bars
-              <BarChart data={data} margin={{ bottom: 50 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="year"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <YAxis />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Legend />
-                {toolKeys.map((tool) => (
-                  <Bar
-                    key={tool}
-                    dataKey={tool}
-                    fill={chartConfig.default.color} 
-                    radius={4}
-                  />
+            <BarChart data={chartDataWithColor} margin={{ bottom: 100 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                angle={-60}
+                textAnchor="end"
+                interval={0}
+              />
+              <YAxis />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent hideLabel />}
+              />
+              <Bar dataKey="count" radius={8}>
+                {chartDataWithColor.map((entry) => (
+                  <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                 ))}
-              </BarChart>
-            )}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
       </CardContent>

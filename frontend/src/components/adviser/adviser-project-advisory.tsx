@@ -1,48 +1,61 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
+import { apiCall } from "@/lib/api";
 
-// --- Mock Data Generation ---
-// In a real app, this data would come from an API call.
-const generateMockProjects = (count: number) => {
-  const projects = [];
-  const sampleTexts = [
-    "Develop a mobile app for local community event management.",
-    "AI-powered system for early detection of crop diseases.",
-    "Blockchain-based solution for transparent supply chain tracking.",
-    "A web platform for connecting student tutors with learners.",
-    "IoT device for monitoring home water consumption and detecting leaks.",
-    "Virtual reality simulation for training medical students in surgical procedures.",
-  ];
-
-  for (let i = 0; i < count; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - i * 3); // Go back in time for variety
-    projects.push({
-      id: i + 1,
-      description: sampleTexts[i % sampleTexts.length],
-      timestamp: date.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }),
-    });
-  }
-  return projects;
-};
+// Interface for a single project based on your backend controller's response
+interface AssignedProject {
+  id: number;
+  title: string;
+  abstract_snippet: string;
+  platform_type: string;
+  keyword_tags: string[];
+  language_tags: string[];
+  students: string[];
+}
 
 const AdviserProjectAdvisory = () => {
-  const suggestions = generateMockProjects(20);
+  const [projects, setProjects] = useState<AssignedProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAssignedProjects = async () => {
+      try {
+        // Fetch assigned projects from the API endpoint
+        const data = await apiCall("/adviser/assigned-projects");
+        setProjects(data);
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch assigned projects.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAssignedProjects();
+  }, []);
+
+  if (isLoading) {
+    return <p className="text-center text-gray-500">Loading projects...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500">{error}</p>;
+  }
+
+  if (projects.length === 0) {
+    return <p className="text-center text-gray-500">No projects found.</p>;
+  }
 
   return (
     // This container enables the custom scrollbar
     <div className="flex-1 overflow-y-auto space-y-2 mt-2 pr-2">
-      {suggestions.map((suggestion) => (
-        <Card key={suggestion.id} className="w-full shadow-md">
-          <CardContent className="p-2">
-            <CardDescription className="text-md text-gray-700">
-              {suggestion.description}
+      {projects.map((project) => (
+        <Card key={project.id} className="w-full shadow-md">
+          <CardContent className="p-3">
+            <CardDescription className="text-md text-gray-800 font-semibold">
+              {project.title}
             </CardDescription>
           </CardContent>
         </Card>
