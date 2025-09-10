@@ -129,3 +129,18 @@
     appearance: none;
   }
 }
+
+
+@keyframes border-animate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-border {
+  background-size: 300% 300%;
+  animation: border-animate 5s linear infinite;
+  filter: drop-shadow(0 0 8px #FFD700); /* glowing gold effect */
+}
+
+

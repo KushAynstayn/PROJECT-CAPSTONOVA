@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'; // --- 1. IMPORT THE BUTTON COM
 
 const HeroSection = () => {
   return (
-    <section className="relative w-full h-[50vh] md:h-[130vh] text-center">
+    <section className="relative w-full h-[50vh] md:h-[130vh] text-center -mt-20">
       {/* Background Image Container (Layer 1 - Bottom) */}
       <div
         className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat z-0"
@@ -15,13 +15,13 @@ const HeroSection = () => {
       <div className="absolute inset-0 w-full h-full bg-black/37 z-10"></div>
 
       {/* Combined Content Layer with Images (Layer 3) */}
-      <div className="relative z-20 flex flex-col items-center justify-center -mt-5">
+      <div className="relative z-20 flex flex-col items-center justify-center -mt-20">
         <Image
           src="/images/project.png"
           alt="Project"
           width={200}
           height={80}
-          className="object-contain"
+          className="object-contain mt-40"
           priority
         />
         <Image
