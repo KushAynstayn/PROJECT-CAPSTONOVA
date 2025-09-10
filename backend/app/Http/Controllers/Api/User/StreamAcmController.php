@@ -22,7 +22,7 @@ class StreamAcmController extends Controller
      */
     public function __invoke(CapstoneManuscript $manuscript)
     {
-        $this->authorize('view', $manuscript);
+
         $filePath = $manuscript->acm_path;
 
         if (!Storage::exists($filePath)) {

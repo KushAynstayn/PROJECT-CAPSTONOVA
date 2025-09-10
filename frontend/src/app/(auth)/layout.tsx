@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 // Make sure the path to your fonts and globals.css is correct.
 // Using a standard path alias is more robust than relative paths.
-import "@/app/globals.css"; 
+import "@/app/globals.css";
 
 // You can define specific fonts for this layout or import them from a shared location.
 // For consistency, we'll use the same Geist fonts.
@@ -28,16 +28,7 @@ export default function AuthLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      {/* We apply the font variables to the body tag, just like in the root layout */}
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {/* The children (your login, registration pages, etc.) will be rendered here,
-            inheriting the correct fonts and base styles. */}
-        {children}
-      </body>
-    </html>
-  );
+  // FIX: Removed the <html> and <body> tags. The root layout already provides these.
+  // This component now simply passes its children through, inheriting the root layout's structure.
+  return <>{children}</>;
 }
