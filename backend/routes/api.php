@@ -6,9 +6,10 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 
+use App\Http\Controllers\Api\Admin\ViewerController;
 use App\Http\Controllers\Api\User\ProfileController;
-use App\Http\Controllers\Api\Admin\AdviserController;
 
+use App\Http\Controllers\Api\Admin\AdviserController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Util\ResourceController;
 use App\Http\Controllers\Api\ProjectDetailsController;
@@ -127,7 +128,11 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
 });
 
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
-    //Whitelist Routes
+    // ============================
+    // Whitelist Routes (Admin)
+    // These routes handle all whitelist-related operations for admins.
+    // ============================
+
     Route::post('whitelist', [WhitelistController::class, 'store'])
         ->name('admin.whitelist.store');
 
@@ -146,7 +151,18 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     // Route to update a specific whitelist entry
     Route::put('whitelist/{whitelist}', [WhitelistController::class, 'update']);
 
-    //adviser Routes
+    // ============================
+    // End Whitelist Routes
+    // ============================
+
+
+    Route::apiResource('viewers', ViewerController::class);
+
+    // ============================
+    // Adviser Routes (Admin)
+    // These routes handle all adviser-related operations for admins.
+    // ============================
+
     Route::post('advisers', [AdviserController::class, 'store'])
         ->name('admin.advisers.store');
 
