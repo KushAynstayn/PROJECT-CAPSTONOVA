@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 
-use App\Http\Controllers\Api\Admin\ViewerController;
+
 use App\Http\Controllers\Api\User\ProfileController;
 
 use App\Http\Controllers\Api\Admin\AdviserController;
@@ -16,10 +16,11 @@ use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
+use App\Http\Controllers\Api\Admin\UserViewerController;
 use App\Http\Controllers\Api\Util\ProjectTypeController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\API\User\NotificationController;
-use App\Http\Controllers\Api\Util\AdviserFetchController;
+
 use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
@@ -155,8 +156,12 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     // End Whitelist Routes
     // ============================
 
+    Route::get('viewers', [UserViewerController::class, 'index'])->name('viewers.index');
+    Route::post('viewers', [UserViewerController::class, 'store'])->name('viewers.store');
+    Route::get('viewers/{id}', [UserViewerController::class, 'show'])->name('viewers.show');
+    Route::put('viewers/{id}', [UserViewerController::class, 'update'])->name('viewers.update');
+    Route::delete('viewers/{id}', [UserViewerController::class, 'destroy'])->name('viewers.destroy');
 
-    Route::apiResource('viewers', ViewerController::class);
 
     // ============================
     // Adviser Routes (Admin)

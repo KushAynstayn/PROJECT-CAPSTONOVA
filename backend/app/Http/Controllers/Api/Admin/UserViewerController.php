@@ -10,22 +10,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
-class ViewerController extends Controller
+class UserViewerController extends Controller
 {
     /**
-     * Display a listing of the viewers.
-     */
-    /**
-     * Display a listing of the viewers.
+     * Display a listing of active viewers.
      */
     public function index(Request $request)
     {
-        // For a more robust implementation, consider using a dedicated API Resource class.
         $query = User::with('userDetail')
             ->where('role', 'Viewer')
             ->where('status', 'active');
 
-        // Handle search query
         if ($request->has('search')) {
             $searchTerm = $request->input('search');
             $query->where(function ($q) use ($searchTerm) {
@@ -40,7 +35,6 @@ class ViewerController extends Controller
         }
 
         $viewers = $query->latest()->paginate(15);
-
         return response()->json($viewers);
     }
 
@@ -86,71 +80,65 @@ class ViewerController extends Controller
     /**
      * Display the specified viewer.
      */
-    public function show(User $user)
+    public function show($id)
     {
-        // Ensure the requested user is a viewer
-        if ($user->role !== 'Viewer') {
-            return response()->json(['message' => 'User not found or is not a Viewer.'], 404);
+        $viewer = User::with('userDetail')->where('role', 'Viewer')->find($id);
+
+        if (!$viewer) {
+            return response()->json(['message' => 'Viewer not found.'], 404);
         }
 
-        return response()->json($user->load('userDetail'));
+        return response()->json($viewer);
     }
 
     /**
      * Update the specified viewer in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, $id)
     {
-        // Ensure the user being updated is a viewer
-        if ($user->role !== 'Viewer') {
-            return response()->json(['message' => 'User not found or is not a Viewer.'], 404);
+        $viewer = User::where('role', 'Viewer')->find($id);
+
+        if (!$viewer) {
+            return response()->json(['message' => 'Viewer not found.'], 404);
         }
 
         $validatedData = $request->validate([
             'first_name' => 'sometimes|required|string|max:100',
             'last_name' => 'sometimes|required|string|max:100',
-            'email' => [
-                'sometimes',
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($user->id),
-            ],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($viewer->id)],
             'student_id' => 'sometimes|required|string|max:50',
             'department' => 'sometimes|required|string|max:50',
             'program' => 'sometimes|required|string|max:50',
             'adviser_id' => 'sometimes|required|integer|exists:users,id',
         ]);
 
-        DB::transaction(function () use ($validatedData, $user, $request) {
-            // Update User fields if present
-            if (isset($validatedData['first_name']) || isset($validatedData['last_name']) || isset($validatedData['email'])) {
-                $user->update($request->only(['first_name', 'last_name', 'email']));
+        DB::transaction(function () use ($validatedData, $viewer, $request) {
+            if ($request->hasAny(['first_name', 'last_name', 'email'])) {
+                $viewer->update($request->only(['first_name', 'last_name', 'email']));
             }
 
-            // Update UserDetail fields if present
-            if ($user->userDetail && (isset($validatedData['student_id']) || isset($validatedData['department']) || isset($validatedData['program']) || isset($validatedData['adviser_id']))) {
-                $user->userDetail->update($request->only(['student_id', 'department', 'program', 'adviser_id']));
+            if ($viewer->userDetail && $request->hasAny(['student_id', 'department', 'program', 'adviser_id'])) {
+                $viewer->userDetail->update($request->only(['student_id', 'department', 'program', 'adviser_id']));
             }
         });
 
-        return response()->json($user->load('userDetail'));
+        return response()->json($viewer->load('userDetail'));
     }
 
     /**
      * Set the viewer's status to 'restricted'.
      */
-    public function destroy(User $user)
+    public function destroy($id)
     {
-        // Ensure the user being "deleted" is a viewer
-        if ($user->role !== 'Viewer') {
-            return response()->json(['message' => 'User not found or is not a Viewer.'], 404);
+        $viewer = User::where('role', 'Viewer')->find($id);
+
+        if (!$viewer) {
+            return response()->json(['message' => 'Viewer not found.'], 404);
         }
 
-        $user->status = 'restricted';
-        $user->save();
+        $viewer->status = 'restricted';
+        $viewer->save();
 
-        return response()->json(['message' => 'User has been restricted successfully.'], 200);
+        return response()->json(['message' => 'Viewer has been restricted successfully.']);
     }
 }
