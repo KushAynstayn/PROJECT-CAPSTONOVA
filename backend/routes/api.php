@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
+use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
@@ -132,6 +133,19 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel'])
         ->name('admin.whitelist.upload-excel');
+
+    // Route to get a list of all whitelist entries
+    Route::get('whitelist', [WhitelistController::class, 'index']);
+
+    // Route to get a single, specific whitelist entry
+    Route::get('whitelist/{id}', [WhitelistController::class, 'show']);
+
+    // Route to delete a whitelist entry
+    Route::delete('whitelist/{whitelist}', [WhitelistController::class, 'destroy']);
+
+    // Route to update a specific whitelist entry
+    Route::put('whitelist/{whitelist}', [WhitelistController::class, 'update']);
+
     //adviser Routes
     Route::post('advisers', [AdviserController::class, 'store'])
         ->name('admin.advisers.store');
@@ -185,6 +199,30 @@ Route::prefix('util')->group(function () {
     Route::get('/project-types', ProjectTypeController::class);
     Route::get('/environment-trends', EnvironmentTrendController::class);
     Route::get('/project-tools', ProjectToolsController::class);
+
+    //Admin analytics route
+    Route::get('/top-advisers', [AdminDashboardUtilController::class, 'topAdvisers']);
+    Route::get(
+        '/programming-tools-usage',
+        [AdminDashboardUtilController::class, 'programmingToolsUsage']
+    );
+    Route::get(
+        '/projects-by-type',
+        [AdminDashboardUtilController::class, 'projectsByType']
+    );
+    Route::get(
+        '/role-distribution',
+        [AdminDashboardUtilController::class, 'roleDistribution']
+    );
+    Route::get(
+        '/latest-submission',
+        [AdminDashboardUtilController::class, 'latestSubmission']
+    );
+    Route::get(
+        '/latest-suggestion',
+        [AdminDashboardUtilController::class, 'latestSuggestionCard']
+    );
+
     //Adviser analytics route
     Route::get('/adviser-overview', AdviserOverviewController::class)->middleware('auth:sanctum');
 

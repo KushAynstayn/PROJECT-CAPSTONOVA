@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import {
   Bar,
   BarChart,
@@ -8,33 +8,23 @@ import {
   LabelList,
   XAxis,
   ResponsiveContainer,
-  Cell, // 1. Import the Cell component
+  Cell,
 } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { apiCall, ApiError } from "@/lib/api";
 
-export const description = "A bar chart with a label";
-
-// 2. Add a `fill` property with a unique maroon color to each data object
-const chartData = [
-  { type: "Web App", projects: 51, fill: "#800000" }, // Maroon
-  { type: "Mobile App", projects: 25, fill: "#A52A2A" }, // Brown
-  { type: "Hybrid", projects: 42, fill: "#B22222" }, // Firebrick
-  { type: "IoT", projects: 15, fill: "#C0392B" }, // Pomegranate
-];
+// Define the interface for the API response
+interface ProjectTypeData {
+  type: string;
+  count: number;
+}
 
 const chartConfig = {
   projects: {
@@ -43,50 +33,98 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+// Color palette for the bars
+const PALETTE = ["#800000", "#A52A2A", "#B22222", "#C0392B"];
+
 export function ChartBarLabel() {
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProjectTypes = async () => {
+      try {
+        setIsLoading(true);
+        const data: ProjectTypeData[] = await apiCall("/util/projects-by-type");
+
+        // Map the API response to the format expected by the chart
+        const formattedData = data.map((item, index) => ({
+          type: item.type,
+          projects: item.count,
+          fill: PALETTE[index % PALETTE.length],
+        }));
+
+        setChartData(formattedData);
+        setError(null);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError(
+            "An unexpected error occurred while fetching project types."
+          );
+        }
+        console.error("Failed to fetch project types:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjectTypes();
+  }, []);
+
   return (
     <Card className="flex h-full flex-col">
       <CardHeader>
         <CardTitle>Projects by Type</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        <ChartContainer config={chartConfig} className="h-full w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              accessibilityLayer
-              data={chartData}
-              margin={{
-                top: 20,
-                left: 12,
-                right: 12,
-              }}
-            >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="type"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              {/* 3. Remove the static `fill` prop from <Bar> and map over the data to create a <Cell> for each bar */}
-              <Bar dataKey="projects" radius={8}>
-                {chartData.map((entry) => (
-                  <Cell key={`cell-${entry.type}`} fill={entry.fill} />
-                ))}
-                <LabelList
-                  position="top"
-                  offset={12}
-                  className="fill-foreground"
-                  fontSize={12}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500">Loading chart...</p>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : (
+          <ChartContainer config={chartConfig} className="h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                accessibilityLayer
+                data={chartData}
+                margin={{
+                  top: 20,
+                  left: 12,
+                  right: 12,
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="type"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
                 />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="projects" radius={8}>
+                  {chartData.map((entry) => (
+                    <Cell key={`cell-${entry.type}`} fill={entry.fill} />
+                  ))}
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

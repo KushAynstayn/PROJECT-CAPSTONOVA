@@ -3,22 +3,28 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-const UploadWhitelistConfirm = () => {
+interface UploadWhitelistConfirmProps {
+  onConfirm: () => void;
+  disabled?: boolean;
+}
+
+const UploadWhitelistConfirm: React.FC<UploadWhitelistConfirmProps> = ({
+  onConfirm,
+  disabled = false,
+}) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // Open confirmation dialog when clicking Upload button
-  const handleUploadClick = () => {
+  const handleTriggerClick = () => {
     setShowConfirmDialog(true);
   };
 
   const handleConfirmYes = () => {
     setShowConfirmDialog(false);
-
-    // Simulate upload delay
-    setTimeout(() => {
-      setShowSuccessDialog(true);
-    }, 800);
+    onConfirm();
+    // Assuming the parent component will show a success message.
+    // If you want a modal confirmation, you can re-enable this.
+    // setShowSuccessDialog(true);
   };
 
   const handleConfirmNo = () => {
@@ -31,26 +37,24 @@ const UploadWhitelistConfirm = () => {
 
   return (
     <>
-      {/* Upload Button */}
       <Button
-        onClick={handleUploadClick}
-        className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-                   transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-                   active:shadow-lg active:shadow-gray-700/90"
+        onClick={handleTriggerClick}
+        disabled={disabled}
+        variant="outline"
+        size="sm"
       >
         Upload Whitelist
       </Button>
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
-         <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300 transform translate-x-30">
-
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+          <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300">
             <h3 className="text-lg font-bold mb-4 text-gray-800">
               Confirm Upload
             </h3>
             <p className="text-sm text-gray-600 mb-6 break-words">
-              Are you sure you want to upload the whitelist?
+              Are you sure you want to upload this whitelist entry?
             </p>
             <div className="flex justify-center space-x-4">
               <Button
@@ -70,11 +74,10 @@ const UploadWhitelistConfirm = () => {
         </div>
       )}
 
-      {/* Success Dialog */}
+      {/* Success Dialog (Optional) */}
       {showSuccessDialog && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300 transform translate-x-30">
-
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
+          <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300">
             <h3 className="text-lg font-bold mb-4 text-gray-800">
               Upload Status
             </h3>

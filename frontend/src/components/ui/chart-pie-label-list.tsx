@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
-// 1. Import ResponsiveContainer
+import { useMemo, useState, useEffect } from "react";
 import { LabelList, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader, // Import CardHeader
-  CardTitle,  // Import CardTitle
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
   ChartConfig,
@@ -17,75 +16,120 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { apiCall, ApiError } from "@/lib/api";
 
-export const description = "A pie chart with a legend in the footer";
+// Define an interface for the API response
+interface RoleData {
+  role: string;
+  count: number;
+}
 
-const chartData = [
-  { role: "leaders", count: 275, fill: "#800000" },
-  { role: "advisers", count: 200, fill: "#B33A3A" },
-];
+const PALETTE: { [key: string]: string } = {
+  Proponent: "#800000",
+  Adviser: "#B33A3A",
+};
 
-const chartConfig = {
-  count: {
-    label: "Count",
-  },
-  leaders: {
-    label: "Project Leaders",
-    color: "#800000",
-  },
-  advisers: {
-    label: "Project Advisers",
-    color: "#B33A3A",
-  },
-} satisfies ChartConfig;
+const LABEL_MAP: { [key: string]: string } = {
+  Proponent: "Project Leaders",
+  Adviser: "Project Advisers",
+};
 
 export function ChartPieLabelList() {
-  const totalMembers = useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.count, 0);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartConfig, setChartConfig] = useState<ChartConfig>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRoleDistribution = async () => {
+      try {
+        setIsLoading(true);
+        const data: RoleData[] = await apiCall("/util/role-distribution");
+
+        const formattedData = data.map((item) => ({
+          role: item.role,
+          count: item.count,
+          fill: PALETTE[item.role] || "#cccccc",
+        }));
+
+        const newChartConfig = data.reduce((config, item) => {
+          config[item.role] = {
+            label: LABEL_MAP[item.role] || item.role,
+            color: PALETTE[item.role] || "#cccccc",
+          };
+          return config;
+        }, {} as ChartConfig);
+        newChartConfig.count = { label: "Count" };
+
+        setChartData(formattedData);
+        setChartConfig(newChartConfig);
+        setError(null);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError("An unexpected error occurred.");
+        }
+        console.error("Failed to fetch role distribution:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRoleDistribution();
   }, []);
 
+  const totalMembers = useMemo(() => {
+    return chartData.reduce((acc, curr) => acc + curr.count, 0);
+  }, [chartData]);
+
   return (
-    // 2. Ensure the card is a flex container with a defined height
     <Card className="flex h-full flex-col">
       <CardHeader>
         <CardTitle>Role Distribution</CardTitle>
       </CardHeader>
-      
-      {/* 3. CardContent will now fill the available space */}
+
       <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          // 4. Remove fixed height and let it fill the container
-          className="h-full w-full"
-        >
-          {/* 5. Wrap the PieChart in a ResponsiveContainer */}
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Pie
-                data={chartData}
-                dataKey="count"
-                nameKey="role"
-                innerRadius="60%" // Use percentages for responsive radius
-                outerRadius="90%"
-              >
-                <LabelList
-                  dataKey="count"
-                  className="fill-white"
-                  stroke="none"
-                  fontSize={12}
-                  fontWeight="bold"
-                  formatter={(value: number) =>
-                    `${((value / totalMembers) * 100).toFixed(0)}%`
-                  }
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <p>Loading...</p>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : (
+          <ChartContainer config={chartConfig} className="h-full w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
                 />
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartContainer>
+                <Pie
+                  data={chartData}
+                  dataKey="count"
+                  nameKey="role"
+                  innerRadius="60%"
+                  outerRadius="90%"
+                >
+                  <LabelList
+                    dataKey="count"
+                    className="fill-white"
+                    stroke="none"
+                    fontSize={12}
+                    fontWeight="bold"
+                    formatter={(value: number) =>
+                      totalMembers > 0
+                        ? `${((value / totalMembers) * 100).toFixed(0)}%`
+                        : "0%"
+                    }
+                  />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm pt-4">
         <div className="flex w-full items-center justify-center gap-4">
@@ -96,7 +140,7 @@ export function ChartPieLabelList() {
                 style={{ backgroundColor: item.fill }}
               />
               <span className="font-medium text-muted-foreground">
-                {chartConfig[item.role as keyof typeof chartConfig].label}
+                {chartConfig[item.role as keyof typeof chartConfig]?.label}
               </span>
             </div>
           ))}
