@@ -11,16 +11,17 @@ import EditViewerView from "../../../../components/user-manage/editViewer";
 import EditProponentView from "../../../../components/user-manage/edit-proponent";
 import EditAdviserView from "../../../../components/user-manage/edit-adviser";
 import SuggestionView from "../../../../components/user-manage/view-suggestion";
-import proponentData from "@/data/proponent.json";
 import adviserData from "@/data/adviser.json";
 import { apiCall, ApiError } from "@/lib/api";
 
 type Role = "Viewer" | "Proponents" | "Advisers";
 
+// --- INTERFACE DEFINITIONS ---
 interface BaseUser {
   id: number;
   email: string;
 }
+
 interface Viewer extends BaseUser {
   first_name: string;
   last_name: string;
@@ -30,27 +31,34 @@ interface Viewer extends BaseUser {
     program: string;
   } | null;
 }
-interface Proponent extends BaseUser {
+
+// Interface for the list view, matching the new backend response
+interface ProponentListItem extends BaseUser {
   name: string;
-  idNumber: string;
-  adviser: string;
-  course: string;
-  capstoneTitle: string;
-  groupName: string;
+  id_number: string;
+  department: string;
   program: string;
+  adviser: string;
 }
+
+// Interface for the edit view, which might have a different structure
+interface ProponentEditData extends BaseUser {
+  first_name: string;
+  last_name: string;
+  student_id: string;
+  department: string;
+  program: string;
+  adviser_id: number | null;
+}
+
 interface Adviser extends BaseUser {
   name: string;
   idNumber: string;
   numberOfAdvisees: string;
   degreeProgram: string;
 }
-type User = Viewer | Proponent | Adviser;
 
-const mockData = {
-  Proponents: proponentData,
-  Advisers: adviserData,
-};
+type User = Viewer | ProponentListItem | ProponentEditData | Adviser;
 
 const placeholderText = {
   Viewer: "Search Viewers Here",
@@ -64,7 +72,7 @@ const AdminUserManagementPage = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [users, setUsers] = useState<Record<Role, User[] | []>>({
     Viewer: [],
-    Proponents: proponentData,
+    Proponents: [],
     Advisers: adviserData,
   });
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
@@ -85,34 +93,50 @@ const AdminUserManagementPage = () => {
     }
   }, [searchQuery]);
 
+  const fetchProponents = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/admin/proponents?search=${searchQuery}`);
+      setUsers((prevUsers) => ({ ...prevUsers, Proponents: data.data }));
+    } catch (err) {
+      setError("Failed to fetch proponents.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
   useEffect(() => {
     if (currentRole === "Viewer") {
       fetchViewers();
+    } else if (currentRole === "Proponents") {
+      fetchProponents();
     }
-  }, [currentRole, fetchViewers]);
+  }, [currentRole, searchQuery, fetchViewers, fetchProponents]);
 
-  const filteredUsers = useMemo(() => {
-    if (currentRole !== "Viewer") {
-      let currentUsers = users[currentRole] as (Proponent | Adviser)[];
-      if (searchQuery) {
-        const lowerCaseQuery = searchQuery.toLowerCase();
-        return currentUsers.filter((user) =>
-          Object.values(user).some((val) =>
-            String(val).toLowerCase().includes(lowerCaseQuery)
-          )
+  const handleEditUser = async (userId: number) => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      let userToEdit;
+      if (currentRole === "Proponents") {
+        userToEdit = await apiCall(`/admin/proponents/${userId}`);
+      } else {
+        // Logic for other roles if they also need fetching for edit
+        userToEdit = (users[currentRole] as User[]).find(
+          (user) => user.id === userId
         );
       }
-      return currentUsers;
-    }
-    return users.Viewer;
-  }, [currentRole, searchQuery, users]);
 
-  const handleEditUser = (userId: number) => {
-    const userToEdit = (users[currentRole] as User[]).find(
-      (user) => user.id === userId
-    );
-    if (userToEdit) {
-      setEditingUser(userToEdit);
+      if (userToEdit) {
+        setEditingUser(userToEdit);
+      } else {
+        setError("Could not find user data to edit.");
+      }
+    } catch (err) {
+      setError("Failed to fetch user details for editing.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -124,6 +148,13 @@ const AdminUserManagementPage = () => {
       } catch (err) {
         setError("Failed to restrict viewer.");
       }
+    } else if (currentRole === "Proponents") {
+      try {
+        await apiCall(`/admin/proponents/${userId}`, "DELETE");
+        fetchProponents();
+      } catch (err) {
+        setError("Failed to restrict proponent.");
+      }
     }
   };
 
@@ -132,9 +163,18 @@ const AdminUserManagementPage = () => {
   };
 
   const handleSaveUser = async (updatedUser: User) => {
+    setEditingUser(null);
+    setError(null);
+    setIsLoading(true);
+
+    let endpoint = "";
+    let payload: any = {};
+    let fetchAction: (() => void) | null = null;
+
     if (currentRole === "Viewer") {
+      endpoint = `/admin/viewers/${updatedUser.id}`;
       const viewerData = updatedUser as Viewer;
-      const payload = {
+      payload = {
         first_name: viewerData.first_name,
         last_name: viewerData.last_name,
         email: viewerData.email,
@@ -142,22 +182,32 @@ const AdminUserManagementPage = () => {
         department: viewerData.user_detail?.department,
         program: viewerData.user_detail?.program,
       };
-
-      try {
-        await apiCall(`/admin/viewers/${updatedUser.id}`, "PUT", payload);
-        fetchViewers();
-      } catch (err) {
-        setError("Failed to update viewer.");
-      }
-    } else {
-      setUsers((prevUsers) => {
-        const newUsersForRole = (prevUsers[currentRole] as User[]).map((user) =>
-          user.id === updatedUser.id ? updatedUser : user
-        );
-        return { ...prevUsers, [currentRole]: newUsersForRole };
-      });
+      fetchAction = fetchViewers;
+    } else if (currentRole === "Proponents") {
+      endpoint = `/admin/proponents/${updatedUser.id}`;
+      const proponentData = updatedUser as ProponentEditData;
+      payload = {
+        first_name: proponentData.first_name,
+        last_name: proponentData.last_name,
+        email: proponentData.email,
+        student_id: proponentData.student_id,
+        department: proponentData.department,
+        program: proponentData.program,
+        adviser_id: proponentData.adviser_id,
+      };
+      fetchAction = fetchProponents;
     }
-    setEditingUser(null);
+
+    try {
+      if (endpoint) {
+        await apiCall(endpoint, "PUT", payload);
+        if (fetchAction) fetchAction();
+      }
+    } catch (err) {
+      setError(`Failed to update ${currentRole}.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleViewSuggestions = (adviser: Adviser) => {
@@ -187,12 +237,10 @@ const AdminUserManagementPage = () => {
         onSearchChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Proponents}
-        filteredUsers={filteredUsers as Proponent[]}
+        filteredUsers={users.Proponents as ProponentListItem[]}
         onEditUser={handleEditUser}
-        startDate={undefined}
-        endDate={undefined}
-        onStartDateChange={() => {}}
-        onEndDateChange={() => {}}
+        onDeleteUser={handleDeleteUser}
+        isLoading={isLoading}
       />
     ),
     Advisers: (
@@ -201,13 +249,17 @@ const AdminUserManagementPage = () => {
         onSearchChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Advisers}
-        filteredUsers={filteredUsers as Adviser[]}
+        filteredUsers={users.Advisers as Adviser[]}
         onEditUser={handleEditUser}
+        onViewSuggestions={handleViewSuggestions}
         startDate={undefined}
         endDate={undefined}
-        onStartDateChange={() => {}}
-        onEndDateChange={() => {}}
-        onViewSuggestions={handleViewSuggestions}
+        onStartDateChange={function (date: Date | undefined): void {
+          throw new Error("Function not implemented.");
+        }}
+        onEndDateChange={function (date: Date | undefined): void {
+          throw new Error("Function not implemented.");
+        }}
       />
     ),
   };
@@ -242,7 +294,7 @@ const AdminUserManagementPage = () => {
               )}
               {currentRole === "Proponents" && (
                 <EditProponentView
-                  user={editingUser as Proponent}
+                  user={editingUser as ProponentEditData}
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />

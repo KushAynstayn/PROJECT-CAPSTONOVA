@@ -24,6 +24,7 @@ use App\Http\Controllers\API\User\NotificationController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Admin\UserProponentController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
 use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
@@ -156,12 +157,24 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     // End Whitelist Routes
     // ============================
 
+    // ============================
+    // Viewer Management Routes (Admin)
+    // These routes allow admins to manage viewers.
+    // ============================
     Route::get('viewers', [UserViewerController::class, 'index'])->name('viewers.index');
     Route::post('viewers', [UserViewerController::class, 'store'])->name('viewers.store');
     Route::get('viewers/{id}', [UserViewerController::class, 'show'])->name('viewers.show');
     Route::put('viewers/{id}', [UserViewerController::class, 'update'])->name('viewers.update');
     Route::delete('viewers/{id}', [UserViewerController::class, 'destroy'])->name('viewers.destroy');
+    // ============================
+    // End Viewer Management Routes
+    // ============================
 
+    Route::get('proponents', [UserProponentController::class, 'index'])->name('proponents.index');
+    Route::post('proponents', [UserProponentController::class, 'store'])->name('proponents.store');
+    Route::get('proponents/{id}', [UserProponentController::class, 'show'])->name('proponents.show');
+    Route::put('proponents/{id}', [UserProponentController::class, 'update'])->name('proponents.update');
+    Route::delete('proponents/{id}', [UserProponentController::class, 'destroy'])->name('proponents.destroy');
 
     // ============================
     // Adviser Routes (Admin)
