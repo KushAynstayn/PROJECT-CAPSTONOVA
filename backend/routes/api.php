@@ -212,7 +212,10 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     // Route::get('advisers', [AdviserController::class, 'index'])
     //     ->name('admin.advisers.index');
 
-    // Capstone Project Routes
+    // Capstone Project Management
+    Route::get('capstone-projects', [CapstoneProjectController::class, 'index'])
+        ->name('admin.capstone-projects.index');
+
     Route::patch('capstone-projects/{project}/archive', [CapstoneProjectController::class, 'archive'])
         ->name('admin.capstone-projects.archive');
 

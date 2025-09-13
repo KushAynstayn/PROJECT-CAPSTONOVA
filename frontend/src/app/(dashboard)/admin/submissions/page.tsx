@@ -1,228 +1,423 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import ProjectCard, { type Project } from '@/components/ui/ProjectCardSub';
-import ArchivedProjectCard, { type ArchivedProject } from '@/components/ui/ArchivedProjectSub';
-import { DownloadModal } from '@/components/ui/AllModal';
+import React, { useState, useEffect, useCallback } from "react";
+import ProjectCard, { type Project } from "@/components/ui/ProjectCardSub";
+import ArchivedProjectCard, {
+  type ArchivedProject,
+} from "@/components/ui/ArchivedProjectSub";
+import { DownloadModal } from "@/components/ui/AllModal";
 import { YearPicker } from "@/components/ui/year-picker";
 import { Button } from "@/components/ui/button";
-
-// A simple search icon component
-const SearchIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-);
+import { apiCall, ApiError } from "@/lib/api";
+import PdfViewer from "@/components/ui/pdf-viewer";
+import { ArrowLeft, Search, X } from "lucide-react";
+import Pagination from "@/components/ui/pagination";
 
 // New component for the details page
-const ProjectDetailsPage = ({ onGoBack }: { onGoBack: () => void }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const handleSourceCodeClick = () => setIsModalOpen(true);
-    const handleModalConfirm = () => setIsModalOpen(false);
-    const handleModalCancel = () => setIsModalOpen(false);
+const ProjectDetailsPage = ({
+  project,
+  onGoBack,
+}: {
+  project: any;
+  onGoBack: () => void;
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewPdf, setViewPdf] = useState(false);
 
+  const handleSourceCodeClick = () => {
+    if (project.source_code_id) {
+      setIsModalOpen(true);
+    } else {
+      alert("No source code available for this project.");
+    }
+  };
+
+  const handleManuscriptClick = () => {
+    if (project.manuscript_id) {
+      setViewPdf(true);
+    } else {
+      alert("No manuscript available for this project.");
+    }
+  };
+
+  const handleModalConfirm = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/user/download/source-code/${project.source_code_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${project.title.replace(/\s+/g, "_")}_source_code.tar`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download source code.");
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleModalCancel = () => setIsModalOpen(false);
+
+  if (viewPdf) {
     return (
-        <div className="p-4 sm:p-6 md:p-0 bg-white min-h-screen font-sans">
-            <div className="flex items-center mb-8">
-                <button onClick={onGoBack} className="mr-4 text-gray-600 hover:text-gray-900 transition-colors" aria-label="Go back">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                </button>
-                <h1 className="text-2xl font-bold text-gray-800">Project Details</h1>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 md:p-8 bg-gray-100 rounded-lg shadow-inner">
-                <div className="flex flex-col items-center">
-                    <button className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 transition-colors duration-200">
-                        <svg className="w-16 h-16 text-yellow-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
-                        </svg>
-                        <span className="text-lg font-semibold text-gray-800">Manuscript</span>
-                    </button>
-                </div>
-                <div className="flex flex-col items-center">
-                    <button onClick={handleSourceCodeClick} className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 transition-colors duration-200">
-                        <svg className="w-16 h-16 text-yellow-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
-                        </svg>
-                        <span className="text-lg font-semibold text-gray-800">Source Code</span>
-                    </button>
-                </div>
-            </div>
-            <DownloadModal isOpen={isModalOpen} onCancel={handleModalCancel} onConfirm={handleModalConfirm} />
+      <div className="h-screen flex flex-col">
+        <div className="flex-shrink-0 p-4 border-b">
+          <Button variant="ghost" onClick={() => setViewPdf(false)}>
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Details
+          </Button>
         </div>
+        <div className="flex-grow">
+          <PdfViewer url={`/user/stream/manuscript/${project.manuscript_id}`} />
+        </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 md:p-0 bg-white min-h-screen font-sans">
+      <div className="flex items-center mb-8">
+        <button
+          onClick={onGoBack}
+          className="mr-4 text-gray-600 hover:text-gray-900 transition-colors"
+          aria-label="Go back"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800">{project.title}</h1>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 md:p-8 bg-gray-100 rounded-lg shadow-inner">
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleManuscriptClick}
+            className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <svg
+              className="w-16 h-16 text-yellow-500"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
+            </svg>
+            <span className="text-lg font-semibold text-gray-800">
+              Manuscript
+            </span>
+          </button>
+        </div>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleSourceCodeClick}
+            className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <svg
+              className="w-16 h-16 text-yellow-500"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
+            </svg>
+            <span className="text-lg font-semibold text-gray-800">
+              Source Code
+            </span>
+          </button>
+        </div>
+      </div>
+      <DownloadModal
+        isOpen={isModalOpen}
+        onCancel={handleModalCancel}
+        onConfirm={handleModalConfirm}
+      />
+    </div>
+  );
 };
 
 // The main component that renders both views
 const AdminSubmissionsPage = () => {
-    const [view, setView] = useState('submissions');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [view, setView] = useState<"submissions" | "archived" | "details">(
+    "submissions"
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [archivedProjects, setArchivedProjects] = useState<ArchivedProject[]>(
+    []
+  );
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+  });
 
-    const currentYear = new Date().getFullYear();
-    const [startYear, setStartYear] = useState<number | undefined>(2020);
-    const [endYear, setEndYear] = useState<number | undefined>(currentYear);
-    const fromYear = 2020;
-    const toYear = currentYear;
+  const [startYear, setStartYear] = useState<number | undefined>(undefined);
+  const [endYear, setEndYear] = useState<number | undefined>(undefined);
+  const fromYear = 2020;
+  const toYear = new Date().getFullYear();
 
-    const mockProjects: Project[] = [
-        { id: 1, title: 'PROJECT CAPSTONOVA', leader: 'Nino John Arado', yearAndSection: 'BSIS 3B', adviser: 'Angelbert Maganoy', schoolYear: '2023-2024' },
-        { id: 2, title: 'INVENTORY MASTER', leader: 'Jane Doe', yearAndSection: 'BSCS 4A', adviser: 'John Smith', schoolYear: '2023-2024' },
-        { id: 3, title: 'DATA VISUALIZER', leader: 'Peter Jones', yearAndSection: 'BSIT 3C', adviser: 'Emily White', schoolYear: '2022-2023' },
-        { id: 4, title: 'E-COMMERCE PLATFORM', leader: 'Sarah Miller', yearAndSection: 'BSIS 4B', adviser: 'Michael Brown', schoolYear: '2022-2023' },
-        { id: 5, title: 'MOBILE LEARNING APP', leader: 'David Wilson', yearAndSection: 'BSCS 3A', adviser: 'Jessica Green', schoolYear: '2021-2022' },
-        { id: 6, title: 'AI CHATBOT', leader: 'Chris Taylor', yearAndSection: 'BSIT 4D', adviser: 'Robert Black', schoolYear: '2021-2022' },
-    ];
-    const mockArchivedProjects: ArchivedProject[] = [
-        { id: 1, title: 'Research and Capstone Project Electronic Repository', proponents: ['Proponent 1', 'Proponent 2'], adviser: 'Sample Name', date: 'March 26, 2024', },
-        { id: 2, title: 'Research and Capstone Project Electronic Repository', proponents: ['Proponent A', 'Proponent B'], adviser: 'Another Sample', date: 'February 15, 2024', },
-    ];
+  const fetchProjects = useCallback(
+    async (page = 1) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          per_page: "6",
+        });
 
-    const handleStartYearChange = (year: number | undefined) => {
-        setStartYear(year);
-        if (endYear && year && endYear < year) {
-            setEndYear(undefined);
+        if (searchTerm) params.append("search", searchTerm);
+        if (startYear) params.append("start_year", String(startYear));
+        if (endYear) params.append("end_year", String(endYear));
+
+        const endpoint =
+          view === "submissions"
+            ? "/admin/capstone-projects"
+            : "/admin/capstone-projects/archived";
+
+        const response = await apiCall(`${endpoint}?${params.toString()}`);
+
+        if (view === "submissions") {
+          setProjects(response.data);
+        } else {
+          setArchivedProjects(response.data);
         }
-    };
 
-    const handleResetYears = () => {
-        setStartYear(undefined);
-        setEndYear(undefined);
-    };
+        setPagination({
+          currentPage: response.current_page,
+          totalPages: response.last_page,
+          totalItems: response.total,
+        });
+      } catch (err) {
+        setError("Failed to fetch projects.");
+        console.error("Error fetching projects:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [searchTerm, startYear, endYear, view]
+  );
 
-    const handleSearch = () => console.log("Searching for:", searchTerm);
-    const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') handleSearch();
-    };
-    const showArchivedProjects = () => setView('archived');
-    const showSubmissions = () => setView('submissions');
-    const handleViewDetails = (id: number) => {
-        setSelectedProjectId(id);
-        setView('details');
-    };
-    const handleGoBack = () => {
-        setSelectedProjectId(null);
-        setView('submissions');
-    };
+  useEffect(() => {
+    fetchProjects(1);
+  }, [fetchProjects]);
 
-    const filteredProjects = mockProjects.filter(project => {
-        const searchLower = searchTerm.toLowerCase();
-        const matchesSearch = (
-            project.title.toLowerCase().includes(searchLower) ||
-            project.leader.toLowerCase().includes(searchLower) ||
-            project.yearAndSection.toLowerCase().includes(searchLower) ||
-            project.adviser.toLowerCase().includes(searchLower)
-        );
+  const handlePageChange = (page: number) => {
+    fetchProjects(page);
+  };
 
-        if (!matchesSearch) return false;
+  const handleStartYearChange = (year: number | undefined) => {
+    setStartYear(year);
+  };
 
-        const projectStartYear = parseInt(project.schoolYear.split('-')[0], 10);
-        return startYear && endYear ? (projectStartYear >= startYear && projectStartYear <= endYear) : true;
-    });
+  const handleEndYearChange = (year: number | undefined) => {
+    setEndYear(year);
+  };
 
-    const filteredArchivedProjects = mockArchivedProjects.filter(project =>
-        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.proponents.join(' ').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const handleResetYears = () => {
+    setStartYear(undefined);
+    setEndYear(undefined);
+  };
 
-    let content;
-    switch (view) {
-        case 'submissions':
-            content = (
-                <>
-                    <div className="w-full bg-[#6b0000] text-white text-center py-3 font-bold text-lg tracking-wider rounded-t-md">
-                        APPROVED PROJECT SUBMISSION
-                    </div>
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-white shadow-md rounded-b-md border-t-0 border-gray-200 mb-8">
-                        <div className="relative w-full md:w-auto flex-grow">
-                            <input
-                                type="text"
-                                placeholder="Search here"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyPress={handleKeyPress}
-                                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
-                            />
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                                <button onClick={handleSearch} className="p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full hover:bg-gray-100" aria-label="Search">
-                                    <SearchIcon />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <Button
-                                onClick={showArchivedProjects}
-                                className="bg-[#5c3c20] hover:bg-[#4a301a] text-white font-semibold px-6 py-2 rounded-full shadow transition-colors duration-200 whitespace-nowrap"
-                            >
-                                Archived Projects
-                            </Button>
-                            <div className="flex items-center relative gap-2">
-                                <YearPicker year={startYear} setYear={handleStartYearChange} placeholder="Start year" fromYear={fromYear} toYear={toYear} />
-                                <YearPicker year={endYear} setYear={setEndYear} placeholder="End year" fromYear={startYear || fromYear} toYear={toYear} disabled={!startYear} />
-                                {(startYear || endYear) && (
-                                    <Button
-                                        variant="ghost"
-                                        onClick={handleResetYears}
-                                        className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200"
-                                        aria-label="Clear years"
-                                    >
-                                        &times;
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    {filteredProjects.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredProjects.map(project => (
-                                <ProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-center text-gray-500 mt-8">No projects found.</p>
-                    )}
-                </>
-            );
-            break;
-        case 'archived':
-            content = (
-                <>
-                    <div className="flex items-center mb-6">
-                        <button onClick={showSubmissions} className="mr-4 text-gray-600 hover:text-gray-900 transition-colors" aria-label="Go back">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </button>
-                        <h1 className="text-2xl font-bold text-gray-800">Archived Projects</h1>
-                    </div>
-                    <div className="relative mb-6">
-                        <input type="text" placeholder="Search here" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400" />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3"> <SearchIcon /> </div>
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Results</h2>
-                    <div className="space-y-4">
-                        {filteredArchivedProjects.length > 0 ? (
-                            filteredArchivedProjects.map((project) => (
-                                <ArchivedProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
-                            ))
-                        ) : ( <p className="text-center text-gray-500">No archived projects found.</p> )}
-                    </div>
-                </>
-            );
-            break;
-        case 'details':
-            content = <ProjectDetailsPage onGoBack={handleGoBack} />;
-            break;
-        default:
-            content = <p>Error: Unknown view state</p>;
+  const handleSearch = () => {
+    fetchProjects(1);
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      handleSearch();
     }
+  };
 
-    return (
-        <div className="p-4 sm:p-6 md:p-0 bg-white min-h-screen">
-            {content}
-        </div>
-    );
+  const showArchivedProjects = () => setView("archived");
+  const showSubmissions = () => setView("submissions");
+
+  const handleViewDetails = (project: Project | ArchivedProject) => {
+    setSelectedProject(project);
+    setView("details");
+  };
+
+  const handleGoBack = () => {
+    setSelectedProject(null);
+    setView(view === "details" ? "submissions" : view);
+  };
+
+  const handleArchive = async (projectId: number) => {
+    try {
+      await apiCall(`/admin/capstone-projects/${projectId}/archive`, "PATCH");
+      fetchProjects(pagination.currentPage);
+    } catch (error) {
+      alert("Failed to archive project.");
+    }
+  };
+
+  const handleRestore = async (projectId: number) => {
+    try {
+      await apiCall(`/admin/capstone-projects/${projectId}/unarchive`, "PATCH");
+      fetchProjects(pagination.currentPage);
+    } catch (error) {
+      alert("Failed to restore project.");
+    }
+  };
+
+  let content;
+  switch (view) {
+    case "submissions":
+    case "archived":
+      const currentData = view === "submissions" ? projects : archivedProjects;
+      content = (
+        <>
+          <div className="w-full bg-[#6b0000] text-white text-center py-3 font-bold text-lg tracking-wider rounded-t-md">
+            {view === "submissions"
+              ? "APPROVED PROJECT SUBMISSION"
+              : "ARCHIVED PROJECTS"}
+          </div>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-white shadow-md rounded-b-md border-t-0 border-gray-200 mb-8">
+            <div className="relative w-full md:w-auto flex-grow">
+              <input
+                type="text"
+                placeholder="Search by title, abstract, or names"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                <button
+                  onClick={handleSearch}
+                  className="p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded-full hover:bg-gray-100"
+                  aria-label="Search"
+                >
+                  <Search className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <Button
+                onClick={
+                  view === "submissions"
+                    ? showArchivedProjects
+                    : showSubmissions
+                }
+                className="bg-[#5c3c20] hover:bg-[#4a301a] text-white font-semibold px-6 py-2 rounded-full shadow transition-colors duration-200 whitespace-nowrap"
+              >
+                {view === "submissions"
+                  ? "View Archived Projects"
+                  : "View Active Projects"}
+              </Button>
+              <div className="flex items-center gap-2">
+                <YearPicker
+                  year={startYear}
+                  setYear={handleStartYearChange}
+                  placeholder="Start year"
+                  fromYear={fromYear}
+                  toYear={toYear}
+                />
+                <span className="text-gray-500">-</span>
+                <YearPicker
+                  year={endYear}
+                  setYear={handleEndYearChange}
+                  placeholder="End year"
+                  fromYear={startYear || fromYear}
+                  toYear={toYear}
+                />
+                {(startYear !== undefined || endYear !== undefined) && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleResetYears}
+                    className="h-8 w-8 p-0 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                    aria-label="Clear years"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <p>Loading projects...</p>
+            </div>
+          ) : error ? (
+            <p className="text-red-500 text-center py-8">{error}</p>
+          ) : currentData.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentData.map((project) =>
+                  view === "submissions" ? (
+                    <ProjectCard
+                      key={project.id}
+                      project={project as Project}
+                      onViewDetails={handleViewDetails}
+                      onArchive={handleArchive}
+                    />
+                  ) : (
+                    <ArchivedProjectCard
+                      key={project.id}
+                      project={project as ArchivedProject}
+                      onViewDetails={handleViewDetails}
+                      onRestore={handleRestore}
+                    />
+                  )
+                )}
+              </div>
+              <div className="mt-8">
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-gray-500 mt-8 py-8">
+              {searchTerm || startYear || endYear
+                ? "No projects match your search criteria."
+                : "No projects found."}
+            </p>
+          )}
+        </>
+      );
+      break;
+    case "details":
+      content = (
+        <ProjectDetailsPage project={selectedProject} onGoBack={handleGoBack} />
+      );
+      break;
+    default:
+      content = <p>Error: Unknown view state</p>;
+  }
+
+  return (
+    <div className="p-4 sm:p-6 md:p-8 bg-white min-h-screen">{content}</div>
+  );
 };
 
 export default AdminSubmissionsPage;
