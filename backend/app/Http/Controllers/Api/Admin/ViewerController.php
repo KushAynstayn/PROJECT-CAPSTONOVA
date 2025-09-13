@@ -15,11 +15,15 @@ class ViewerController extends Controller
     /**
      * Display a listing of the viewers.
      */
+    /**
+     * Display a listing of the viewers.
+     */
     public function index(Request $request)
     {
         // For a more robust implementation, consider using a dedicated API Resource class.
         $query = User::with('userDetail')
-            ->where('role', 'Viewer');
+            ->where('role', 'Viewer')
+            ->where('status', 'active');
 
         // Handle search query
         if ($request->has('search')) {
