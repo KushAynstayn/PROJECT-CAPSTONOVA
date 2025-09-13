@@ -11,11 +11,13 @@ use Illuminate\Validation\Rule;
 class UserAdviserController extends Controller
 {
     /**
-     * Display a listing of all advisers.
+     * Display a listing of all advisers, with optional name filtering.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $query = "
+        $nameQuery = $request->query('name');
+
+        $baseQuery = "
             SELECT
                 u.id,
                 u.first_name,
@@ -29,7 +31,14 @@ class UserAdviserController extends Controller
                 u.role = ?
         ";
 
-        $advisers = DB::select($query, ['Adviser']);
+        $bindings = ['Adviser'];
+
+        if ($nameQuery) {
+            $baseQuery .= " AND CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) LIKE ?";
+            $bindings[] = '%' . $nameQuery . '%';
+        }
+
+        $advisers = DB::select($baseQuery, $bindings);
 
         // Format the response
         $formattedAdvisers = array_map(function ($adviser) {

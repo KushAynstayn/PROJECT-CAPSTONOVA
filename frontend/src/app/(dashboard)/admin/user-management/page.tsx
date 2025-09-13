@@ -121,7 +121,7 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/admin/advisers?search=${searchQuery}`);
+      const data = await apiCall(`/admin/advisers?name=${searchQuery}`);
       setUsers((prev) => ({ ...prev, Advisers: data }));
     } catch (err) {
       setError("Failed to fetch advisers.");
