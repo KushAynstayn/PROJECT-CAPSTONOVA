@@ -2,23 +2,12 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-// Corrected the User interface to be consistent with other files
 interface User {
   id: number;
-  name: string;
-  idNumber: string;
-  email: string;
-  numberOfAdvisees: string;
-  // Add the new degreeProgram field
-  degreeProgram: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
 }
 
 interface EditAdviserViewProps {
@@ -28,148 +17,82 @@ interface EditAdviserViewProps {
 }
 
 const EditAdviserView = ({ user, onSave, onCancel }: EditAdviserViewProps) => {
-  // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
 
-  // Handler for standard text inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // For number input, ensure value is parsed correctly
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "numberOfAdvisees" ? Number(value) : value,
-    }));
-  };
-
-  // Handler for the ShadCN Select component
-  const handleSelectChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, degreeProgram: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = () => {
     onSave(formData);
   };
-  
-  const degreePrograms = ["BSIS", "BSIT", "BIT-CT"];
 
   return (
-    // Main container with border, rounded corners, and shadow
     <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
-      {/* 1. IMAGE INSERTED HERE */}
       <img
         src="/images/ctubldg.png"
         alt="Header"
         className="w-full rounded-t-lg object-cover"
         style={{ height: "1.3in" }}
       />
-
       <div className="p-8">
-        {/* Centered title with a line underneath */}
         <div className="mb-8">
           <h2 className="text-center font-serif text-2xl uppercase tracking-widest text-gray-700">
             Edit Adviser Information
           </h2>
           <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
         </div>
-
-        {/* Form Fields using a grid layout for alignment */}
-        <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
-          {/* REVISED LAYOUT for Full Name and Email using Flexbox */}
+        <div className="grid grid-cols-1 gap-x-6 gap-y-4">
           <div>
             <label
-              htmlFor="name"
+              htmlFor="first_name"
               className="block text-sm font-semibold text-gray-600"
             >
-              Full Name
+              First Name
             </label>
             <input
-              id="name"
+              id="first_name"
               type="text"
-              name="name"
-              value={formData.name}
+              name="first_name"
+              value={formData.first_name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
-
-          {/* ID Number and Course remain the same as they align correctly in the grid */}
           <div>
             <label
-              htmlFor="idNumber"
+              htmlFor="middle_name"
               className="block text-sm font-semibold text-gray-600"
             >
-              ID Number
+              Middle Name (Optional)
             </label>
             <input
-              id="idNumber"
+              id="middle_name"
               type="text"
-              name="idNumber"
-              value={formData.idNumber}
+              name="middle_name"
+              value={formData.middle_name || ""}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
-
           <div>
             <label
-              htmlFor="email"
+              htmlFor="last_name"
               className="block text-sm font-semibold text-gray-600"
             >
-              Email
+              Last Name
             </label>
             <input
-              id="email"
-              type="email"
-              name="email"
-              value={formData.email}
+              id="last_name"
+              type="text"
+              name="last_name"
+              value={formData.last_name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
-          </div>
-
-          {/* Add a field for numberOfAdvisees */}
-          <div>
-            <label
-              htmlFor="numberOfAdvisees"
-              className="block text-sm font-semibold text-gray-600"
-            >
-              Number of Advisees
-            </label>
-            <input
-              id="numberOfAdvisees"
-              type="number"
-              name="numberOfAdvisees"
-              value={formData.numberOfAdvisees}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
-            />
-          </div>
-          
-          {/* Degree Program Dropdown */}
-          <div>
-            <label
-              htmlFor="degreeProgram"
-              className="block text-sm font-semibold text-gray-600"
-            >
-              Degree Program
-            </label>
-            <Select
-              value={formData.degreeProgram}
-              onValueChange={handleSelectChange}
-            >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
-                <SelectValue placeholder="Select Degree Program" />
-              </SelectTrigger>
-              <SelectContent>
-                {degreePrograms.map(program => (
-                  <SelectItem key={program} value={program}>{program}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
-
-        {/* Action Buttons with distinct styling and layout */}
         <div className="mt-8 flex justify-end gap-x-4">
           <Button
             variant="outline"

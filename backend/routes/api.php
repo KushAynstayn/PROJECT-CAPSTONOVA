@@ -18,9 +18,10 @@ use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
 use App\Http\Controllers\Api\Admin\UserViewerController;
 use App\Http\Controllers\Api\Util\ProjectTypeController;
+use App\Http\Controllers\Api\Admin\UserAdviserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
-use App\Http\Controllers\API\User\NotificationController;
 
+use App\Http\Controllers\API\User\NotificationController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
@@ -170,25 +171,46 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     // End Viewer Management Routes
     // ============================
 
+    //Proponents
     Route::get('proponents', [UserProponentController::class, 'index'])->name('proponents.index');
     Route::post('proponents', [UserProponentController::class, 'store'])->name('proponents.store');
     Route::get('proponents/{id}', [UserProponentController::class, 'show'])->name('proponents.show');
     Route::put('proponents/{id}', [UserProponentController::class, 'update'])->name('proponents.update');
     Route::delete('proponents/{id}', [UserProponentController::class, 'destroy'])->name('proponents.destroy');
+    //End proponents
+
+
+    //Advisers route
+    // Adviser Management Routes
+    Route::get('/advisers', [UserAdviserController::class, 'index'])->name('advisers.index');
+    Route::post('/advisers', [UserAdviserController::class, 'store'])->name('advisers.store');
+    Route::get('/advisers/{id}', [UserAdviserController::class, 'show'])->name('advisers.show');
+    Route::put('/advisers/{id}', [UserAdviserController::class, 'update'])->name('advisers.update');
+    Route::delete(
+        '/advisers/{id}',
+        [UserAdviserController::class, 'destroy']
+    )->name('advisers.destroy');
+
+    // Adviser Suggestions Route
+    Route::get(
+        '/advisers/{id}/suggestions',
+        [UserAdviserController::class, 'adviserSuggestions']
+    )->name('advisers.suggestions');
+    //End advisers route
 
     // ============================
     // Adviser Routes (Admin)
     // These routes handle all adviser-related operations for admins.
     // ============================
 
-    Route::post('advisers', [AdviserController::class, 'store'])
-        ->name('admin.advisers.store');
+    // Route::post('advisers', [AdviserController::class, 'store'])
+    //     ->name('admin.advisers.store');
 
-    Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict'])
-        ->name('admin.advisers.restrict');
+    // Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict'])
+    //     ->name('admin.advisers.restrict');
 
-    Route::get('advisers', [AdviserController::class, 'index'])
-        ->name('admin.advisers.index');
+    // Route::get('advisers', [AdviserController::class, 'index'])
+    //     ->name('admin.advisers.index');
 
     // Capstone Project Routes
     Route::patch('capstone-projects/{project}/archive', [CapstoneProjectController::class, 'archive'])
