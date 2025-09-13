@@ -94,14 +94,20 @@ class UserViewerController extends Controller
     /**
      * Update the specified viewer in storage.
      */
+    /**
+     * Update the specified viewer in storage using raw SQL.
+     * Creates a user detail record if one does not exist.
+     */
     public function update(Request $request, $id)
     {
+        // First, find the viewer to ensure they exist.
         $viewer = User::where('role', 'Viewer')->find($id);
 
         if (!$viewer) {
             return response()->json(['message' => 'Viewer not found.'], 404);
         }
 
+        // Validate the incoming data.
         $validatedData = $request->validate([
             'first_name' => 'sometimes|required|string|max:100',
             'last_name' => 'sometimes|required|string|max:100',
@@ -112,17 +118,62 @@ class UserViewerController extends Controller
             'adviser_id' => 'sometimes|required|integer|exists:users,id',
         ]);
 
-        DB::transaction(function () use ($validatedData, $viewer, $request) {
-            if ($request->hasAny(['first_name', 'last_name', 'email'])) {
-                $viewer->update($request->only(['first_name', 'last_name', 'email']));
+        DB::transaction(function () use ($validatedData, $id, $viewer) {
+            // Prepare and execute the update for the 'users' table
+            $userFieldsToUpdate = [];
+            $userBindings = [];
+
+            if (isset($validatedData['first_name'])) {
+                $userFieldsToUpdate[] = 'first_name = ?';
+                $userBindings[] = $validatedData['first_name'];
+            }
+            if (isset($validatedData['last_name'])) {
+                $userFieldsToUpdate[] = 'last_name = ?';
+                $userBindings[] = $validatedData['last_name'];
+            }
+            if (isset($validatedData['email'])) {
+                $userFieldsToUpdate[] = 'email = ?';
+                $userBindings[] = $validatedData['email'];
             }
 
-            if ($viewer->userDetail && $request->hasAny(['student_id', 'department', 'program', 'adviser_id'])) {
-                $viewer->userDetail->update($request->only(['student_id', 'department', 'program', 'adviser_id']));
+            if (!empty($userFieldsToUpdate)) {
+                $userBindings[] = $id;
+                $sql = 'UPDATE users SET ' . implode(', ', $userFieldsToUpdate) . ' WHERE id = ?';
+                DB::update($sql, $userBindings);
+            }
+
+            // Check if any user detail fields were provided
+            $userDetailData = array_intersect_key($validatedData, array_flip(['student_id', 'department', 'program', 'adviser_id']));
+
+            if (!empty($userDetailData)) {
+                // Check if a UserDetail record already exists
+                if ($viewer->userDetail) {
+                    // --- UPDATE an existing record ---
+                    $bindings = array_values($userDetailData);
+                    $fieldsToUpdate = array_map(fn($key) => "$key = ?", array_keys($userDetailData));
+                    $bindings[] = $id;
+                    $sql = 'UPDATE user_details SET ' . implode(', ', $fieldsToUpdate) . ' WHERE user_id = ?';
+                    DB::update($sql, $bindings);
+                } else {
+                    // --- CREATE a new record ---
+                    $userDetailData['user_id'] = $id;
+                    $userDetailData['created_at'] = now();
+                    $userDetailData['updated_at'] = now();
+
+                    $columns = implode(', ', array_keys($userDetailData));
+                    $placeholders = implode(', ', array_fill(0, count($userDetailData), '?'));
+                    $bindings = array_values($userDetailData);
+
+                    $sql = "INSERT INTO user_details ($columns) VALUES ($placeholders)";
+                    DB::insert($sql, $bindings);
+                }
             }
         });
 
-        return response()->json($viewer->load('userDetail'));
+        // Re-fetch the user with updated details to return the fresh data
+        $updatedViewer = User::with('userDetail')->find($id);
+
+        return response()->json($updatedViewer);
     }
 
     /**
