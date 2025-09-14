@@ -35,7 +35,7 @@ interface PaginatedSuggestions {
 }
 
 interface AdviserSuggestionsDetailsProps {
-  adviser: { id?: number; name: string };
+  adviser: { id: number; name: string };
   onGoBack: () => void;
 }
 
@@ -55,28 +55,28 @@ const AdviserSuggestionsDetails = ({
 
   const fetchAdviserSuggestions = useCallback(
     async (page = 1) => {
+      if (!adviser.id) {
+        setError("Adviser ID is missing.");
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
       try {
         const params = new URLSearchParams({
           page: String(page),
           per_page: "9",
-          is_archived: viewMode === "archived" ? "true" : "false",
+          archived: viewMode === "archived" ? "true" : "false",
         });
 
-        if (adviser.id) {
-          params.append("adviser_id", String(adviser.id));
-        } else {
-          params.append("adviser_name", adviser.name);
-        }
-
         const response = await apiCall(
-          `/user/suggestions?${params.toString()}`
+          `/admin/advisers/${adviser.id}/suggestions?${params.toString()}`
         );
 
-        setSuggestions(response.data.data);
-        setCurrentPage(response.data.current_page);
-        setTotalPages(response.data.last_page);
+        setSuggestions(response);
+        setTotalPages(1);
+        setCurrentPage(1);
       } catch (err: any) {
         setError(err.message || "Failed to fetch suggestions.");
         setSuggestions([]);
@@ -84,7 +84,7 @@ const AdviserSuggestionsDetails = ({
         setIsLoading(false);
       }
     },
-    [adviser, viewMode]
+    [adviser.id, viewMode]
   );
 
   useEffect(() => {
@@ -92,7 +92,6 @@ const AdviserSuggestionsDetails = ({
   }, [fetchAdviserSuggestions]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
     fetchAdviserSuggestions(page);
   };
 
@@ -122,7 +121,7 @@ const AdviserSuggestionsDetails = ({
             </svg>
           </Button>
           <h1 className="text-xl font-bold text-gray-800">
-            Suggestions of {adviser.name}
+            Suggestions by {adviser.name}
           </h1>
         </div>
 
@@ -170,7 +169,7 @@ const AdviserSuggestionsDetails = ({
                   >
                     <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
                       <CardTitle className="text-xl font-extrabold tracking-wide">
-                        {s.adviser.first_name} {s.adviser.last_name}
+                        {adviser.name}
                       </CardTitle>
                       <p className="text-sm opacity-90">Adviser</p>
                     </CardHeader>
@@ -199,11 +198,13 @@ const AdviserSuggestionsDetails = ({
                 </p>
               )}
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
           </>
         )}
       </div>

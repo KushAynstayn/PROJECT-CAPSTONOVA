@@ -174,4 +174,59 @@ class UserAdviserController extends Controller
 
         return response()->json($suggestions);
     }
+
+    /**
+     * Get all suggestions with advanced filtering.
+     * By default, it returns active suggestions.
+     * Filters: ?archived=true, ?from_year=YYYY, ?to_year=YYYY
+     */
+    public function allSuggestions(Request $request)
+    {
+        $request->validate([
+            'from_year' => 'nullable|integer|digits:4',
+            'to_year' => 'nullable|integer|digits:4|gte:from_year',
+            'adviser_name' => 'nullable|string|max:255',
+        ]);
+
+        $query = DB::table('suggestions as s')
+            ->join('users as u', 's.adviser_id', '=', 'u.id')
+            ->select(
+                's.suggestion_id',
+                's.adviser_id',
+                's.title',
+                's.suggestion_text',
+                's.submission_date',
+                's.is_archived',
+                DB::raw("TRIM(CONCAT(u.first_name, ' ', IFNULL(CONCAT(u.middle_name, ' '), ''), u.last_name)) as adviser_name")
+            );
+
+        // Filter by archive status. Defaults to active (is_archived = false).
+        if ($request->has('archived')) {
+            $isArchived = filter_var($request->query('archived'), FILTER_VALIDATE_BOOLEAN);
+            $query->where('s.is_archived', $isArchived);
+        } else {
+            $query->where('s.is_archived', false);
+        }
+
+        // Filter by submission year range
+        if ($request->filled('from_year')) {
+            $query->whereYear('s.submission_date', '>=', $request->input('from_year'));
+        }
+
+        if ($request->filled('to_year')) {
+            $query->whereYear('s.submission_date', '<=', $request->input('to_year'));
+        }
+
+        // START: NEWLY ADDED SEARCH LOGIC
+        // Filter by adviser name
+        if ($request->filled('adviser_name')) {
+            $name = $request->input('adviser_name');
+            $query->where(DB::raw("CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name)"), 'LIKE', "%{$name}%");
+        }
+        // END: NEWLY ADDED SEARCH LOGIC
+
+        $suggestions = $query->orderBy('s.submission_date', 'desc')->paginate(15);
+
+        return response()->json($suggestions);
+    }
 }

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Pie, PieChart, Legend } from "recharts"
+import { Pie, PieChart, Legend } from "recharts";
 
 import {
   Card,
@@ -8,46 +8,31 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 
-// ## THE COLORS ARE UPDATED HERE ##
-const chartData = [
-  { course: "BIT-CT", count: 1, fill: "#fec832" }, // Green is now Red
-  { course: "BSIS", count: 1, fill: "#cc9747" }, // Blue is now Dark Blue
-  { course: "BSIT", count: 1, fill: "#f5dda8" }, // Purple is now Yellow/Gold
-]
-
-// ## AND ALSO UPDATED HERE FOR THE LEGEND ##
 const chartConfig = {
   count: {
     label: "Admins",
   },
-  "BIT-CT": {
-    label: "BIT-CT",
-    color: "#cc3333", // Green -> Red
+  Admins: {
+    label: "Admins",
+    color: "#0c284d",
   },
-  BSIS: {
-    label: "BSIS",
-    color: "#0c284d", // Blue -> Dark Blue
-  },
-  BSIT: {
-    label: "BSIT",
-    color: "#fec832", // Purple -> Yellow/Gold
-  },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
-export function AdminDistributionChart() {
+export function AdminDistributionChart({ adminCount }: { adminCount: number }) {
+  const chartData = [{ course: "Admins", count: adminCount, fill: "#0c284d" }];
   return (
     <Card className="flex flex-col w-[300px]">
       <CardHeader className="items-center pb-0">
         <CardTitle>Admins</CardTitle>
-        <CardDescription>Total: 3 Admins</CardDescription>
+        <CardDescription>Total: {adminCount} Admins</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -62,5 +47,5 @@ export function AdminDistributionChart() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

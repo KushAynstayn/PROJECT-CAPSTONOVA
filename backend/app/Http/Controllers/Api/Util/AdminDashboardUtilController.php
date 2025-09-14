@@ -148,4 +148,187 @@ class AdminDashboardUtilController extends Controller
 
         return response()->json($responseData);
     }
+
+    /**
+     * Get the advisory load, counting projects per adviser with date filtering.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function advisoryLoad(Request $request): JsonResponse
+    {
+        $request->validate([
+            'year' => 'nullable|integer|digits:4',
+            'from_year' => 'nullable|integer|digits:4',
+            'to_year' => 'nullable|integer|digits:4|gte:from_year',
+        ]);
+
+        $query = CapstoneProject::query()
+            ->join('users', 'capstone_projects.adviser_id', '=', 'users.id')
+            ->select(
+                DB::raw("CONCAT(users.first_name, ' ', users.last_name) as adviser_name"),
+                DB::raw('COUNT(capstone_projects.id) as projects_handled')
+            )
+            ->where('users.role', 'Adviser')
+            ->groupBy('adviser_name')
+            ->orderBy('adviser_name');
+
+        // Filter by a single year
+        if ($request->filled('year')) {
+            $query->whereYear('capstone_projects.submission_date', $request->input('year'));
+        }
+
+        // Filter by a date range
+        if ($request->filled('from_year')) {
+            $query->whereYear('capstone_projects.submission_date', '>=', $request->input('from_year'));
+        }
+        if ($request->filled('to_year')) {
+            $query->whereYear('capstone_projects.submission_date', '<=', $request->input('to_year'));
+        }
+
+        $advisoryLoad = $query->get();
+
+        return response()->json($advisoryLoad);
+    }
+
+    /**
+     * Get project submission counts by course/department with date filtering using raw SQL.
+     *
+     * @param \Illuminate\Http.Request $request
+     * @return \Illuminate\Http.JsonResponse
+     */
+    public function submissionsByCourse(Request $request): JsonResponse
+    {
+        $request->validate([
+            'year' => 'nullable|integer|digits:4',
+            'from_year' => 'nullable|integer|digits:4',
+            'to_year' => 'nullable|integer|digits:4|gte:from_year',
+        ]);
+
+        $whereConditions = [];
+        $bindings = [];
+
+        // Build the date-based WHERE clause and bindings for capstone_projects table
+        if ($request->filled('year')) {
+            $whereConditions[] = 'YEAR(submission_date) = ?';
+            $bindings[] = $request->input('year');
+        }
+
+        if ($request->filled('from_year')) {
+            $whereConditions[] = 'YEAR(submission_date) >= ?';
+            $bindings[] = $request->input('from_year');
+        }
+        if ($request->filled('to_year')) {
+            $whereConditions[] = 'YEAR(submission_date) <= ?';
+            $bindings[] = $request->input('to_year');
+        }
+
+        $dateWhereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+
+        // 1. Get total submissions (Optimized: No joins needed)
+        $totalSubmissionsQuery = "SELECT COUNT(*) as total FROM capstone_projects {$dateWhereClause}";
+        $totalResult = DB::selectOne($totalSubmissionsQuery, $bindings);
+        $totalSubmissions = $totalResult ? $totalResult->total : 0;
+
+        // 2. Get total archived submissions (Optimized: No joins needed)
+        $archivedWhereClause = $dateWhereClause;
+        if (empty($whereConditions)) {
+            $archivedWhereClause = 'WHERE is_archived = TRUE';
+        } else {
+            $archivedWhereClause .= ' AND is_archived = TRUE';
+        }
+        $totalArchivedQuery = "SELECT COUNT(*) as total_archived FROM capstone_projects {$archivedWhereClause}";
+        $archivedResult = DB::selectOne($totalArchivedQuery, $bindings);
+        $totalArchived = $archivedResult ? $archivedResult->total_archived : 0;
+
+        // 3. Get submissions per course/department (Corrected to use ud.department)
+        $courseWhereClause = !empty($whereConditions) ? 'WHERE ' . str_replace('submission_date', 'cp.submission_date', implode(' AND ', $whereConditions)) : '';
+
+        $submissionsPerCourseQuery = "
+        SELECT
+            ud.department as course, 
+            COUNT(cp.id) as count
+        FROM 
+            capstone_projects AS cp
+        JOIN 
+            project_researchers AS pr ON cp.id = pr.project_id
+        JOIN 
+            user_details AS ud ON pr.user_id = ud.user_id
+        {$courseWhereClause}
+        GROUP BY 
+            ud.department
+    ";
+        $submissions = DB::select($submissionsPerCourseQuery, $bindings);
+
+        return response()->json([
+            'submissions_per_course' => $submissions,
+            'total_submissions' => $totalSubmissions,
+            'total_archived' => $totalArchived,
+        ]);
+    }
+
+    /**
+     * Get counts of users by role, including a departmental breakdown for proponents and viewers.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function userRoleCounts(): JsonResponse
+    {
+        $query = "
+            SELECT
+                u.role,
+                ud.department,
+                COUNT(u.id) as count
+            FROM
+                users AS u
+            LEFT JOIN
+                user_details AS ud ON u.id = ud.user_id
+            WHERE
+                u.role IN ('Admin', 'Adviser', 'Proponent', 'Viewer')
+            GROUP BY
+                u.role, ud.department
+            ORDER BY
+                u.role, ud.department;
+        ";
+
+        $results = DB::select($query);
+
+        $response = [
+            'admins' => 0,
+            'advisers' => 0,
+            'proponents' => ['total' => 0, 'by_department' => []],
+            'viewers' => ['total' => 0, 'by_department' => []],
+        ];
+
+        foreach ($results as $result) {
+            switch ($result->role) {
+                case 'Admin':
+                    $response['admins'] = $result->count;
+                    break;
+                case 'Adviser':
+                    $response['advisers'] = $result->count;
+                    break;
+                case 'Proponent':
+                    if ($result->department) {
+                        $response['proponents']['by_department'][] = [
+                            'department' => $result->department,
+                            'count' => $result->count
+                        ];
+                    }
+                    $response['proponents']['total'] += $result->count;
+                    break;
+                case 'Viewer':
+                    if ($result->department) {
+                        $response['viewers']['by_department'][] = [
+                            'department' => $result->department,
+                            'count' => $result->count
+                        ];
+                    }
+                    $response['viewers']['total'] += $result->count;
+                    break;
+            }
+        }
+
+        return response()->json($response);
+    }
 }

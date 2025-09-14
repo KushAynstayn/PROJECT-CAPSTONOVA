@@ -196,6 +196,10 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
         '/advisers/{id}/suggestions',
         [UserAdviserController::class, 'adviserSuggestions']
     )->name('advisers.suggestions');
+    Route::get(
+        '/suggestions',
+        [UserAdviserController::class, 'allSuggestions']
+    )->name('suggestions.index');
     //End advisers route
 
     // ============================
@@ -281,6 +285,18 @@ Route::prefix('util')->group(function () {
         '/latest-suggestion',
         [AdminDashboardUtilController::class, 'latestSuggestionCard']
     );
+    Route::get(
+        '/advisory-load',
+        [AdminDashboardUtilController::class, 'advisoryLoad']
+    )->name('util.advisory-load');
+    Route::get(
+        '/submissions-by-course',
+        [AdminDashboardUtilController::class, 'submissionsByCourse']
+    )->name('util.submissions-by-course');
+    Route::get(
+        '/user-role-counts',
+        [AdminDashboardUtilController::class, 'userRoleCounts']
+    )->name('util.user-role-counts');
 
     //Adviser analytics route
     Route::get('/adviser-overview', AdviserOverviewController::class)->middleware('auth:sanctum');
