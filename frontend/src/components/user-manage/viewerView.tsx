@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { Button } from "@/components/ui/button";
@@ -13,37 +14,41 @@ import {
   TableCell,
 } from "@heroui/react";
 
-interface Adviser {
+interface User {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  advisees_count: number;
+  user_detail: {
+    student_id: string;
+    department: string;
+  } | null;
 }
 
-interface AdviserViewProps {
+interface ViewerViewProps {
   searchQuery: string;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: Adviser[];
+  filteredUsers: User[];
   onEditUser: (userId: number) => void;
-  onViewSuggestions: (adviser: Adviser) => void;
   onDeleteUser: (userId: number) => void;
-  onAddUser: () => void;
+  isLoading: boolean;
 }
 
-const AdviserView = ({
+const ViewerView = ({
   searchQuery,
   onSearchChange,
   onClear,
   placeholder,
   filteredUsers,
   onEditUser,
-  onViewSuggestions,
   onDeleteUser,
-  onAddUser,
-}: AdviserViewProps) => {
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  isLoading,
+}: ViewerViewProps) => {
+  const [selectedUserId, setSelectedUserId] = React.useState<number | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
@@ -76,11 +81,6 @@ const AdviserView = ({
     handleCloseModal();
   };
 
-  const handleViewSuggestions = (e: React.MouseEvent, adviser: Adviser) => {
-    e.stopPropagation();
-    onViewSuggestions(adviser);
-  };
-
   return (
     <div>
       <style jsx>{`
@@ -111,7 +111,6 @@ const AdviserView = ({
           animation: fadeOut 0.15s ease-in forwards;
         }
       `}</style>
-
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="w-full grow md:max-w-md">
           <InputWithClear
@@ -122,31 +121,25 @@ const AdviserView = ({
             onClear={onClear}
           />
         </div>
-        <button
-          className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:rounded-[25px] hover:scale-110 hover:opacity-100"
-          onClick={onAddUser}
-        >
-          <img
-            src="/images/add-user.png"
-            alt="Add User"
-            className="h-12 w-12"
-          />
-        </button>
       </div>
 
       <div className="relative max-h-[60vh] overflow-y-auto">
-        <Table removeWrapper aria-label="Adviser user data table">
+        <Table removeWrapper aria-label="Viewer user data table">
           <TableHeader>
             <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
-              ADVISEES COUNT
+              ID NUMBER
             </TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
-              SUGGESTIONS
+              DEPARTMENT
             </TableColumn>
           </TableHeader>
-          <TableBody emptyContent={"No users match the current filters."}>
+          <TableBody
+            emptyContent={
+              isLoading ? "Loading..." : "No users match the current filters."
+            }
+          >
             {filteredUsers.map((user) => (
               <TableRow
                 key={user.id}
@@ -157,21 +150,16 @@ const AdviserView = ({
                 onClick={(e) => handleRowClick(e, user.id)}
               >
                 <TableCell className="border-b border-gray-200">
-                  {user.name}
+                  {user.first_name} {user.last_name}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
                   {user.email}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.advisees_count}
+                  {user.user_detail?.student_id}
                 </TableCell>
-                <TableCell className="border-b border-gray-200 w-10">
-                  <Button
-                    onClick={(e) => handleViewSuggestions(e, user)}
-                    className="bg-[#6b211d] text-white font-serif rounded-1px shadow-md hover:bg-[#8c2d29]"
-                  >
-                    View Suggestions
-                  </Button>
+                <TableCell className="border-b border-gray-200">
+                  {user.user_detail?.department}
                 </TableCell>
               </TableRow>
             ))}
@@ -212,18 +200,14 @@ const AdviserView = ({
                   }
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-red-500 text-white shadow-md hover:bg-red-600"
                 >
-                  <img
-                    src="/images/trash.png"
-                    alt="Delete"
-                    className="h-12 w-12"
-                  />
+                  <Trash2 className="h-12 w-12" />
                   <span className="text-sm">Restrict</span>
                 </Button>
               </div>
             </div>
             <button
               onClick={handleCloseModal}
-              className="absolute right-2 top-2 text-gray-400 transition-transform hover:scale-110 hover:text-gray-600"
+              className="absolute right-2 top-2 text-gray-400 transition-transform hover:scale-120 hover:text-gray-600"
             >
               <img src="/images/close.png" alt="Close" className="h-6 w-6" />
             </button>
@@ -234,4 +218,4 @@ const AdviserView = ({
   );
 };
 
-export default AdviserView;
+export default ViewerView;

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Legend, Label, Pie, PieChart } from "recharts"
+import * as React from "react";
+import { Legend, Label, Pie, PieChart, Cell } from "recharts";
 
 import {
   Card,
@@ -9,42 +9,48 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 
-const chartData = [
-  { course: "BSIS", proponents: 15, fill: "var(--color-bsis)" },
-  { course: "BSIT", proponents: 12, fill: "var(--color-bsit)" },
-  { course: "BIT-CT", proponents: 8, fill: "var(--color-bit-ct)" },
-]
+interface ProponentsData {
+  total: number;
+  by_department: { department: string; count: number }[];
+}
 
-const chartConfig = {
-  proponents: {
-    label: "Proponents",
-  },
-  bsis: {
-    label: "BSIS",
-    color: "#660000",
-  },
-  bsit: {
-    label: "BSIT",
-    color: "#ea0700",
-  },
-  "bit-ct": {
-    label: "BIT-CT",
-    color: "#ff8383",
-  },
-} satisfies ChartConfig
+interface ProponentDistributionChartProps {
+  proponentsData: ProponentsData;
+}
 
-export function ProponentDistributionChart() {
-  const totalProponents = React.useMemo(() => {
-    return chartData.reduce((sum, current) => sum + current.proponents, 0)
-  }, [])
+const PALETTE = ["#660000", "#ea0700", "#ff8383", "#fec832", "#0c284d"];
+
+export function ProponentDistributionChart({
+  proponentsData,
+}: ProponentDistributionChartProps) {
+  const { chartData, chartConfig } = React.useMemo(() => {
+    const data = proponentsData.by_department.map((d, index) => ({
+      course: d.department,
+      proponents: d.count,
+      fill: PALETTE[index % PALETTE.length],
+    }));
+
+    const config: ChartConfig = data.reduce((acc, entry) => {
+      acc[entry.course] = {
+        label: entry.course,
+        color: entry.fill,
+      };
+      return acc;
+    }, {} as ChartConfig);
+    config.proponents = { label: "Proponents" };
+
+    return { chartData: data, chartConfig: config };
+  }, [proponentsData]);
+
+  const totalProponents = proponentsData.total;
 
   return (
     <Card className="flex flex-col w-[300px]">
@@ -69,6 +75,9 @@ export function ProponentDistributionChart() {
               innerRadius={60}
               outerRadius={90}
             >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
@@ -89,7 +98,7 @@ export function ProponentDistributionChart() {
                           Proponents
                         </tspan>
                       </text>
-                    )
+                    );
                   }
                 }}
               />
@@ -99,5 +108,5 @@ export function ProponentDistributionChart() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

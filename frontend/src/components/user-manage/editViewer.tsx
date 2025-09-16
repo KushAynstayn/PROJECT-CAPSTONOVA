@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -9,77 +9,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SearchableCombobox } from "@/components/ui/searchable-combobox";
-import { apiCall } from "@/lib/api";
 
 interface User {
   id: number;
   first_name: string;
   last_name: string;
   email: string;
-  student_id: string;
-  department: string;
-  program: string;
-  adviser_id: number | null;
+  user_detail: {
+    student_id: string;
+    department: string;
+    program: string;
+  } | null;
 }
 
-interface Adviser {
-  id: number;
-  full_name: string;
-}
-
-interface EditProponentViewProps {
+interface EditViewerViewProps {
   user: User;
   onSave: (updatedUser: User) => void;
   onCancel: () => void;
 }
 
-const EditProponentView = ({
-  user,
-  onSave,
-  onCancel,
-}: EditProponentViewProps) => {
+const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
   const [formData, setFormData] = useState<User>(user);
-  const [advisers, setAdvisers] = useState<Adviser[]>([]);
-
-  useEffect(() => {
-    const fetchAdvisers = async () => {
-      try {
-        const response = await apiCall("/util/advisers");
-        if (response.success) {
-          setAdvisers(response.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch advisers:", error);
-      }
-    };
-    fetchAdvisers();
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "student_id") {
+      setFormData((prev) => ({
+        ...prev,
+        user_detail: { ...prev.user_detail!, student_id: value },
+      }));
+    } else if (name in (formData.user_detail || {})) {
+      setFormData((prev) => ({
+        ...prev,
+        user_detail: { ...prev.user_detail!, [name]: value },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value as never }));
+    }
   };
 
-  const handleSelectChange = (fieldName: keyof User, value: string) => {
-    setFormData((prev) => ({ ...prev, [fieldName]: value }));
-  };
-
-  const handleAdviserChange = (value: string) => {
-    const adviserId = parseInt(value, 10);
+  const handleSelectChange = (
+    fieldName: keyof NonNullable<User["user_detail"]>,
+    value: string
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      adviser_id: isNaN(adviserId) ? null : adviserId,
+      user_detail: { ...prev.user_detail!, [fieldName]: value },
     }));
   };
 
   const handleSave = () => {
     onSave(formData);
   };
-
-  // This should ideally be fetched from an API
-  const courses = ["BSIS", "BSIT", "BIT-CT"];
-  const programs = ["Day Program", "Evening Program"];
 
   return (
     <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
@@ -89,15 +70,13 @@ const EditProponentView = ({
         className="w-full rounded-t-lg object-cover"
         style={{ height: "1.3in" }}
       />
-
       <div className="p-8">
         <div className="mb-8">
           <h2 className="text-center font-serif text-2xl uppercase tracking-widest text-gray-700">
-            Edit Proponent Information
+            Edit Information
           </h2>
           <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
         </div>
-
         <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
           <div>
             <label
@@ -131,7 +110,6 @@ const EditProponentView = ({
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
-
           <div>
             <label
               htmlFor="email"
@@ -148,7 +126,6 @@ const EditProponentView = ({
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
-
           <div>
             <label
               htmlFor="student_id"
@@ -160,36 +137,32 @@ const EditProponentView = ({
               id="student_id"
               type="text"
               name="student_id"
-              value={formData.student_id}
+              value={formData.user_detail?.student_id || ""}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
-
           <div>
             <label
               htmlFor="department"
               className="block text-sm font-semibold text-gray-600"
             >
-              Degree Program
+              Department
             </label>
             <Select
-              value={formData.department}
+              value={formData.user_detail?.department || ""}
               onValueChange={(value) => handleSelectChange("department", value)}
             >
               <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
-                <SelectValue placeholder="Select a Course" />
+                <SelectValue placeholder="Select a Department" />
               </SelectTrigger>
               <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course} value={course}>
-                    {course}
-                  </SelectItem>
-                ))}
+                <SelectItem value="BSIS">BSIS</SelectItem>
+                <SelectItem value="BSIT">BSIT</SelectItem>
+                <SelectItem value="BIT-CT">BIT-CT</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <label
               htmlFor="program"
@@ -198,42 +171,20 @@ const EditProponentView = ({
               Program Schedule
             </label>
             <Select
-              value={formData.program}
+              value={formData.user_detail?.program || ""}
               onValueChange={(value) => handleSelectChange("program", value)}
             >
               <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
-                <SelectValue placeholder="Select a Program" />
+                <SelectValue placeholder="Select Program" />
               </SelectTrigger>
               <SelectContent>
-                {programs.map((program) => (
-                  <SelectItem key={program} value={program}>
-                    {program}
-                  </SelectItem>
-                ))}
+                <SelectItem value="Day">Day Program</SelectItem>
+                <SelectItem value="Evening">Evening Program</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          <div className="md:col-span-2">
-            <label
-              htmlFor="adviser_id"
-              className="block text-sm font-semibold text-gray-600"
-            >
-              Adviser
-            </label>
-            <SearchableCombobox
-              value={formData.adviser_id ? String(formData.adviser_id) : ""}
-              onValueChange={handleAdviserChange}
-              items={advisers.map((adviser) => ({
-                value: String(adviser.id),
-                label: adviser.full_name,
-              }))}
-              placeholder={"Select Adviser"}
-            />
-          </div>
         </div>
-
-        <div className="mt-8 flex justify-end gap-x-4">
+        <div className="mt-8 flex items-center justify-end gap-x-4">
           <Button
             variant="outline"
             onClick={onCancel}
@@ -253,4 +204,4 @@ const EditProponentView = ({
   );
 };
 
-export default EditProponentView;
+export default EditViewerView;

@@ -6,22 +6,26 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\LogoutController;
 
-use App\Http\Controllers\Api\User\ProfileController;
-use App\Http\Controllers\Api\Admin\AdviserController;
 
+use App\Http\Controllers\Api\User\ProfileController;
+
+use App\Http\Controllers\Api\Admin\AdviserController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Util\ResourceController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 use App\Http\Controllers\Api\Admin\WhitelistController;
 use App\Http\Controllers\Api\SuperAdmin\UserController;
+use App\Http\Controllers\Api\Admin\UserViewerController;
 use App\Http\Controllers\Api\Util\ProjectTypeController;
+use App\Http\Controllers\Api\Admin\UserAdviserController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
+
 use App\Http\Controllers\API\User\NotificationController;
-use App\Http\Controllers\Api\Util\AdviserFetchController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Admin\UserProponentController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
 use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
@@ -32,6 +36,7 @@ use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
+use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
@@ -126,23 +131,95 @@ Route::middleware('auth:sanctum')->prefix('adviser')->group(function () {
 });
 
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
-    //Whitelist Routes
+    // ============================
+    // Whitelist Routes (Admin)
+    // These routes handle all whitelist-related operations for admins.
+    // ============================
+
     Route::post('whitelist', [WhitelistController::class, 'store'])
         ->name('admin.whitelist.store');
 
     Route::post('whitelist/upload-excel', [WhitelistController::class, 'uploadExcel'])
         ->name('admin.whitelist.upload-excel');
-    //adviser Routes
-    Route::post('advisers', [AdviserController::class, 'store'])
-        ->name('admin.advisers.store');
 
-    Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict'])
-        ->name('admin.advisers.restrict');
+    // Route to get a list of all whitelist entries
+    Route::get('whitelist', [WhitelistController::class, 'index']);
 
-    Route::get('advisers', [AdviserController::class, 'index'])
-        ->name('admin.advisers.index');
+    // Route to get a single, specific whitelist entry
+    Route::get('whitelist/{id}', [WhitelistController::class, 'show']);
 
-    // Capstone Project Routes
+    // Route to delete a whitelist entry
+    Route::delete('whitelist/{whitelist}', [WhitelistController::class, 'destroy']);
+
+    // Route to update a specific whitelist entry
+    Route::put('whitelist/{whitelist}', [WhitelistController::class, 'update']);
+
+    // ============================
+    // End Whitelist Routes
+    // ============================
+
+    // ============================
+    // Viewer Management Routes (Admin)
+    // These routes allow admins to manage viewers.
+    // ============================
+    Route::get('viewers', [UserViewerController::class, 'index'])->name('viewers.index');
+    Route::post('viewers', [UserViewerController::class, 'store'])->name('viewers.store');
+    Route::get('viewers/{id}', [UserViewerController::class, 'show'])->name('viewers.show');
+    Route::put('viewers/{id}', [UserViewerController::class, 'update'])->name('viewers.update');
+    Route::delete('viewers/{id}', [UserViewerController::class, 'destroy'])->name('viewers.destroy');
+    // ============================
+    // End Viewer Management Routes
+    // ============================
+
+    //Proponents
+    Route::get('proponents', [UserProponentController::class, 'index'])->name('proponents.index');
+    Route::post('proponents', [UserProponentController::class, 'store'])->name('proponents.store');
+    Route::get('proponents/{id}', [UserProponentController::class, 'show'])->name('proponents.show');
+    Route::put('proponents/{id}', [UserProponentController::class, 'update'])->name('proponents.update');
+    Route::delete('proponents/{id}', [UserProponentController::class, 'destroy'])->name('proponents.destroy');
+    //End proponents
+
+
+    //Advisers route
+    // Adviser Management Routes
+    Route::get('/advisers', [UserAdviserController::class, 'index'])->name('advisers.index');
+    Route::post('/advisers', [UserAdviserController::class, 'store'])->name('advisers.store');
+    Route::get('/advisers/{id}', [UserAdviserController::class, 'show'])->name('advisers.show');
+    Route::put('/advisers/{id}', [UserAdviserController::class, 'update'])->name('advisers.update');
+    Route::delete(
+        '/advisers/{id}',
+        [UserAdviserController::class, 'destroy']
+    )->name('advisers.destroy');
+
+    // Adviser Suggestions Route
+    Route::get(
+        '/advisers/{id}/suggestions',
+        [UserAdviserController::class, 'adviserSuggestions']
+    )->name('advisers.suggestions');
+    Route::get(
+        '/suggestions',
+        [UserAdviserController::class, 'allSuggestions']
+    )->name('suggestions.index');
+    //End advisers route
+
+    // ============================
+    // Adviser Routes (Admin)
+    // These routes handle all adviser-related operations for admins.
+    // ============================
+
+    // Route::post('advisers', [AdviserController::class, 'store'])
+    //     ->name('admin.advisers.store');
+
+    // Route::patch('advisers/{user}/restrict', [AdviserController::class, 'restrict'])
+    //     ->name('admin.advisers.restrict');
+
+    // Route::get('advisers', [AdviserController::class, 'index'])
+    //     ->name('admin.advisers.index');
+
+    // Capstone Project Management
+    Route::get('capstone-projects', [CapstoneProjectController::class, 'index'])
+        ->name('admin.capstone-projects.index');
+
     Route::patch('capstone-projects/{project}/archive', [CapstoneProjectController::class, 'archive'])
         ->name('admin.capstone-projects.archive');
 
@@ -185,6 +262,42 @@ Route::prefix('util')->group(function () {
     Route::get('/project-types', ProjectTypeController::class);
     Route::get('/environment-trends', EnvironmentTrendController::class);
     Route::get('/project-tools', ProjectToolsController::class);
+
+    //Admin analytics route
+    Route::get('/top-advisers', [AdminDashboardUtilController::class, 'topAdvisers']);
+    Route::get(
+        '/programming-tools-usage',
+        [AdminDashboardUtilController::class, 'programmingToolsUsage']
+    );
+    Route::get(
+        '/projects-by-type',
+        [AdminDashboardUtilController::class, 'projectsByType']
+    );
+    Route::get(
+        '/role-distribution',
+        [AdminDashboardUtilController::class, 'roleDistribution']
+    );
+    Route::get(
+        '/latest-submission',
+        [AdminDashboardUtilController::class, 'latestSubmission']
+    );
+    Route::get(
+        '/latest-suggestion',
+        [AdminDashboardUtilController::class, 'latestSuggestionCard']
+    );
+    Route::get(
+        '/advisory-load',
+        [AdminDashboardUtilController::class, 'advisoryLoad']
+    )->name('util.advisory-load');
+    Route::get(
+        '/submissions-by-course',
+        [AdminDashboardUtilController::class, 'submissionsByCourse']
+    )->name('util.submissions-by-course');
+    Route::get(
+        '/user-role-counts',
+        [AdminDashboardUtilController::class, 'userRoleCounts']
+    )->name('util.user-role-counts');
+
     //Adviser analytics route
     Route::get('/adviser-overview', AdviserOverviewController::class)->middleware('auth:sanctum');
 

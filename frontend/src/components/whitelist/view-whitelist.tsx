@@ -1,18 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-// ... other imports remain the same
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Trash2 } from "lucide-react";
+import React, { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableHeader,
@@ -21,16 +12,12 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
-import { CustomEditIcon } from "@/components/icons/customIcon";
 
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  idNumber: string;
-  email: string;
-  adviser: string;
-  schedule:string;
+interface WhitelistEntry {
+  whitelist_id: number;
+  student_id: string;
+  student_email: string;
+  adviser_name: string;
 }
 
 interface WhitelistViewProps {
@@ -38,13 +25,9 @@ interface WhitelistViewProps {
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: User[]; // Use the defined User type
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-  onStartDateChange: (date: Date | undefined) => void;
-  onEndDateChange: (date: Date | undefined) => void;
-  // NEW PROP: Function to trigger the edit mode in the parent
+  filteredUsers: WhitelistEntry[];
   onEditUser: (userId: number) => void;
+  onDeleteUser: (userId: number) => void;
 }
 
 const WhitelistView = ({
@@ -53,39 +36,32 @@ const WhitelistView = ({
   onClear,
   placeholder,
   filteredUsers,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
-  onEditUser, // Destructure the new prop
+  onEditUser,
+  onDeleteUser,
 }: WhitelistViewProps) => {
   const [selectedUserId, setSelectedUserId] = React.useState<number | null>(
     null
   );
-
-  // State to manage the visibility of the modal dialog
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFadingOut, setIsFadingOut] = useState(false); // New state for fade-out animation
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
 
   const handleRowClick = (e: React.MouseEvent, userId: number) => {
     setSelectedUserId(userId);
-    setIsFadingOut(false); // Reset fade-out state
+    setIsFadingOut(false);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsFadingOut(true); // Trigger fade-out animation
+    setIsFadingOut(true);
   };
 
-  // New handler for when the animation ends
   const handleAnimationEnd = () => {
     if (isFadingOut) {
-      setIsModalOpen(false); // Close modal after animation
+      setIsModalOpen(false);
       setIsFadingOut(false);
-      setSelectedUserId(null); // Clear selected user
+      setSelectedUserId(null);
     }
   };
 
@@ -93,7 +69,7 @@ const WhitelistView = ({
     if (action === "edit") {
       onEditUser(userId);
     } else {
-      console.log(`Action: ${action} for User ID: ${userId}`);
+      onDeleteUser(userId);
     }
     handleCloseModal();
   };
@@ -138,102 +114,36 @@ const WhitelistView = ({
             onClear={onClear}
           />
         </div>
-        <div className="flex w-full flex-col gap-4 md:w-auto md:flex-row">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal md:w-48",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? (
-                  format(startDate, "LLL dd, y")
-                ) : (
-                  <span>Start date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={onStartDateChange}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal md:w-48",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "LLL dd, y") : <span>End date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={onEndDateChange}
-                disabled={startDate ? { before: startDate } : false}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
       </div>
-      <div
-        ref={scrollContainerRef}
-        className="relative max-h-[60vh] overflow-y-auto"
-      >
-        <Table removeWrapper aria-label="Guest user data table">
+      <div className="relative max-h-[60vh] overflow-y-auto">
+        <Table removeWrapper aria-label="Whitelist data table">
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              FULL NAME
-            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
               ID NUMBER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
               ADVISER
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              CLASS PROGRAM
             </TableColumn>
           </TableHeader>
           <TableBody emptyContent={"No users match the current filters."}>
             {filteredUsers.map((user) => (
               <TableRow
-                key={user.id}
+                key={user.whitelist_id}
                 className={cn(
                   "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  selectedUserId === user.whitelist_id && "bg-gray-200"
                 )}
-                onClick={(e) => handleRowClick(e, user.id)}
+                onClick={(e) => handleRowClick(e, user.whitelist_id)}
               >
                 <TableCell className="border-b border-gray-200">
-                {`${user.firstName} ${user.lastName}`}
+                  {user.student_email}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.idNumber}
+                  {user.student_id}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.email}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
-                  {user.adviser}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
-                  {user.schedule}
+                  {user.adviser_name}
                 </TableCell>
               </TableRow>
             ))}

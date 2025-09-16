@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,63 +14,94 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import AdviserSuggestionsDetails from "@/components/admin-suggestions/suggestions-details";
+import { apiCall, ApiError } from "@/lib/api";
+import Pagination from "@/components/ui/pagination";
 
-interface Suggestion {
+// --- INTERFACES ---
+interface Adviser {
   id: number;
-  adviser: string;
-  suggestion: string;
-  date: string;
-  isArchived: boolean;
-  adviserId?: number;
+  first_name: string;
+  last_name: string;
+  email: string;
 }
 
-const mockSuggestions: Suggestion[] = [
-  {
-    id: 1,
-    adviser: "Monkey D. Luffy",
-    suggestion:
-      "Consider integrating a real-time collaboration feature to allow multiple students to edit the proposal simultaneously. This will greatly improve the team's efficiency and communication.",
-    date: "March 26, 2025",
-    isArchived: false,
-    adviserId: 1,
-  },
-  {
-    id: 2,
-    adviser: "Roronoa Zoro",
-    suggestion:
-      "Your project scope is too broad. Focus on a specific aspect of the 'Smart Library System' to ensure a more manageable and high-quality outcome.",
-    date: "March 25, 2025",
-    isArchived: false,
-    adviserId: 2,
-  },
-];
+interface Suggestion {
+  suggestion_id: number;
+  adviser_name: string;
+  adviser_id: number;
+  title: string;
+  suggestion_text: string;
+  submission_date: string;
+  is_archived: boolean;
+}
+
+interface PaginatedSuggestions {
+  data: Suggestion[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}
 
 const AdminSuggestionsPage = () => {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [view, setView] = useState("list");
   const [selectedAdviser, setSelectedAdviser] = useState<{
-    id?: number;
+    id: number;
     name: string;
   } | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredSuggestions = mockSuggestions
-    .filter(
-      (s) =>
-        (date
-          ? format(new Date(s.date), "PPP") === format(date, "PPP")
-          : true) &&
-        s.adviser.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
-        s.isArchived === showArchived
-    )
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const fetchSuggestions = useCallback(
+    async (page = 1) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          per_page: "9",
+          archived: String(showArchived),
+        });
 
-  const handleSeeMoreClick = (
-    adviser: Suggestion["adviser"],
-    adviserId?: Suggestion["adviserId"]
-  ) => {
-    setSelectedAdviser({ name: adviser, id: adviserId });
+        if (date) {
+          params.append("from_year", format(date, "yyyy"));
+          params.append("to_year", format(date, "yyyy"));
+        }
+        if (searchQuery) {
+          params.append("adviser_name", searchQuery);
+        }
+
+        const response: PaginatedSuggestions = await apiCall(
+          `/admin/suggestions?${params.toString()}`
+        );
+
+        setSuggestions(response.data);
+        setCurrentPage(response.current_page);
+        setTotalPages(response.last_page);
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch suggestions.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [date, searchQuery, showArchived]
+  );
+
+  useEffect(() => {
+    fetchSuggestions(1);
+  }, [fetchSuggestions]);
+
+  const handlePageChange = (page: number) => {
+    fetchSuggestions(page);
+  };
+
+  const handleSeeMoreClick = (adviserName: string, adviserId: number) => {
+    setSelectedAdviser({ name: adviserName, id: adviserId });
     setView("details");
   };
 
@@ -149,54 +180,71 @@ const AdminSuggestionsPage = () => {
           </div>
 
           <div className="p-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">
-              {showArchived ? "Archived Suggestions" : "Active Suggestions"}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSuggestions.length > 0 ? (
-                filteredSuggestions.map((s) => (
-                  <Card
-                    key={s.id}
-                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
-                  >
-                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
-                      <CardTitle className="text-xl font-extrabold tracking-wide">
-                        {s.adviser}
-                      </CardTitle>
-                      <p className="text-sm opacity-90">Adviser</p>
-                    </CardHeader>
-                    <CardContent className="flex-1 p-6 space-y-4">
-                      <p className="italic text-lg text-gray-700 leading-relaxed">
-                        "{s.suggestion}"
-                      </p>
-                    </CardContent>
-                    <div className="px-6 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
-                      <p className="font-medium">
-                        Uploaded:{" "}
-                        <span className="text-gray-700">
-                          {format(new Date(s.date), "MMM d, yyyy")}
-                        </span>
-                      </p>
-                      <Button
-                        variant="link"
-                        className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
-                        onClick={() =>
-                          handleSeeMoreClick(s.adviser, s.adviserId)
-                        }
+            {isLoading ? (
+              <p className="text-center text-gray-500">Loading...</p>
+            ) : error ? (
+              <p className="text-center text-red-500">{error}</p>
+            ) : (
+              <>
+                <h2 className="text-lg font-semibold text-gray-800 mb-6">
+                  {showArchived ? "Archived Suggestions" : "Active Suggestions"}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {suggestions.length > 0 ? (
+                    suggestions.map((s) => (
+                      <Card
+                        key={s.suggestion_id}
+                        className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
                       >
-                        See more suggestions from this adviser
-                      </Button>
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <p className="col-span-full text-center text-gray-500">
-                  {showArchived
-                    ? "No archived suggestions found."
-                    : "No suggestions found for this date."}
-                </p>
-              )}
-            </div>
+                        <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
+                          <CardTitle className="text-xl font-extrabold tracking-wide">
+                            {s.adviser_name}
+                          </CardTitle>
+                          <p className="text-sm opacity-90">Adviser</p>
+                        </CardHeader>
+                        <CardContent className="flex-1 p-6 space-y-4">
+                          <p className="font-bold text-lg text-gray-800">
+                            {s.title}
+                          </p>
+                          <p className="italic text-gray-700 leading-relaxed">
+                            "{s.suggestion_text}"
+                          </p>
+                        </CardContent>
+                        <div className="px-6 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
+                          <p className="font-medium">
+                            Uploaded:{" "}
+                            <span className="text-gray-700">
+                              {format(
+                                new Date(s.submission_date),
+                                "MMM d, yyyy"
+                              )}
+                            </span>
+                          </p>
+                          <Button
+                            variant="link"
+                            className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
+                            onClick={() =>
+                              handleSeeMoreClick(s.adviser_name, s.adviser_id)
+                            }
+                          >
+                            See more suggestions from this adviser
+                          </Button>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <p className="col-span-full text-center text-gray-500">
+                      No suggestions found.
+                    </p>
+                  )}
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            )}
           </div>
         </>
       ) : (

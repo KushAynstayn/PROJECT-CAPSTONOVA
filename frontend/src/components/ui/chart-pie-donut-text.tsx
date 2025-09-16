@@ -1,49 +1,62 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Pie, PieChart, Label, Cell } from "recharts"
+import * as React from "react";
+import { Pie, PieChart, Label, Cell } from "recharts";
 
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 
-// ## 1. Update colors in chartData ##
-const chartData = [
-  { course: "BIT-CT", submissions: 3, fill: "#cc3333" }, // Green changed to red
-  { course: "BSIS", submissions: 20, fill: "#0c284d" }, // Blue changed to dark blue
-  { course: "BSIT", submissions: 15, fill: "#fec832" }, // Purple changed to yellow/gold
-]
+interface SubmissionData {
+  course: string;
+  count: number;
+}
 
-// ## 2. Update colors in chartConfig ##
+interface ModifiedPieChartProps {
+  size?: number;
+  data: SubmissionData[];
+}
+
 const chartConfig = {
   submissions: {
     label: "Submissions",
   },
   "BIT-CT": {
     label: "BIT-CT",
-    color: "#cc3333", // Green changed to red
+    color: "#cc3333",
   },
   BSIS: {
     label: "BSIS",
-    color: "#0c284d", // Blue changed to dark blue
+    color: "#0c284d",
   },
   BSIT: {
     label: "BSIT",
-    color: "#fec832", // Purple changed to yellow/gold
+    color: "#fec832",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
-interface ModifiedPieChartProps {
-  size?: number; 
-}
+const colorMapping: { [key: string]: string } = {
+  "BIT-CT": "#cc3333",
+  BSIS: "#0c284d",
+  BSIT: "#fec832",
+};
 
-export function ModifiedPieChart({ size = 250 }: ModifiedPieChartProps) {
+export function ModifiedPieChart({
+  size = 250,
+  data = [],
+}: ModifiedPieChartProps) {
+  const chartData = data.map((item) => ({
+    ...item,
+    submissions: item.count, // recharts Pie component expects a specific key
+    fill: colorMapping[item.course] || "#cccccc", // Add fill color
+  }));
+
   const totalSubmissions = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.submissions, 0)
-  }, [])
+    return chartData.reduce((acc, curr) => acc + curr.submissions, 0);
+  }, [chartData]);
 
   return (
     <ChartContainer
@@ -91,12 +104,12 @@ export function ModifiedPieChart({ size = 250 }: ModifiedPieChartProps) {
                       Total Submissions
                     </tspan>
                   </text>
-                )
+                );
               }
             }}
           />
         </Pie>
       </PieChart>
     </ChartContainer>
-  )
+  );
 }
