@@ -62,8 +62,8 @@ const SuperAdminUploadWhitelistPage = () => {
     setIsLoading(true);
     try {
       const url = searchQuery
-        ? `/super-admin/whitelist?search=${searchQuery}`
-        : "/super-admin/whitelist";
+        ? `/user-mgt/whitelist?search=${searchQuery}`
+        : "/user-mgt/whitelist";
       const response = await apiCall(url);
       setUsers(response.data);
     } catch (error) {
@@ -107,7 +107,7 @@ const SuperAdminUploadWhitelistPage = () => {
     };
 
     try {
-      await apiCall("/super-admin/whitelist", "POST", payload);
+      await apiCall("/user-mgt/whitelist", "POST", payload);
       setSuccess("Whitelist entry added successfully!");
       handleClearAll();
       fetchWhitelist();
@@ -129,7 +129,7 @@ const SuperAdminUploadWhitelistPage = () => {
     uploadFormData.append("file", selectedFile);
     try {
       await apiCall(
-        "/super-admin/whitelist/upload-excel",
+        "/user-mgt/whitelist/upload-excel",
         "POST",
         uploadFormData,
         true
@@ -151,7 +151,7 @@ const SuperAdminUploadWhitelistPage = () => {
 
   const handleEditUser = async (userId: number) => {
     try {
-      const userData = await apiCall(`/super-admin/whitelist/${userId}`);
+      const userData = await apiCall(`/user-mgt/whitelist/${userId}`);
       setEditingUser(userData);
     } catch (error) {
       setError("Failed to fetch user data for editing.");
@@ -167,15 +167,11 @@ const SuperAdminUploadWhitelistPage = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiCall(
-        `/super-admin/whitelist/${updatedUser.whitelist_id}`,
-        "PUT",
-        {
-          student_email: updatedUser.student_email,
-          student_id: updatedUser.student_id,
-          adviser_id: updatedUser.adviser_id,
-        }
-      );
+      await apiCall(`/user-mgt/whitelist/${updatedUser.whitelist_id}`, "PUT", {
+        student_email: updatedUser.student_email,
+        student_id: updatedUser.student_id,
+        adviser_id: updatedUser.adviser_id,
+      });
       setEditingUser(null);
       setCurrentView("Whitelist");
       await fetchWhitelist();
@@ -197,7 +193,7 @@ const SuperAdminUploadWhitelistPage = () => {
     if (deletingUser) {
       try {
         await apiCall(
-          `/super-admin/whitelist/${deletingUser.whitelist_id}`,
+          `/user-mgt/whitelist/${deletingUser.whitelist_id}`,
           "DELETE"
         );
         setDeletingUser(null);

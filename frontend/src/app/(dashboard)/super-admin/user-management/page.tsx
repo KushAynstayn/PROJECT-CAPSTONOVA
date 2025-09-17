@@ -14,6 +14,8 @@ import EditAdviserView from "../../../../components/user-manage/edit-adviser";
 import EditAdminView from "../../../../components/user-manage/edit-admin";
 import SuggestionView from "../../../../components/user-manage/view-suggestion";
 import AddProponent from "../../../../components/user-manage/add-proponent";
+import AddAdviser from "../../../../components/user-manage/add-adviser";
+import AddAdmin from "../../../../components/user-manage/add-admin";
 import { apiCall, ApiError } from "@/lib/api";
 
 // --- Type and Interface definitions ---
@@ -36,8 +38,9 @@ interface Viewer extends BaseUser {
 
 interface ProponentListItem extends BaseUser {
   name: string;
-  idNumber: string;
-  course: string;
+  id_number: string;
+  department: string;
+  program: string;
   adviser: string;
 }
 
@@ -52,19 +55,32 @@ interface ProponentEditData extends BaseUser {
 
 interface Adviser extends BaseUser {
   name: string;
-  idNumber: string;
-  numberOfAdvisees: string;
-  degreeProgram: string;
+  advisees_count: number;
 }
 
+interface AdviserEditData {
+  id: number;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+}
+
+// --- FIX: Added 'name' property to align with data structure ---
 interface Admin extends BaseUser {
   name: string;
-  idNumber: string;
-  branch: string;
-  department: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
 }
+// --- END OF FIX ---
 
-type User = Viewer | ProponentListItem | ProponentEditData | Adviser | Admin;
+type User =
+  | Viewer
+  | ProponentListItem
+  | ProponentEditData
+  | Adviser
+  | AdviserEditData
+  | Admin;
 
 const placeholderText = {
   Viewer: "Search Viewers Here",
@@ -89,11 +105,12 @@ const SuperAdminUserManagementPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // --- Data Fetching Callbacks ---
   const fetchViewers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/super-admin/viewers?search=${searchQuery}`);
+      const data = await apiCall(`/user-mgt/viewers?search=${searchQuery}`);
       setUsers((prev) => ({ ...prev, Viewer: data.data }));
     } catch (err) {
       setError("Failed to fetch viewers.");
@@ -106,12 +123,40 @@ const SuperAdminUserManagementPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(
-        `/super-admin/proponents?search=${searchQuery}`
-      );
+      const data = await apiCall(`/user-mgt/proponents?search=${searchQuery}`);
       setUsers((prev) => ({ ...prev, Proponents: data.data }));
     } catch (err) {
       setError("Failed to fetch proponents.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
+  const fetchAdvisers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/user-mgt/advisers?name=${searchQuery}`);
+      setUsers((prev) => ({ ...prev, Advisers: data }));
+    } catch (err) {
+      setError("Failed to fetch advisers.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
+  const fetchAdmins = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/user-mgt/admin?name=${searchQuery}`);
+      const formattedData = data.data.map((admin: any) => ({
+        ...admin,
+        name: `${admin.first_name} ${admin.last_name}`,
+      }));
+      setUsers((prev) => ({ ...prev, Admin: formattedData }));
+    } catch (err) {
+      setError("Failed to fetch admins.");
     } finally {
       setIsLoading(false);
     }
@@ -121,18 +166,41 @@ const SuperAdminUserManagementPage = () => {
     setEditingUser(null);
     setViewingSuggestionsFor(null);
 
-    if (currentRole === "Viewer") fetchViewers();
-    if (currentRole === "Proponents") fetchProponents();
-  }, [currentRole, searchQuery, fetchViewers, fetchProponents]);
+    switch (currentRole) {
+      case "Viewer":
+        fetchViewers();
+        break;
+      case "Proponents":
+        fetchProponents();
+        break;
+      case "Advisers":
+        fetchAdvisers();
+        break;
+      case "Admin":
+        fetchAdmins();
+        break;
+    }
+  }, [
+    currentRole,
+    searchQuery,
+    fetchViewers,
+    fetchProponents,
+    fetchAdvisers,
+    fetchAdmins,
+  ]);
+
+  // --- CRUD Handlers ---
 
   const handleEditUser = async (userId: number) => {
     setError(null);
     setIsLoading(true);
     try {
       let endpoint = "";
-      if (currentRole === "Viewer") endpoint = `/super-admin/viewers/${userId}`;
+      if (currentRole === "Viewer") endpoint = `/user-mgt/viewers/${userId}`;
       if (currentRole === "Proponents")
-        endpoint = `/super-admin/proponents/${userId}`;
+        endpoint = `/user-mgt/proponents/${userId}`;
+      if (currentRole === "Advisers") endpoint = `/user-mgt/advisers/${userId}`;
+      if (currentRole === "Admin") endpoint = `/user-mgt/admin/${userId}`;
 
       if (endpoint) {
         const userToEdit = await apiCall(endpoint);
@@ -151,16 +219,23 @@ const SuperAdminUserManagementPage = () => {
     let roleName = currentRole.slice(0, -1);
 
     if (currentRole === "Viewer") {
-      endpoint = `/super-admin/viewers/${userId}`;
+      endpoint = `/user-mgt/viewers/${userId}`;
       fetchAction = fetchViewers;
     } else if (currentRole === "Proponents") {
-      endpoint = `/super-admin/proponents/${userId}`;
+      endpoint = `/user-mgt/proponents/${userId}`;
       fetchAction = fetchProponents;
+    } else if (currentRole === "Advisers") {
+      endpoint = `/user-mgt/advisers/${userId}`;
+      fetchAction = fetchAdvisers;
+    } else if (currentRole === "Admin") {
+      endpoint = `/user-mgt/admin/${userId}/restrict`;
+      fetchAction = fetchAdmins;
     }
 
     if (window.confirm(`Are you sure you want to restrict this ${roleName}?`)) {
       try {
-        await apiCall(endpoint, "DELETE");
+        const method = currentRole === "Admin" ? "PATCH" : "DELETE";
+        await apiCall(endpoint, method);
         if (fetchAction) fetchAction();
       } catch (err) {
         setError(`Failed to restrict ${roleName}.`);
@@ -168,17 +243,31 @@ const SuperAdminUserManagementPage = () => {
     }
   };
 
-  const handleAddProponent = async (proponentData: any) => {
+  const handleAddUser = async (userData: any) => {
     setIsLoading(true);
     setError(null);
+    let endpoint = "";
+    let fetchAction: (() => void) | null = null;
+
+    if (currentRole === "Proponents") {
+      endpoint = "/user-mgt/proponents";
+      fetchAction = fetchProponents;
+    } else if (currentRole === "Advisers") {
+      endpoint = "/user-mgt/advisers";
+      fetchAction = fetchAdvisers;
+    } else if (currentRole === "Admin") {
+      endpoint = "/user-mgt/admin";
+      fetchAction = fetchAdmins;
+    }
+
     try {
-      await apiCall("/super-admin/proponents", "POST", proponentData);
+      await apiCall(endpoint, "POST", userData);
       setIsAddModalOpen(false);
-      fetchProponents();
+      if (fetchAction) fetchAction();
     } catch (err: any) {
       const message =
         err instanceof ApiError ? err.message : "An unexpected error occurred.";
-      alert(`Failed to add proponent: ${message}`);
+      alert(`Failed to add user: ${message}`);
     } finally {
       setIsLoading(false);
     }
@@ -196,13 +285,27 @@ const SuperAdminUserManagementPage = () => {
     let fetchAction: (() => void) | null = null;
 
     if (currentRole === "Viewer") {
-      endpoint = `/super-admin/viewers/${updatedUser.id}`;
-      payload = updatedUser as Viewer;
+      endpoint = `/user-mgt/viewers/${updatedUser.id}`;
+      const viewerData = updatedUser as Viewer;
+      payload = {
+        first_name: viewerData.first_name,
+        last_name: viewerData.last_name,
+        email: viewerData.email,
+        ...viewerData.user_detail,
+      };
       fetchAction = fetchViewers;
     } else if (currentRole === "Proponents") {
-      endpoint = `/super-admin/proponents/${updatedUser.id}`;
+      endpoint = `/user-mgt/proponents/${updatedUser.id}`;
       payload = updatedUser as ProponentEditData;
       fetchAction = fetchProponents;
+    } else if (currentRole === "Advisers") {
+      endpoint = `/user-mgt/advisers/${updatedUser.id}`;
+      payload = updatedUser as AdviserEditData;
+      fetchAction = fetchAdvisers;
+    } else if (currentRole === "Admin") {
+      endpoint = `/user-mgt/admin/${updatedUser.id}`;
+      payload = updatedUser as Admin;
+      fetchAction = fetchAdmins;
     }
 
     try {
@@ -251,10 +354,10 @@ const SuperAdminUserManagementPage = () => {
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Advisers}
         filteredUsers={users.Advisers as Adviser[]}
-        onEditUser={() => {}}
+        onEditUser={handleEditUser}
         onViewSuggestions={handleViewSuggestions}
-        onDeleteUser={() => {}}
-        onAddUser={() => {}}
+        onDeleteUser={handleDeleteUser}
+        onAddUser={() => setIsAddModalOpen(true)}
       />
     ),
     Admin: (
@@ -264,7 +367,9 @@ const SuperAdminUserManagementPage = () => {
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Admin}
         filteredUsers={users.Admin as Admin[]}
-        onEditUser={() => {}}
+        onEditUser={handleEditUser}
+        onAddUser={() => setIsAddModalOpen(true)}
+        onDeleteUser={handleDeleteUser}
       />
     ),
   };
@@ -287,7 +392,21 @@ const SuperAdminUserManagementPage = () => {
           {isAddModalOpen && currentRole === "Proponents" && (
             <AddProponent
               onClose={() => setIsAddModalOpen(false)}
-              onAdd={handleAddProponent}
+              onAdd={handleAddUser}
+            />
+          )}
+
+          {isAddModalOpen && currentRole === "Advisers" && (
+            <AddAdviser
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
+            />
+          )}
+
+          {isAddModalOpen && currentRole === "Admin" && (
+            <AddAdmin
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
             />
           )}
 
@@ -308,6 +427,20 @@ const SuperAdminUserManagementPage = () => {
               {currentRole === "Proponents" && (
                 <EditProponentView
                   user={editingUser as ProponentEditData}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {currentRole === "Advisers" && (
+                <EditAdviserView
+                  user={editingUser as AdviserEditData}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {currentRole === "Admin" && (
+                <EditAdminView
+                  user={editingUser as Admin}
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />

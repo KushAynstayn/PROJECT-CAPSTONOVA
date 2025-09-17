@@ -93,9 +93,8 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
   };
 
   const handleConfirmSave = () => {
-    // Exclude confirmPassword before sending to the backend
-    const { password_confirmation, ...proponentData } = formData;
-    onAdd(proponentData);
+    // FIX: Send the full formData, including password_confirmation
+    onAdd(formData);
   };
 
   return (

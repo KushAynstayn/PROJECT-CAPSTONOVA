@@ -71,7 +71,7 @@ const AdviserSuggestionsDetails = ({
         });
 
         const response = await apiCall(
-          `/admin/advisers/${adviser.id}/suggestions?${params.toString()}`
+          `/user-mgt/advisers/${adviser.id}/suggestions?${params.toString()}`
         );
 
         setSuggestions(response);

@@ -17,8 +17,8 @@ interface User {
   id: number;
   name: string;
   email: string;
-  idNumber: string;
-  course: string;
+  id_number: string;
+  department: string;
   adviser: string;
 }
 
@@ -139,7 +139,7 @@ const ProponentView = ({
               ID NUMBER
             </TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
-              DEGREE PROGRAM
+              DEPARTMENT
             </TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">
               ADVISER
@@ -162,10 +162,10 @@ const ProponentView = ({
                   {user.email}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.idNumber}
+                  {user.id_number}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.course}
+                  {user.department}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
                   {user.adviser}

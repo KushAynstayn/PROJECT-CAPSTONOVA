@@ -2,22 +2,13 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-// Corrected the User interface to be consistent with other files
 interface User {
   id: number;
-  name: string;
-  idNumber: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
   email: string;
-  branch: string;
-  department: string;
 }
 
 interface EditAdminViewProps {
@@ -29,23 +20,15 @@ interface EditAdminViewProps {
 const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
   // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSelectChange = (fieldName: keyof User, value: string) => {
-    setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
   const handleSave = () => {
     onSave(formData);
   };
-
-  // Dummy data for comboboxes
-  const branches = ["BSIS", "BSIT", "BIT-CT"];
-  const departments = ["CCICT", "COT-D", "COT-E", "CME", "CAS", "COE", "COeD"];
 
   return (
     // Main container with border, rounded corners, and shadow
@@ -69,39 +52,66 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
 
         {/* REVISED: Form Fields using a Grid layout */}
         <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
-          {/* Full Name */}
+          {/* First Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-semibold text-gray-600">
-              Full Name
+            <label
+              htmlFor="first_name"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              First Name
             </label>
             <input
-              id="name"
+              id="first_name"
               type="text"
-              name="name"
-              value={formData.name}
+              name="first_name"
+              value={formData.first_name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
 
-          {/* ID Number */}
+          {/* Last Name */}
           <div>
-            <label htmlFor="idNumber" className="block text-sm font-semibold text-gray-600">
-              ID Number
+            <label
+              htmlFor="last_name"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              Last Name
             </label>
             <input
-              id="idNumber"
+              id="last_name"
               type="text"
-              name="idNumber"
-              value={formData.idNumber}
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            />
+          </div>
+
+          {/* Middle Name */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="middle_name"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              Middle Name (Optional)
+            </label>
+            <input
+              id="middle_name"
+              type="text"
+              name="middle_name"
+              value={formData.middle_name || ""}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
           </div>
 
           {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-600">
+          <div className="md:col-span-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-gray-600"
+            >
               Email
             </label>
             <input
@@ -112,46 +122,6 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
             />
-          </div>
-
-          {/* Branch Dropdown */}
-          <div>
-            <label htmlFor="branch" className="block text-sm font-semibold text-gray-600">
-              Degree Program
-            </label>
-            <Select
-              value={formData.branch}
-              onValueChange={(value) => handleSelectChange("branch", value)}
-            >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
-                <SelectValue placeholder="Select a Branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map(branch => (
-                  <SelectItem key={branch} value={branch}>{branch}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Department Dropdown */}
-          <div>
-            <label htmlFor="department" className="block text-sm font-semibold text-gray-600">
-              Department
-            </label>
-            <Select
-              value={formData.department}
-              onValueChange={(value) => handleSelectChange("department", value)}
-            >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
-                <SelectValue placeholder="Select a Department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map(dept => (
-                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 

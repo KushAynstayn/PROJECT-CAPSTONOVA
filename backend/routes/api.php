@@ -32,20 +32,21 @@ use App\Http\Controllers\Api\Util\CheckManuscriptController;
 use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
+use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
-use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 
+use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\UserManagement\MProponentController;
 use App\Http\Controllers\Api\UserManagement\MWhitelistController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
+
+
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
-
-
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
@@ -310,4 +311,22 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
         [MAdviserController::class, 'allSuggestions']
     )->name('suggestions.index');
     //End advisers route
+
+
+    // ============================
+    // Admin Management Routes (Admin)
+    // These routes allow admins to manage other admins.
+    // ============================
+    Route::get('admin/', [MAdminController::class, 'index'])->name('admins.index');
+    Route::post('admin/', [MAdminController::class, 'store'])->name('admins.store');
+    Route::get('admin/{admin}', [MAdminController::class, 'show'])->name('admins.show');
+    Route::put('admin/{admin}', [MAdminController::class, 'update'])->name('admins.update');
+    Route::patch(
+        'admin/{admin}/restrict',
+        [MAdminController::class, 'setStatusToRestricted']
+    )->name('admins.restrict');
+    // ============================
+    // End Admin Management Routes
+    // ============================
+
 });
