@@ -41,15 +41,16 @@ use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
+use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
 use App\Http\Controllers\Api\UserManagement\MProponentController;
 use App\Http\Controllers\Api\UserManagement\MWhitelistController;
+
+
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
-
-
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
-use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
+use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
 
 // Authentication routes grouped under the 'auth' prefix.
@@ -177,6 +178,8 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
     Route::post('document-requests/{id}/reject', [DocumentRequestController::class, 'reject']);
 
     Route::get('document-requests/approval-history', [DocumentRequestController::class, 'approvalHistory']);
+
+    Route::apiResource('system-settings', SystemSettingController::class);
 });
 
 
