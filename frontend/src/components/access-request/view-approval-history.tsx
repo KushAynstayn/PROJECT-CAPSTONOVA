@@ -21,39 +21,48 @@ import {
   TableCell,
 } from "@heroui/react";
 
-interface User {
-  id: number;
-  name: string;
-  idNumber: string;
-  dateRequested: string;
-  requestedDoc: string;
+// Interface matches the structure from the approvalHistory method
+interface ApprovalHistory {
+  history_id: number;
+  viewer: {
+    full_name: string;
+  };
+  project: {
+    title: string;
+  };
+  approver: {
+    full_name: string;
+  };
+  request_date: string;
+  approval_date: string;
+  expiry_date: string;
 }
 
 interface ApprovalHistoryViewProps {
+  history: ApprovalHistory[];
   searchQuery: string;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: User[];
   startDate: Date | undefined;
   endDate: Date | undefined;
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
-  onEditUser: (userId: number) => void;
+  isLoading: boolean;
 }
 
 const ApprovalHistoryView = ({
+  history,
   searchQuery,
   onSearchChange,
   onClear,
   placeholder,
-  filteredUsers,
   startDate,
   endDate,
   onStartDateChange,
   onEndDateChange,
+  isLoading,
 }: ApprovalHistoryViewProps) => {
-
   return (
     <div>
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
@@ -121,21 +130,45 @@ const ApprovalHistoryView = ({
 
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Approval history data table">
-          <TableHeader className="min-w-[800px]">
-           
-            <TableColumn className="w-32 bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="w-32 bg-[#EDB4B4] text-left">ID NUMBER</TableColumn>
-            <TableColumn className="w-32 bg-[#EDB4B4] text-left">DATE REQUESTED</TableColumn>
-            <TableColumn className="w-80 bg-[#EDB4B4] text-left">REQUESTED DOCUMENT</TableColumn>
+          <TableHeader>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              REQUESTER
+            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              PROJECT TITLE
+            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              APPROVER
+            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              APPROVAL DATE
+            </TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
+              EXPIRY DATE
+            </TableColumn>
           </TableHeader>
-          <TableBody emptyContent={"No approval history found."}>
-            {filteredUsers.map((user) => (
-              <TableRow key={user.id}>
-              
-                <TableCell className="w-32 border-b border-gray-200">{user.name}</TableCell>
-                <TableCell className="w-32 border-b border-gray-200">{user.idNumber}</TableCell>
-                <TableCell className="w-32 border-b border-gray-200">{user.dateRequested}</TableCell>
-                <TableCell className="w-80 border-b border-gray-200">{user.requestedDoc}</TableCell>
+          <TableBody
+            emptyContent={
+              isLoading ? "Loading..." : "No approval history found."
+            }
+          >
+            {history.map((item) => (
+              <TableRow key={item.history_id}>
+                <TableCell className="border-b border-gray-200">
+                  {item.viewer.full_name}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
+                  {item.project.title}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
+                  {item.approver.full_name}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
+                  {format(new Date(item.approval_date), "PPP")}
+                </TableCell>
+                <TableCell className="border-b border-gray-200">
+                  {format(new Date(item.expiry_date), "PPP")}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -15,7 +15,7 @@ use App\Http\Controllers\Api\Util\ResourceController;
 use App\Http\Controllers\Api\ProjectDetailsController;
 use App\Http\Controllers\Api\User\StreamAcmController;
 
-use App\Http\Controllers\Api\SuperAdmin\UserController;
+
 
 use App\Http\Controllers\Api\Util\ProjectTypeController;
 
@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
+use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
 
 
 // Authentication routes grouped under the 'auth' prefix.
@@ -156,8 +157,17 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
 Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
 
-    Route::apiResource('users', UserController::class)
-        ->names('super-admin.users');
+    Route::get('capstone-projects', [SACapstoneProjectController::class, 'index'])
+        ->name('admin.capstone-projects.index');
+
+    Route::patch('capstone-projects/{project}/archive', [SACapstoneProjectController::class, 'archive'])
+        ->name('admin.capstone-projects.archive');
+
+    Route::patch('capstone-projects/{project}/unarchive', [SACapstoneProjectController::class, 'unarchive'])
+        ->name('admin.capstone-projects.unarchive');
+
+    Route::get('capstone-projects/archived', [SACapstoneProjectController::class, 'getArchived'])
+        ->name('admin.capstone-projects.archived');
 
 
     Route::get('document-requests', [DocumentRequestController::class, 'index']);
@@ -165,6 +175,8 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
     Route::post('document-requests/{id}/approve', [DocumentRequestController::class, 'approve']);
 
     Route::post('document-requests/{id}/reject', [DocumentRequestController::class, 'reject']);
+
+    Route::get('document-requests/approval-history', [DocumentRequestController::class, 'approvalHistory']);
 });
 
 
@@ -183,6 +195,7 @@ Route::prefix('util')->group(function () {
     Route::get('/project-types', ProjectTypeController::class);
     Route::get('/environment-trends', EnvironmentTrendController::class);
     Route::get('/project-tools', ProjectToolsController::class);
+    //Super Admin analytics route
 
     //Admin analytics route
     Route::get('/top-advisers', [AdminDashboardUtilController::class, 'topAdvisers']);
