@@ -33,12 +33,7 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === "student_id") {
-      setFormData((prev) => ({
-        ...prev,
-        user_detail: { ...prev.user_detail!, student_id: value },
-      }));
-    } else if (name in (formData.user_detail || {})) {
+    if (name in (formData.user_detail || {})) {
       setFormData((prev) => ({
         ...prev,
         user_detail: { ...prev.user_detail!, [name]: value },

@@ -62,8 +62,8 @@ const AdminUploadWhitelistPage = () => {
     setIsLoading(true);
     try {
       const url = searchQuery
-        ? `/admin/whitelist?search=${searchQuery}`
-        : "/admin/whitelist";
+        ? `/user-mgt/whitelist?search=${searchQuery}`
+        : "/user-mgt/whitelist";
       const response = await apiCall(url);
       setUsers(response.data);
     } catch (error) {
@@ -97,7 +97,7 @@ const AdminUploadWhitelistPage = () => {
     setError(null);
     setSuccess(null);
     try {
-      await apiCall("/admin/whitelist", "POST", {
+      await apiCall("/user-mgt/whitelist", "POST", {
         entries: [
           {
             student_email: formData.student_email,
@@ -126,7 +126,7 @@ const AdminUploadWhitelistPage = () => {
     uploadFormData.append("file", selectedFile);
     try {
       await apiCall(
-        "/admin/whitelist/upload-excel",
+        "/user-mgt/whitelist/upload-excel",
         "POST",
         uploadFormData,
         true
@@ -146,7 +146,7 @@ const AdminUploadWhitelistPage = () => {
     try {
       const userToEdit = users.find((u) => u.whitelist_id === userId);
       if (userToEdit) {
-        const userData = await apiCall(`/admin/whitelist/${userId}`);
+        const userData = await apiCall(`/user-mgt/whitelist/${userId}`);
         setEditingUser(userData);
       }
     } catch (error) {
@@ -163,7 +163,7 @@ const AdminUploadWhitelistPage = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiCall(`/admin/whitelist/${updatedUser.whitelist_id}`, "PUT", {
+      await apiCall(`/user-mgt/whitelist/${updatedUser.whitelist_id}`, "PUT", {
         student_email: updatedUser.student_email,
         student_id: updatedUser.student_id,
         adviser_id: updatedUser.adviser_id,
@@ -189,7 +189,7 @@ const AdminUploadWhitelistPage = () => {
     if (deletingUser) {
       try {
         await apiCall(
-          `/admin/whitelist/${deletingUser.whitelist_id}`,
+          `/user-mgt/whitelist/${deletingUser.whitelist_id}`,
           "DELETE"
         );
         setDeletingUser(null);

@@ -1,7 +1,7 @@
 import React from "react";
 
 // Define the possible roles for type safety
-export type Role = "Guest" | "Proponents" | "Advisers" | "Admin";
+export type Role = "Viewer" | "Proponents" | "Advisers" | "Admin";
 
 // Define the component's props
 interface NavigationBarProps {
@@ -15,7 +15,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   activeRole,
   onSelectRole,
 }) => {
-  const roles: Role[] = ["Guest", "Proponents", "Advisers", "Admin"];
+  const roles: Role[] = ["Viewer", "Proponents", "Advisers", "Admin"];
 
   const navStyles: React.CSSProperties = {
     padding: "12px 20px",

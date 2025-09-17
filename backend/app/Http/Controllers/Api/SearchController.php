@@ -36,32 +36,37 @@ class SearchController extends Controller
             'keywords.*' => ['required_with:keywords', 'string', 'max:50'],
             'languages' => ['nullable', 'array'],
             'languages.*' => ['required_with:languages', 'string', 'max:50'],
+            'submission_year' => ['nullable', 'integer', 'digits:4'],
             'year_from' => ['nullable', 'integer', 'digits:4'],
             'year_to' => ['nullable', 'integer', 'digits:4', 'gte:year_from'],
         ]);
 
         $query = CapstoneProject::query();
 
-        // 2. Determine if this is an advanced search or a basic search
-        $isAdvancedSearch = collect($validated)->except('q')->filter()->isNotEmpty();
-
-        if ($isAdvancedSearch) {
-            $this->applyAdvancedFilters($query, $validated);
-        } elseif (!empty($validated['q'])) {
-            // Basic search with escaped term
+        // 2. Apply general search term if it exists.
+        if (!empty($validated['q'])) {
             $searchTerm = $this->escapeLike($validated['q']);
-            $query->where('title', 'LIKE', '%' . $searchTerm . '%');
+            $query->where(function (Builder $q) use ($searchTerm) {
+                $q->where('title', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('abstract', 'LIKE', '%' . $searchTerm . '%');
+            });
         }
 
-        // 3. Eager load relationships and paginate the results
+        // 3. Apply any advanced filters that are present.
+        $advancedFilters = collect($validated)->except('q')->filter()->all();
+        if (!empty($advancedFilters)) {
+            $this->applyAdvancedFilters($query, $advancedFilters);
+        }
+
+        // 4. Eager load relationships and paginate the results
         $projects = $query->with([
             'projectResearcher.user',
             'keywords',
             'sourceCode.programmingLanguages',
-            'adviser' // Eager-load the adviser relationship
-        ])->paginate(10)->withQueryString(); // withQueryString appends filters to pagination links
+            'adviser'
+        ])->paginate(10)->withQueryString();
 
-        // 4. Transform the items for the final JSON response
+        // 5. Transform the items for the final JSON response
         $transformedProjects = $projects->through(fn(CapstoneProject $project) => $this->transformProject($project));
 
         return response()->json($transformedProjects);
@@ -76,26 +81,26 @@ class SearchController extends Controller
      */
     private function applyAdvancedFilters(Builder $query, array $filters): void
     {
-        // Filter by title
         if (!empty($filters['title'])) {
             $searchTerm = $this->escapeLike($filters['title']);
             $query->where('title', 'LIKE', '%' . $searchTerm . '%');
         }
 
-        // Filter by platform type
         if (!empty($filters['platform_type'])) {
             $query->where('platform_type', $filters['platform_type']);
         }
 
-        // Filter by submission year range
-        if (!empty($filters['year_from'])) {
-            $query->where('submission_year', '>=', $filters['year_from']);
-        }
-        if (!empty($filters['year_to'])) {
-            $query->where('submission_year', '<=', $filters['year_to']);
+        if (!empty($filters['submission_year'])) {
+            $query->where('submission_year', $filters['submission_year']);
+        } else {
+            if (!empty($filters['year_from'])) {
+                $query->where('submission_year', '>=', $filters['year_from']);
+            }
+            if (!empty($filters['year_to'])) {
+                $query->where('submission_year', '<=', $filters['year_to']);
+            }
         }
 
-        // Filter by adviser name
         if (!empty($filters['adviser'])) {
             $adviserName = $this->escapeLike($filters['adviser']);
             $query->whereHas('adviser', function (Builder $q) use ($adviserName) {
@@ -104,7 +109,6 @@ class SearchController extends Controller
             });
         }
 
-        // Filter by authors (leader or members)
         if (!empty($filters['authors'])) {
             $authors = $filters['authors'];
             $query->whereHas('projectResearcher', function (Builder $q) use ($authors) {
@@ -123,14 +127,12 @@ class SearchController extends Controller
             });
         }
 
-        // Filter by keywords
         if (!empty($filters['keywords'])) {
             $query->whereHas('keywords', function (Builder $q) use ($filters) {
                 $q->whereIn('keyword_name', $filters['keywords']);
             });
         }
 
-        // Filter by programming languages
         if (!empty($filters['languages'])) {
             $query->whereHas('sourceCode.programmingLanguages', function (Builder $q) use ($filters) {
                 $q->whereIn('language_name', $filters['languages']);
@@ -169,7 +171,7 @@ class SearchController extends Controller
     }
 
     /**
-     * Formats a collection of tags into a displayable array (e.g., "+N more").
+     * Formats a collection of tags into a displayable array.
      *
      * @param Collection|null $tags
      * @param string $key
@@ -199,7 +201,6 @@ class SearchController extends Controller
      */
     private function escapeLike(string $value): string
     {
-        // Escape backslashes, then percent signs, then underscores
         return str_replace(
             ['\\', '%', '_'],
             ['\\\\', '\%', '\_'],

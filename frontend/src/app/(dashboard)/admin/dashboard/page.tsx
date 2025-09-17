@@ -36,6 +36,7 @@ interface ProjectDetails extends SearchResult {
 
 const AdminDashboardPage: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
+  const [selectedYear, setSelectedYear] = useState<number | undefined>();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(
     null
@@ -46,7 +47,7 @@ const AdminDashboardPage: React.FC = () => {
   // --- DEBOUNCED SEARCH ---
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (searchValue.trim() !== "") {
+      if (searchValue.trim() !== "" || selectedYear) {
         handleSearch();
       } else {
         setSearchResults([]);
@@ -57,17 +58,26 @@ const AdminDashboardPage: React.FC = () => {
       clearTimeout(handler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchValue]);
+  }, [searchValue, selectedYear]);
 
   // --- API CALLS ---
   const handleSearch = async () => {
-    if (searchValue.trim() === "") return;
+    if (searchValue.trim() === "" && !selectedYear) return;
     setIsSearching(true);
     try {
-      const response = await apiCall(`/public/search?q=${searchValue}`);
+      const params = new URLSearchParams();
+      if (searchValue.trim()) {
+        params.append("q", searchValue);
+      }
+      if (selectedYear) {
+        params.append("submission_year", selectedYear.toString());
+      }
+
+      const response = await apiCall(`/public/search?${params.toString()}`);
       setSearchResults(response.data);
     } catch (error) {
       console.error("Search failed:", error);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -89,6 +99,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleClearAll = () => {
     setSearchValue("");
+    setSelectedYear(undefined);
     setSearchResults([]);
     setSelectedProject(null);
     setShowFullDocument(false);
@@ -164,7 +175,7 @@ const AdminDashboardPage: React.FC = () => {
     }
 
     // 3. View Search Results
-    if (searchValue.trim() !== "") {
+    if (searchValue.trim() !== "" || selectedYear) {
       return (
         <div className="flex flex-col bg-white rounded-lg shadow-md p-4 border border-gray-100 overflow-y-auto mt-4">
           <h2 className="text-xl font-bold text-gray-800 mb-4">
@@ -239,7 +250,7 @@ const AdminDashboardPage: React.FC = () => {
               onChange={(e) => setSearchValue(e.target.value)}
               onClear={handleClearAll}
             />
-            <Calendar22 />
+            <Calendar22 year={selectedYear} setYear={setSelectedYear} />
           </div>
           {renderContent()}
         </div>

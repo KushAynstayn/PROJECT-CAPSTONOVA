@@ -95,7 +95,7 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/admin/viewers?search=${searchQuery}`);
+      const data = await apiCall(`/user-mgt/viewers?search=${searchQuery}`);
       setUsers((prev) => ({ ...prev, Viewer: data.data }));
     } catch (err) {
       setError("Failed to fetch viewers.");
@@ -108,7 +108,7 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/admin/proponents?search=${searchQuery}`);
+      const data = await apiCall(`/user-mgt/proponents?search=${searchQuery}`);
       setUsers((prev) => ({ ...prev, Proponents: data.data }));
     } catch (err) {
       setError("Failed to fetch proponents.");
@@ -121,7 +121,7 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/admin/advisers?name=${searchQuery}`);
+      const data = await apiCall(`/user-mgt/advisers?name=${searchQuery}`);
       setUsers((prev) => ({ ...prev, Advisers: data }));
     } catch (err) {
       setError("Failed to fetch advisers.");
@@ -144,10 +144,10 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     try {
       let endpoint = "";
-      if (currentRole === "Viewer") endpoint = `/admin/viewers/${userId}`;
+      if (currentRole === "Viewer") endpoint = `/user-mgt/viewers/${userId}`;
       if (currentRole === "Proponents")
-        endpoint = `/admin/proponents/${userId}`;
-      if (currentRole === "Advisers") endpoint = `/admin/advisers/${userId}`;
+        endpoint = `/user-mgt/proponents/${userId}`;
+      if (currentRole === "Advisers") endpoint = `/user-mgt/advisers/${userId}`;
 
       const userToEdit = await apiCall(endpoint);
       setEditingUser({ id: userId, ...userToEdit });
@@ -163,15 +163,15 @@ const AdminUserManagementPage = () => {
     let fetchAction: (() => void) | null = null;
 
     if (currentRole === "Viewer") {
-      endpoint = `/admin/viewers/${userId}`;
+      endpoint = `/user-mgt/viewers/${userId}`;
       fetchAction = fetchViewers;
     }
     if (currentRole === "Proponents") {
-      endpoint = `/admin/proponents/${userId}`;
+      endpoint = `/user-mgt/proponents/${userId}`;
       fetchAction = fetchProponents;
     }
     if (currentRole === "Advisers") {
-      endpoint = `/admin/advisers/${userId}`;
+      endpoint = `/user-mgt/advisers/${userId}`;
       fetchAction = fetchAdvisers;
     }
 
@@ -193,7 +193,7 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await apiCall("/admin/advisers", "POST", adviserData);
+      await apiCall("/user-mgt/advisers", "POST", adviserData);
       setIsAddModalOpen(false);
       fetchAdvisers();
     } catch (err: any) {
@@ -217,15 +217,23 @@ const AdminUserManagementPage = () => {
     let fetchAction: (() => void) | null = null;
 
     if (currentRole === "Viewer") {
-      endpoint = `/admin/viewers/${updatedUser.id}`;
-      payload = updatedUser as Viewer;
+      endpoint = `/user-mgt/viewers/${updatedUser.id}`;
+      // --- FIX: Flatten the nested user_detail object before sending ---
+      const viewerData = updatedUser as Viewer;
+      payload = {
+        first_name: viewerData.first_name,
+        last_name: viewerData.last_name,
+        email: viewerData.email,
+        ...viewerData.user_detail,
+      };
+      // --- END OF FIX ---
       fetchAction = fetchViewers;
     } else if (currentRole === "Proponents") {
-      endpoint = `/admin/proponents/${updatedUser.id}`;
+      endpoint = `/user-mgt/proponents/${updatedUser.id}`;
       payload = updatedUser as ProponentEditData;
       fetchAction = fetchProponents;
     } else if (currentRole === "Advisers") {
-      endpoint = `/admin/advisers/${updatedUser.id}`;
+      endpoint = `user-mgt/advisers/${updatedUser.id}`;
       payload = updatedUser as AdviserEditData;
       fetchAction = fetchAdvisers;
     }

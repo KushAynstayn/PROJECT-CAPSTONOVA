@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Admin;
+namespace App\Http\Controllers\Api\UserManagement;
 
 use Exception;
 use Throwable;
@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\Admin\ImportWhitelistRequest;
 
-class WhitelistController extends Controller
+class MWhitelistController extends Controller
 {
     /**
      * Store newly created resources in storage.
