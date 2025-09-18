@@ -2,61 +2,151 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ActionApprovedRequestProps {
-  onConfirm: () => void;
+  onConfirm: (grantDate: Date, expiryDate: Date) => void;
   onCancel: () => void;
+  isLoading: boolean;
 }
 
-const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({ onConfirm, onCancel }) => {
-  const [showConfirmDialog, setShowConfirmDialog] = useState(true);
+const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
+  onConfirm,
+  onCancel,
+  isLoading,
+}) => {
+  const [grantDate, setGrantDate] = useState<Date | undefined>(new Date());
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>();
+  const [error, setError] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // Triggered by the "Yes" button in the confirmation dialog.
-  const handleConfirmYes = () => {
-    setShowConfirmDialog(false); // Hide the confirmation dialog
-    onConfirm(); // Call the parent's function to perform the approval logic
-    setShowSuccessDialog(true); // Show the success dialog
+  const handleConfirm = () => {
+    if (!grantDate || !expiryDate) {
+      setError("Please select both a grant and an expiry date.");
+      return;
+    }
+    if (expiryDate < grantDate) {
+      setError("Expiry date cannot be before the grant date.");
+      return;
+    }
+    setError(null);
+    onConfirm(grantDate, expiryDate);
+    // Assuming confirmation is successful, show the success dialog
+    setShowSuccessDialog(true);
   };
 
-  // Triggered by the "OK" button in the success dialog.
   const handleSuccessDialogClose = () => {
-    setShowSuccessDialog(false); // Hide the success dialog.
-    onCancel(); // Call onCancel from the parent to close the main modal.
+    setShowSuccessDialog(false);
+    onCancel(); // Close the main modal after success
   };
 
   return (
     <>
-      {/* Conditional rendering for the initial confirmation dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 ">
-          <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300 ml-65">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">
-              Confirm Approval
-            </h3>
-            <p className="text-sm text-gray-600 mb-6 break-words">
-              Are you sure you want to approve this request?
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Button
-                onClick={handleConfirmYes}
-                className="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-xl hover:bg-green-600 transition-colors"
-              >
-                Yes
-              </Button>
-              <Button
-                onClick={onCancel} // Use the onCancel prop directly to close the dialog.
-                className="flex-1 bg-red-500 text-white font-bold py-2 px-4 rounded-xl hover:bg-red-600 transition-colors"
-              >
-                No
-              </Button>
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
+        <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-96 text-center border border-gray-300 ml-65">
+          <h3 className="text-lg font-bold mb-4 text-gray-800">
+            Approve Access Request
+          </h3>
+          <p className="text-sm text-gray-600 mb-6 break-words">
+            Please set the grant and expiry date for the document access.
+          </p>
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                Grant Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !grantDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {grantDate ? (
+                      format(grantDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={grantDate}
+                    onSelect={setGrantDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                Expiry Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? (
+                      format(expiryDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    disabled={{ before: grantDate || new Date() }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Conditional rendering for the success dialog */}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+          <div className="flex justify-center space-x-4">
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              className="flex-1"
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              className="flex-1 bg-green-500 text-white hover:bg-green-600"
+              disabled={isLoading}
+            >
+              {isLoading ? "Approving..." : "Confirm"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Dialog */}
       {showSuccessDialog && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
           <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300 ml-65">

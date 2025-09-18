@@ -1,18 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-// ... other imports remain the same
-import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableHeader,
@@ -22,17 +13,13 @@ import {
   TableCell,
 } from "@heroui/react";
 
-
 // Import the AddUser component
-import AddAdmin from "./add-admin";// Adjust this path to the correct location of your AddUser component.
+import AddAdmin from "./add-admin"; // Adjust this path to the correct location of your AddUser component.
 
 interface User {
   id: number;
   name: string;
-  idNumber: string;
   email: string;
-  branch: string;
-  department: string;
 }
 
 interface AdminViewProps {
@@ -40,13 +27,10 @@ interface AdminViewProps {
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: User[]; // Use the defined User type
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-  onStartDateChange: (date: Date | undefined) => void;
-  onEndDateChange: (date: Date | undefined) => void;
-  // NEW PROP: Function to trigger the edit mode in the parent
+  filteredUsers: User[];
   onEditUser: (userId: number) => void;
+  onAddUser: () => void;
+  onDeleteUser: (userId: number) => void;
 }
 
 const AdminView = ({
@@ -55,39 +39,36 @@ const AdminView = ({
   onClear,
   placeholder,
   filteredUsers,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
-  onEditUser, // Destructure the new prop
+  onEditUser,
+  onAddUser,
+  onDeleteUser,
 }: AdminViewProps) => {
   const [selectedUserId, setSelectedUserId] = React.useState<number | null>(
     null
   );
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFadingOut, setIsFadingOut] = useState(false);
-  // NEW STATE: Manage the visibility of the AddUser component
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  
+  // State to manage the visibility of the modal dialog
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false); // New state for fade-out animation
+
   const modalRef = React.useRef<HTMLDivElement>(null);
 
   const handleRowClick = (e: React.MouseEvent, userId: number) => {
     setSelectedUserId(userId);
-    setIsFadingOut(false);
+    setIsFadingOut(false); // Reset fade-out state
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsFadingOut(true);
+    setIsFadingOut(true); // Trigger fade-out animation
   };
 
+  // New handler for when the animation ends
   const handleAnimationEnd = () => {
     if (isFadingOut) {
-      setIsModalOpen(false);
+      setIsModalOpen(false); // Close modal after animation
       setIsFadingOut(false);
-      setSelectedUserId(null);
+      setSelectedUserId(null); // Clear selected user
     }
   };
 
@@ -95,7 +76,7 @@ const AdminView = ({
     if (action === "edit") {
       onEditUser(userId);
     } else {
-      console.log(`Action: ${action} for User ID: ${userId}`);
+      onDeleteUser(userId);
     }
     handleCloseModal();
   };
@@ -145,7 +126,7 @@ const AdminView = ({
         {/* Add User button with a new click handler */}
         <button
           className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:rounded-[25px] hover:scale-110 hover:opacity-100"
-          onClick={() => setIsAddUserModalOpen(true)} // Set state to true to show the form
+          onClick={onAddUser}
         >
           <img
             src="/images/add-user.png"
@@ -155,21 +136,11 @@ const AdminView = ({
         </button>
       </div>
 
-      <div
-        ref={scrollContainerRef}
-        className="relative max-h-[60vh] overflow-y-auto"
-      >
+      <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Proponent user data table">
           <TableHeader>
             <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              ID NUMBER
-            </TableColumn>
             <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">BRANCH</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              DEPARTMENT
-            </TableColumn>
           </TableHeader>
           <TableBody emptyContent={"No users match the current filters."}>
             {filteredUsers.map((user) => (
@@ -185,16 +156,7 @@ const AdminView = ({
                   {user.name}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.idNumber}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
                   {user.email}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
-                  {user.branch}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
-                  {user.department}
                 </TableCell>
               </TableRow>
             ))}
@@ -253,9 +215,6 @@ const AdminView = ({
           </div>
         </div>
       )}
-
-      {/* Conditionally render the AddUser component */}
-      {isAddUserModalOpen && <AddAdmin onClose={() => setIsAddUserModalOpen(false)} />}
     </div>
   );
 };

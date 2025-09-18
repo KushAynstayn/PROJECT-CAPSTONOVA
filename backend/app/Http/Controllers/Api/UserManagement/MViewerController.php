@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Admin;
+namespace App\Http\Controllers\Api\UserManagement;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
-class UserViewerController extends Controller
+class MViewerController extends Controller
 {
     /**
      * Display a listing of active viewers.

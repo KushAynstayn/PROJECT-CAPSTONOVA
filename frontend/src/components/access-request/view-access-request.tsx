@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-// ... other imports remain the same
+import React, { useState, useRef } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,60 +20,71 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
-
-// Import the new dialog component
 import ActionApprovedRequest from "@/components/ui/action-approved-request";
+import { ApiError } from "@/lib/api";
 
-// Define the User interface
-interface User {
-  id: number;
-  name: string;
-  idNumber: string;
-  dateRequested: string;
-  requestedDoc: string;
+// Interface matches the structure from the DocumentRequestController index method
+interface DocumentRequest {
+  request_id: number;
+  viewer: {
+    id: number;
+    full_name: string;
+    email: string;
+  };
+  project: {
+    id: number;
+    title: string;
+  };
+  request_date: string;
+  status: string;
 }
 
-// Define the props interface for this component
 interface AccessRequestViewProps {
+  requests: DocumentRequest[];
   searchQuery: string;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: User[];
   startDate: Date | undefined;
   endDate: Date | undefined;
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
-  onEditUser: (userId: number) => void;
+  onApprove: (
+    requestId: number,
+    grantDate: Date,
+    expiryDate: Date
+  ) => Promise<void>;
+  onDecline: (requestId: number) => Promise<void>;
+  isLoading: boolean;
 }
 
 const AccessRequestView = ({
+  requests,
   searchQuery,
   onSearchChange,
   onClear,
   placeholder,
-  filteredUsers,
   startDate,
   endDate,
   onStartDateChange,
   onEndDateChange,
-  onEditUser,
+  onApprove,
+  onDecline,
+  isLoading,
 }: AccessRequestViewProps) => {
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedRequest, setSelectedRequest] =
+    useState<DocumentRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const [isApprovedDialogVisible, setIsApprovedDialogVisible] = useState(false);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const [hoveredUserId, setHoveredUserId] = useState<number | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [isShowingTooltip, setIsShowingTooltip] = useState(false);
+  const modalRef = React.useRef<HTMLDivElement>(null);
 
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reminderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  const handleRowClick = (userId: number) => {
-    setSelectedUserId(userId);
+  const handleRowClick = (request: DocumentRequest) => {
+    setSelectedRequest(request);
+    setActionError(null);
     setIsFadingOut(false);
     setIsModalOpen(true);
   };
@@ -87,73 +97,49 @@ const AccessRequestView = ({
     if (isFadingOut) {
       setIsModalOpen(false);
       setIsFadingOut(false);
-      setSelectedUserId(null);
+      setSelectedRequest(null);
     }
   };
 
-  const handleActionClick = (userId: number, action: "approve" | "decline") => {
-    if (action === "approve") {
-      setIsModalOpen(false); // Hide the main modal
-      setIsApprovedDialogVisible(true); // Show the new dialog
-    } else {
-      console.log(`Declined user with ID: ${userId}`);
-      handleCloseModal();
-    }
-  };
-
-  const handleApproveConfirm = () => {
-    // This is the function that gets called when the user clicks "Yes"
-    console.log(
-      `Final confirmation to approve user with ID: ${selectedUserId}`
-    );
-    // Here you would put the final logic to approve the request, like an API call.
-    // The ActionApprovedRequest component will then show the success message.
-  };
-
-  const handleApproveCancel = () => {
-    // This function closes the approval dialog and the main modal
-    setIsApprovedDialogVisible(false);
+  const handleApproveClick = () => {
     setIsModalOpen(false);
-    setSelectedUserId(null);
+    setIsApproveModalOpen(true);
   };
 
-  const handleMouseEnter = (userId: number) => {
-    setHoveredUserId(userId);
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
+  const handleDeclineClick = async () => {
+    if (!selectedRequest) return;
+    setIsActionLoading(true);
+    setActionError(null);
+    try {
+      await onDecline(selectedRequest.request_id);
+      handleCloseModal();
+    } catch (err: any) {
+      setActionError(err.message || "Failed to decline request.");
+    } finally {
+      setIsActionLoading(false);
     }
-    hoverTimeoutRef.current = setTimeout(() => {
-      setIsShowingTooltip(true);
-    }, 500);
   };
 
-  const handleMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-    setHoveredUserId(null);
-    setIsShowingTooltip(false);
-  };
-
-  const handleMouseMove = (event: React.MouseEvent) => {
-    setTooltipPosition({ x: event.clientX + 15, y: event.clientY + 15 });
-  };
-
-  useEffect(() => {
-    if (isShowingTooltip) {
-      if (reminderTimeoutRef.current) {
-        clearTimeout(reminderTimeoutRef.current);
+  const handleConfirmApproval = async (grantDate: Date, expiryDate: Date) => {
+    if (!selectedRequest) return;
+    setIsActionLoading(true);
+    setActionError(null);
+    try {
+      await onApprove(selectedRequest.request_id, grantDate, expiryDate);
+      setIsApproveModalOpen(false);
+      setSelectedRequest(null);
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        setActionError(err.message);
+      } else {
+        setActionError("An unexpected error occurred during approval.");
       }
-      reminderTimeoutRef.current = setTimeout(() => {
-        setIsShowingTooltip(false);
-      }, 1500);
+      // Re-open approve modal on error to show message
+      setIsApproveModalOpen(true);
+    } finally {
+      setIsActionLoading(false);
     }
-    return () => {
-      if (reminderTimeoutRef.current) {
-        clearTimeout(reminderTimeoutRef.current);
-      }
-    };
-  }, [isShowingTooltip]);
+  };
 
   return (
     <div>
@@ -183,17 +169,6 @@ const AccessRequestView = ({
         }
         .animate-fade-out {
           animation: fadeOut 0.15s ease-in forwards;
-        }
-        .tooltip-arrow {
-          position: absolute;
-          width: 0;
-          height: 0;
-          border-left: 8px solid transparent;
-          border-right: 8px solid transparent;
-          border-top: 8px solid #fff; /* Match background color */
-          bottom: -8px;
-          left: 50%;
-          transform: translateX(-50%);
         }
       `}</style>
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
@@ -261,44 +236,38 @@ const AccessRequestView = ({
 
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Access request data table">
-          <TableHeader className="min-w-[800px]">
-            <TableColumn className="w-32 bg-[#EDB4B4] text-left">
-              NAME
-            </TableColumn>
-            <TableColumn className="w-32 bg-[#EDB4B4] text-left">
-              ID NUMBER
-            </TableColumn>
-            <TableColumn className="w-32 bg-[#EDB4B4] text-left">
+          <TableHeader>
+            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
+            <TableColumn className="bg-[#EDB4B4] text-left">
               DATE REQUESTED
             </TableColumn>
-            <TableColumn className="w-80 bg-[#EDB4B4] text-left">
+            <TableColumn className="bg-[#EDB4B4] text-left">
               REQUESTED DOCUMENT
             </TableColumn>
           </TableHeader>
-          <TableBody emptyContent={"No pending access requests."}>
-            {filteredUsers.map((user) => (
+          <TableBody
+            emptyContent={
+              isLoading ? "Loading..." : "No pending access requests."
+            }
+          >
+            {requests.map((request) => (
               <TableRow
-                key={user.id}
-                className={cn(
-                  "hover:bg-gray-100 cursor-pointer relative",
-                  selectedUserId === user.id && "bg-gray-200"
-                )}
-                onClick={() => handleRowClick(user.id)}
-                onMouseEnter={() => handleMouseEnter(user.id)}
-                onMouseLeave={handleMouseLeave}
-                onMouseMove={handleMouseMove}
+                key={request.request_id}
+                className="hover:bg-gray-100 cursor-pointer"
+                onClick={() => handleRowClick(request)}
               >
-                <TableCell className="w-32 border-b border-gray-200">
-                  {user.name}
+                <TableCell className="border-b border-gray-200">
+                  {request.viewer.full_name}
                 </TableCell>
-                <TableCell className="w-32 border-b border-gray-200">
-                  {user.idNumber}
+                <TableCell className="border-b border-gray-200">
+                  {request.viewer.email}
                 </TableCell>
-                <TableCell className="w-32 border-b border-gray-200">
-                  {user.dateRequested}
+                <TableCell className="border-b border-gray-200">
+                  {format(new Date(request.request_date), "PPP")}
                 </TableCell>
-                <TableCell className="w-80 border-b border-gray-200">
-                  {user.requestedDoc}
+                <TableCell className="border-b border-gray-200">
+                  {request.project.title}
                 </TableCell>
               </TableRow>
             ))}
@@ -306,24 +275,13 @@ const AccessRequestView = ({
         </Table>
       </div>
 
-      {/* Tooltip outside the table to avoid structural issues */}
-      {isShowingTooltip && hoveredUserId !== null && (
-        <div
-          className="fixed z-50 text-black text-sm px-3 py-1 rounded-md shadow-md bg-white border border-gray-300"
-          style={{ top: tooltipPosition.y, left: tooltipPosition.x }}
-        >
-          Click to approve request
-          <div className="tooltip"></div>
-        </div>
-      )}
-
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 ">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
             ref={modalRef}
             onAnimationEnd={handleAnimationEnd}
             className={cn(
-              "relative rounded-lg bg-white p-8 shadow-2xl  ml-65",
+              "relative rounded-lg bg-white p-8 shadow-2xl ml-65",
               isFadingOut ? "animate-fade-out" : "animate-fade-in"
             )}
           >
@@ -331,10 +289,7 @@ const AccessRequestView = ({
               <p className="font-semibold text-gray-700">Choose an action:</p>
               <div className="grid grid-cols-2 gap-4">
                 <Button
-                  onClick={() =>
-                    selectedUserId &&
-                    handleActionClick(selectedUserId, "approve")
-                  }
+                  onClick={handleApproveClick}
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-green-500 text-white shadow-md hover:bg-green-600"
                 >
                   <img
@@ -345,20 +300,23 @@ const AccessRequestView = ({
                   <span className="text-sm">Approve</span>
                 </Button>
                 <Button
-                  onClick={() =>
-                    selectedUserId &&
-                    handleActionClick(selectedUserId, "decline")
-                  }
+                  onClick={handleDeclineClick}
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-red-500 text-white shadow-md hover:bg-red-600"
+                  disabled={isActionLoading}
                 >
                   <img
                     src="/images/cross.png"
                     alt="Decline"
                     className="h-12 w-12"
                   />
-                  <span className="text-sm">Decline</span>
+                  <span className="text-sm">
+                    {isActionLoading ? "Declining..." : "Decline"}
+                  </span>
                 </Button>
               </div>
+              {actionError && (
+                <p className="text-red-500 text-sm mt-2">{actionError}</p>
+              )}
             </div>
             <button
               onClick={handleCloseModal}
@@ -370,10 +328,13 @@ const AccessRequestView = ({
         </div>
       )}
 
-      {isApprovedDialogVisible && (
+      {isApproveModalOpen && selectedRequest && (
         <ActionApprovedRequest
-          onConfirm={handleApproveConfirm}
-          onCancel={handleApproveCancel}
+          onConfirm={(grantDate, expiryDate) =>
+            handleConfirmApproval(grantDate, expiryDate)
+          }
+          onCancel={() => setIsApproveModalOpen(false)}
+          isLoading={isActionLoading}
         />
       )}
     </div>

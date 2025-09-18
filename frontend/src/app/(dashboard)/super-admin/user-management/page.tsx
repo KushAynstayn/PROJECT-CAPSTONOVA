@@ -1,147 +1,338 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { isWithinInterval } from "date-fns";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import NavigationBar, {
   Role as NavRole,
 } from "@/components/ui/user-management-navbar";
-import GuestView from "../../../../components/user-manage/viewGuest";
+import ViewerView from "../../../../components/user-manage/viewerView";
 import ProponentView from "../../../../components/user-manage/view-proponent";
 import AdviserView from "../../../../components/user-manage/view-adviser";
 import AdminView from "../../../../components/user-manage/view-admin";
-import EditGuestView from "../../../../components/user-manage/editGuest";
+import EditViewerView from "../../../../components/user-manage/editViewer";
 import EditProponentView from "../../../../components/user-manage/edit-proponent";
 import EditAdviserView from "../../../../components/user-manage/edit-adviser";
 import EditAdminView from "../../../../components/user-manage/edit-admin";
 import SuggestionView from "../../../../components/user-manage/view-suggestion";
-import guestData from "@/data/guest.json";
-import proponentData from "@/data/proponent.json";
-import adviserData from "@/data/adviser.json";
-import adminData from "@/data/admin.json";
+import AddProponent from "../../../../components/user-manage/add-proponent";
+import AddAdviser from "../../../../components/user-manage/add-adviser";
+import AddAdmin from "../../../../components/user-manage/add-admin";
+import { apiCall, ApiError } from "@/lib/api";
 
-// --- Type and Interface definitions remain the same ---
-type Role = "Guest" | "Proponents" | "Advisers" | "Admin";
+// --- Type and Interface definitions ---
+type Role = "Viewer" | "Proponents" | "Advisers" | "Admin";
 
 interface BaseUser {
   id: number;
-  name: string;
   email: string;
-  idNumber: string;
 }
-interface Guest extends BaseUser {
-  course: string;
-  dateRequested: string;
-  // ADDED: The 'program' property to match EditGuestView
-  program: string;
-}
-interface Proponent extends BaseUser {
-  adviser: string;
-  course: string;
-  // ADDED: New properties to match EditProponentView
-  capstoneTitle: string;
-  groupName: string;
-  program: string;
-}
-interface Adviser extends BaseUser {
-  numberOfAdvisees: string;
-  // ADDED: The 'degreeProgram' property to match EditAdviserView
-  degreeProgram: string;
-}
-interface Admin extends BaseUser {
-  branch: string;
-  department: string;
-}
-type User = Guest | Proponent | Adviser | Admin;
-// --- End of Type and Interface definitions ---
 
-const mockData = {
-  Guest: guestData,
-  Proponents: proponentData,
-  Advisers: adviserData,
-  Admin: adminData,
-};
+interface Viewer extends BaseUser {
+  first_name: string;
+  last_name: string;
+  user_detail: {
+    student_id: string;
+    department: string;
+    program: string;
+  } | null;
+}
+
+interface ProponentListItem extends BaseUser {
+  name: string;
+  id_number: string;
+  department: string;
+  program: string;
+  adviser: string;
+}
+
+interface ProponentEditData extends BaseUser {
+  first_name: string;
+  last_name: string;
+  student_id: string;
+  department: string;
+  program: string;
+  adviser_id: number | null;
+}
+
+interface Adviser extends BaseUser {
+  name: string;
+  advisees_count: number;
+}
+
+interface AdviserEditData {
+  id: number;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+}
+
+// --- FIX: Added 'name' property to align with data structure ---
+interface Admin extends BaseUser {
+  name: string;
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+}
+// --- END OF FIX ---
+
+type User =
+  | Viewer
+  | ProponentListItem
+  | ProponentEditData
+  | Adviser
+  | AdviserEditData
+  | Admin;
 
 const placeholderText = {
-  Guest: "Search Guests Here",
+  Viewer: "Search Viewers Here",
   Proponents: "Search Proponents Here",
   Advisers: "Search Advisers Here",
   Admin: "Search Admins Here",
 };
 
 const SuperAdminUserManagementPage = () => {
-  const [currentRole, setCurrentRole] = useState<Role>("Guest");
+  const [currentRole, setCurrentRole] = useState<Role>("Viewer");
   const [searchQuery, setSearchQuery] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<Record<Role, User[] | []>>(mockData);
+  const [users, setUsers] = useState<Record<Role, User[]>>({
+    Viewer: [],
+    Proponents: [],
+    Advisers: [],
+    Admin: [],
+  });
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
     useState<Adviser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const filteredUsers = useMemo(() => {
-    let currentUsers = users[currentRole] as User[];
-    if (searchQuery) {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      currentUsers = currentUsers.filter((user) =>
-        Object.values(user).some((val) =>
-          String(val).toLowerCase().includes(lowerCaseQuery)
-        )
-      );
+  // --- Data Fetching Callbacks ---
+  const fetchViewers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/user-mgt/viewers?search=${searchQuery}`);
+      setUsers((prev) => ({ ...prev, Viewer: data.data }));
+    } catch (err) {
+      setError("Failed to fetch viewers.");
+    } finally {
+      setIsLoading(false);
     }
-    if (startDate && endDate && currentRole === "Guest") {
-      currentUsers = currentUsers.filter((user) => {
-        if ("dateRequested" in user) {
-          const userDate = new Date(user.dateRequested);
-          return isWithinInterval(userDate, { start: startDate, end: endDate });
-        }
-        return false;
-      });
-    }
-    return currentUsers;
-  }, [currentRole, searchQuery, startDate, endDate, users]);
+  }, [searchQuery]);
 
-  const handleEditUser = (userId: number) => {
-    const userToEdit = filteredUsers.find((user) => user.id === userId);
-    if (userToEdit) {
-      setEditingUser(userToEdit);
+  const fetchProponents = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/user-mgt/proponents?search=${searchQuery}`);
+      setUsers((prev) => ({ ...prev, Proponents: data.data }));
+    } catch (err) {
+      setError("Failed to fetch proponents.");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [searchQuery]);
 
-  const handleCancelEdit = () => {
+  const fetchAdvisers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/user-mgt/advisers?name=${searchQuery}`);
+      setUsers((prev) => ({ ...prev, Advisers: data }));
+    } catch (err) {
+      setError("Failed to fetch advisers.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
+  const fetchAdmins = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiCall(`/user-mgt/admin?name=${searchQuery}`);
+      const formattedData = data.data.map((admin: any) => ({
+        ...admin,
+        name: `${admin.first_name} ${admin.last_name}`,
+      }));
+      setUsers((prev) => ({ ...prev, Admin: formattedData }));
+    } catch (err) {
+      setError("Failed to fetch admins.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
     setEditingUser(null);
-  };
-
-  const handleSaveUser = (updatedUser: User) => {
-    setUsers((prevUsers) => {
-      const newUsersForRole = (prevUsers[currentRole] as User[]).map((user) =>
-        user.id === updatedUser.id ? updatedUser : user
-      ) as User[];
-      return { ...prevUsers, [currentRole]: newUsersForRole };
-    });
-    setEditingUser(null);
-  };
-
-  const handleViewSuggestions = (adviser: Adviser) => {
-    setViewingSuggestionsFor(adviser);
-  };
-
-  const handleCloseSuggestions = () => {
     setViewingSuggestionsFor(null);
+
+    switch (currentRole) {
+      case "Viewer":
+        fetchViewers();
+        break;
+      case "Proponents":
+        fetchProponents();
+        break;
+      case "Advisers":
+        fetchAdvisers();
+        break;
+      case "Admin":
+        fetchAdmins();
+        break;
+    }
+  }, [
+    currentRole,
+    searchQuery,
+    fetchViewers,
+    fetchProponents,
+    fetchAdvisers,
+    fetchAdmins,
+  ]);
+
+  // --- CRUD Handlers ---
+
+  const handleEditUser = async (userId: number) => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      let endpoint = "";
+      if (currentRole === "Viewer") endpoint = `/user-mgt/viewers/${userId}`;
+      if (currentRole === "Proponents")
+        endpoint = `/user-mgt/proponents/${userId}`;
+      if (currentRole === "Advisers") endpoint = `/user-mgt/advisers/${userId}`;
+      if (currentRole === "Admin") endpoint = `/user-mgt/admin/${userId}`;
+
+      if (endpoint) {
+        const userToEdit = await apiCall(endpoint);
+        setEditingUser({ id: userId, ...userToEdit });
+      }
+    } catch (err) {
+      setError(`Failed to fetch user details for editing.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleDeleteUser = async (userId: number) => {
+    let endpoint = "";
+    let fetchAction: (() => void) | null = null;
+    let roleName = currentRole.slice(0, -1);
+
+    if (currentRole === "Viewer") {
+      endpoint = `/user-mgt/viewers/${userId}`;
+      fetchAction = fetchViewers;
+    } else if (currentRole === "Proponents") {
+      endpoint = `/user-mgt/proponents/${userId}`;
+      fetchAction = fetchProponents;
+    } else if (currentRole === "Advisers") {
+      endpoint = `/user-mgt/advisers/${userId}`;
+      fetchAction = fetchAdvisers;
+    } else if (currentRole === "Admin") {
+      endpoint = `/user-mgt/admin/${userId}/restrict`;
+      fetchAction = fetchAdmins;
+    }
+
+    if (window.confirm(`Are you sure you want to restrict this ${roleName}?`)) {
+      try {
+        const method = currentRole === "Admin" ? "PATCH" : "DELETE";
+        await apiCall(endpoint, method);
+        if (fetchAction) fetchAction();
+      } catch (err) {
+        setError(`Failed to restrict ${roleName}.`);
+      }
+    }
+  };
+
+  const handleAddUser = async (userData: any) => {
+    setIsLoading(true);
+    setError(null);
+    let endpoint = "";
+    let fetchAction: (() => void) | null = null;
+
+    if (currentRole === "Proponents") {
+      endpoint = "/user-mgt/proponents";
+      fetchAction = fetchProponents;
+    } else if (currentRole === "Advisers") {
+      endpoint = "/user-mgt/advisers";
+      fetchAction = fetchAdvisers;
+    } else if (currentRole === "Admin") {
+      endpoint = "/user-mgt/admin";
+      fetchAction = fetchAdmins;
+    }
+
+    try {
+      await apiCall(endpoint, "POST", userData);
+      setIsAddModalOpen(false);
+      if (fetchAction) fetchAction();
+    } catch (err: any) {
+      const message =
+        err instanceof ApiError ? err.message : "An unexpected error occurred.";
+      alert(`Failed to add user: ${message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => setEditingUser(null);
+
+  const handleSaveUser = async (updatedUser: User) => {
+    setEditingUser(null);
+    setError(null);
+    setIsLoading(true);
+
+    let endpoint = "";
+    let payload: any = {};
+    let fetchAction: (() => void) | null = null;
+
+    if (currentRole === "Viewer") {
+      endpoint = `/user-mgt/viewers/${updatedUser.id}`;
+      const viewerData = updatedUser as Viewer;
+      payload = {
+        first_name: viewerData.first_name,
+        last_name: viewerData.last_name,
+        email: viewerData.email,
+        ...viewerData.user_detail,
+      };
+      fetchAction = fetchViewers;
+    } else if (currentRole === "Proponents") {
+      endpoint = `/user-mgt/proponents/${updatedUser.id}`;
+      payload = updatedUser as ProponentEditData;
+      fetchAction = fetchProponents;
+    } else if (currentRole === "Advisers") {
+      endpoint = `/user-mgt/advisers/${updatedUser.id}`;
+      payload = updatedUser as AdviserEditData;
+      fetchAction = fetchAdvisers;
+    } else if (currentRole === "Admin") {
+      endpoint = `/user-mgt/admin/${updatedUser.id}`;
+      payload = updatedUser as Admin;
+      fetchAction = fetchAdmins;
+    }
+
+    try {
+      await apiCall(endpoint, "PUT", payload);
+      if (fetchAction) fetchAction();
+    } catch (err) {
+      setError(`Failed to update ${currentRole.slice(0, -1)}.`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewSuggestions = (adviser: Adviser) =>
+    setViewingSuggestionsFor(adviser);
+  const handleCloseSuggestions = () => setViewingSuggestionsFor(null);
 
   const componentMap = {
-    Guest: (
-      <GuestView
+    Viewer: (
+      <ViewerView
         searchQuery={searchQuery}
         onSearchChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
-        placeholder={placeholderText.Guest}
-        filteredUsers={filteredUsers as Guest[]}
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
+        placeholder={placeholderText.Viewer}
+        filteredUsers={users.Viewer as Viewer[]}
         onEditUser={handleEditUser}
+        onDeleteUser={handleDeleteUser}
+        isLoading={isLoading}
       />
     ),
     Proponents: (
@@ -150,12 +341,10 @@ const SuperAdminUserManagementPage = () => {
         onSearchChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Proponents}
-        filteredUsers={filteredUsers as Proponent[]}
+        filteredUsers={users.Proponents as ProponentListItem[]}
         onEditUser={handleEditUser}
-        startDate={undefined}
-        endDate={undefined}
-        onStartDateChange={() => {}}
-        onEndDateChange={() => {}}
+        onDeleteUser={handleDeleteUser}
+        onAddUser={() => setIsAddModalOpen(true)}
       />
     ),
     Advisers: (
@@ -164,13 +353,11 @@ const SuperAdminUserManagementPage = () => {
         onSearchChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Advisers}
-        filteredUsers={filteredUsers as Adviser[]}
+        filteredUsers={users.Advisers as Adviser[]}
         onEditUser={handleEditUser}
-        startDate={undefined}
-        endDate={undefined}
-        onStartDateChange={() => {}}
-        onEndDateChange={() => {}}
         onViewSuggestions={handleViewSuggestions}
+        onDeleteUser={handleDeleteUser}
+        onAddUser={() => setIsAddModalOpen(true)}
       />
     ),
     Admin: (
@@ -178,13 +365,11 @@ const SuperAdminUserManagementPage = () => {
         searchQuery={searchQuery}
         onSearchChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
-        placeholder={placeholderText.Advisers}
-        filteredUsers={filteredUsers as Admin[]}
+        placeholder={placeholderText.Admin}
+        filteredUsers={users.Admin as Admin[]}
         onEditUser={handleEditUser}
-        startDate={undefined}
-        endDate={undefined}
-        onStartDateChange={() => {}}
-        onEndDateChange={() => {}}
+        onAddUser={() => setIsAddModalOpen(true)}
+        onDeleteUser={handleDeleteUser}
       />
     ),
   };
@@ -197,13 +382,34 @@ const SuperAdminUserManagementPage = () => {
           onSelectRole={(role) => {
             setCurrentRole(role as Role);
             setSearchQuery("");
-            setStartDate(undefined);
-            setEndDate(undefined);
             setEditingUser(null);
             setViewingSuggestionsFor(null);
           }}
         />
         <div className="mt-6 p-1">
+          {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+          {isAddModalOpen && currentRole === "Proponents" && (
+            <AddProponent
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
+            />
+          )}
+
+          {isAddModalOpen && currentRole === "Advisers" && (
+            <AddAdviser
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
+            />
+          )}
+
+          {isAddModalOpen && currentRole === "Admin" && (
+            <AddAdmin
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
+            />
+          )}
+
           {viewingSuggestionsFor && currentRole === "Advisers" ? (
             <SuggestionView
               adviser={viewingSuggestionsFor}
@@ -211,23 +417,23 @@ const SuperAdminUserManagementPage = () => {
             />
           ) : editingUser ? (
             <>
-              {currentRole === "Guest" && (
-                <EditGuestView
-                  user={editingUser as Guest}
+              {currentRole === "Viewer" && (
+                <EditViewerView
+                  user={editingUser as Viewer}
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />
               )}
               {currentRole === "Proponents" && (
                 <EditProponentView
-                  user={editingUser as Proponent}
+                  user={editingUser as ProponentEditData}
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />
               )}
               {currentRole === "Advisers" && (
                 <EditAdviserView
-                  user={editingUser as Adviser}
+                  user={editingUser as AdviserEditData}
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />

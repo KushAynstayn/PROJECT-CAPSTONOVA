@@ -77,7 +77,7 @@ const AdminSuggestionsPage = () => {
         }
 
         const response: PaginatedSuggestions = await apiCall(
-          `/admin/suggestions?${params.toString()}`
+          `/user-mgt/suggestions?${params.toString()}`
         );
 
         setSuggestions(response.data);

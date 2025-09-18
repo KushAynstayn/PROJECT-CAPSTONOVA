@@ -1,17 +1,29 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ChevronDownIcon, XIcon } from "lucide-react"
+import * as React from "react";
+import { ChevronDownIcon, XIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
-export function Calendar22() {
-  const [open, setOpen] = React.useState(false)
-  const [year, setYear] = React.useState<number | undefined>(undefined)
+// Define props for the component
+interface Calendar22Props {
+  year: number | undefined;
+  setYear: (year: number | undefined) => void;
+}
 
-  // Generate last 50 years (you can adjust range or add future years)
-  const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i)
+export function Calendar22({ year, setYear }: Calendar22Props) {
+  const [open, setOpen] = React.useState(false);
+
+  // Generate last 50 years
+  const years = Array.from(
+    { length: 50 },
+    (_, i) => new Date().getFullYear() - i
+  );
 
   return (
     <div>
@@ -42,7 +54,10 @@ export function Calendar22() {
           )}
         </div>
 
-        <PopoverContent className="w-48 max-h-60 overflow-y-auto p-2" align="start">
+        <PopoverContent
+          className="w-48 max-h-60 overflow-y-auto p-2"
+          align="start"
+        >
           <div className="grid grid-cols-1 gap-1">
             {years.map((yr) => (
               <Button
@@ -50,8 +65,8 @@ export function Calendar22() {
                 variant={yr === year ? "default" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => {
-                  setYear(yr)
-                  setOpen(false)
+                  setYear(yr);
+                  setOpen(false);
                 }}
               >
                 {yr}
@@ -61,5 +76,5 @@ export function Calendar22() {
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }

@@ -1,29 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { InputWithClear } from "@/components/ui/inputWithClear";
-import Combobox from "@/components/ui/combobox";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { SaveConfirm } from "@/components/ui/save-new-proponent";
+import { apiCall } from "@/lib/api";
+
+interface Adviser {
+  id: number;
+  full_name: string;
+}
 
 interface AddProponentProps {
   onClose: () => void;
+  onAdd: (proponentData: any) => void;
 }
 
-const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
+const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    idNumber: "",
+    first_name: "",
+    last_name: "",
     email: "",
-    course: "",
-    adviser: "",
+    password: "",
+    password_confirmation: "",
+    student_id: "",
+    department: "",
+    program: "",
+    adviser_id: "",
   });
-
+  const [advisers, setAdvisers] = useState<Adviser[]>([]);
+  const [error, setError] = useState("");
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+
+  useEffect(() => {
+    const fetchAdvisers = async () => {
+      try {
+        const response = await apiCall("/util/advisers");
+        if (response.success) {
+          setAdvisers(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch advisers:", error);
+      }
+    };
+    fetchAdvisers();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -36,42 +61,45 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
 
   const handleClearAll = () => {
     setFormData({
-      firstName: "",
-      lastName: "",
-      idNumber: "",
+      first_name: "",
+      last_name: "",
       email: "",
-      course: "",
-      adviser: "",
+      password: "",
+      password_confirmation: "",
+      student_id: "",
+      department: "",
+      program: "",
+      adviser_id: "",
     });
+    setError("");
   };
 
-  // Corrected handler for the course combobox
-  const handleCourseChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, course: value }));
-  };
-
-  // Corrected handler for the adviser combobox
   const handleAdviserChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, adviser: value }));
+    setFormData((prev) => ({ ...prev, adviser_id: value }));
   };
 
   const handleSaveClick = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== formData.password_confirmation) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    setError("");
     setShowSaveConfirm(true);
   };
 
   const handleConfirmSave = () => {
-    console.log("New Proponent Data:", formData);
-  };
-
-  const handleCancelSave = () => {
-    setShowSaveConfirm(false);
-    onClose();
+    // FIX: Send the full formData, including password_confirmation
+    onAdd(formData);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <Card className="w-full ml-65 max-w-2xl rounded-md border border-black shadow-lg shadow-gray-800/50 bg-white relative">
+      <Card className="w-full max-w-2xl rounded-md border border-black shadow-lg shadow-gray-800/50 bg-white relative ml-65">
         <CardHeader className="p-0 pt-1 pb-0">
           <CardTitle className="m-0 text-center text-2xl font-serif font-normal tracking-wider opacity-60">
             New Proponent
@@ -80,117 +108,109 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
         <div className="w-3/5 mx-auto mb-1">
           <Separator className="bg-black" />
         </div>
+
         <CardContent className="pt-1">
-          <form onSubmit={handleSaveClick} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="firstName" className="font-normal">
-                  First Name
-                </Label>
-                <InputWithClear
-                  id="firstName"
-                  placeholder="Juan"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  onClear={() => handleClear("firstName")}
-                  className="rounded-none border-[rgba(0,0,0,0.5)]"
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="lastName" className="font-normal">
-                  Last Name
-                </Label>
-                <InputWithClear
-                  id="lastName"
-                  placeholder="dela Cruz"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  onClear={() => handleClear("lastName")}
-                  className="rounded-none border-[rgba(0,0,0,0.5)]"
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="idNumber" className="font-normal">
-                  ID Number
-                </Label>
-                <InputWithClear
-                  id="idNumber"
-                  placeholder="1331370"
-                  value={formData.idNumber}
-                  onChange={handleChange}
-                  onClear={() => handleClear("idNumber")}
-                  className="rounded-none border-[rgba(0,0,0,0.5)]"
-                />
-              </div>
+          <form onSubmit={handleSaveClick} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputWithClear
+                id="first_name"
+                placeholder="First Name"
+                value={formData.first_name}
+                onChange={handleChange}
+                onClear={() => handleClear("first_name")}
+                required
+              />
+              <InputWithClear
+                id="last_name"
+                placeholder="Last Name"
+                value={formData.last_name}
+                onChange={handleChange}
+                onClear={() => handleClear("last_name")}
+                required
+              />
+              <InputWithClear
+                id="email"
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                onClear={() => handleClear("email")}
+                required
+              />
+              <InputWithClear
+                id="student_id"
+                placeholder="Student ID"
+                value={formData.student_id}
+                onChange={handleChange}
+                onClear={() => handleClear("student_id")}
+                required
+              />
+              <InputWithClear
+                id="password"
+                type="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                onClear={() => handleClear("password")}
+                required
+              />
+              <InputWithClear
+                id="password_confirmation"
+                type="password"
+                placeholder="Confirm Password"
+                value={formData.password_confirmation}
+                onChange={handleChange}
+                onClear={() => handleClear("password_confirmation")}
+                required
+              />
+              <InputWithClear
+                id="department"
+                placeholder="Department (e.g., BSIS)"
+                value={formData.department}
+                onChange={handleChange}
+                onClear={() => handleClear("department")}
+                required
+              />
+              <InputWithClear
+                id="program"
+                placeholder="Program (e.g., Day)"
+                value={formData.program}
+                onChange={handleChange}
+                onClear={() => handleClear("program")}
+                required
+              />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="email" className="font-normal">
-                  Email
-                </Label>
-                <InputWithClear
-                  id="email"
-                  placeholder="juan.delacruz@ctu.edu.ph"
-                  value={formData.email}
-                  onChange={handleChange}
-                  onClear={() => handleClear("email")}
-                  className="rounded-none border-[rgba(0,0,0,0.5)]"
-                />
-              </div>
-              {/* Course Combobox */}
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="course" className="font-normal">
-                  Degree Program
-                </Label>
-                <Combobox
-                  value={formData.course}
-                  onValueChange={handleCourseChange}
-                  items={[
-                    { value: "BSIS", label: "BSIS" },
-                    { value: "BSIT", label: "BSIT" },
-                    { value: "BIT-CT", label: "BIT-CT" },
-                  ]}
-                  placeholder={"Select Degree Program"}
-                />
-              </div>
-              {/* Adviser Combobox */}
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="adviser" className="font-normal">
-                  Adviser
-                </Label>
-                <Combobox
-                  value={formData.adviser}
-                  onValueChange={handleAdviserChange}
-                  items={[
-                    { value: "adviser1", label: "Monkey Luffy" },
-                    { value: "adviser2", label: "Roronoa Zoro" },
-                    { value: "adviser3", label: "Sanji Vinsmoke" },
-                    { value: "adviser4", label: "Trafalgar Law" },
-                    { value: "adviser5", label: "Nico Robin" },
-                    { value: "adviser6", label: "Rob Lucci" },
-                    { value: "adviser7", label: "Dracule Mihawk" },
-                  ]}
-                  placeholder={"Select Adviser"}
-                />
-              </div>
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="adviser_id" className="font-normal">
+                Adviser
+              </Label>
+              <SearchableCombobox
+                value={formData.adviser_id}
+                onValueChange={handleAdviserChange}
+                items={advisers.map((adviser) => ({
+                  value: adviser.id.toString(),
+                  label: adviser.full_name,
+                }))}
+                placeholder={"Select Adviser"}
+              />
             </div>
 
-            <div className="flex justify-center gap-4 mt-6">
+            {error && (
+              <p className="text-sm text-center text-red-500 pt-2">{error}</p>
+            )}
+
+            <div className="flex justify-center gap-4 mt-4">
               <Button
                 type="button"
                 onClick={handleClearAll}
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-              transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-              active:shadow-lg active:shadow-gray-700/90"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
               >
                 Clear
               </Button>
               <Button
                 type="submit"
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-              transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-              active:shadow-lg active:shadow-gray-700/90"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
               >
                 Save
               </Button>
@@ -198,10 +218,7 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
           </form>
         </CardContent>
 
-        <button
-          onClick={onClose}
-          className="absolute opacity-70 right-3 top-3 text-gray-400 hover:opacity-100 hover:text-gray-600 transition-transform hover:scale-110"
-        >
+        <button onClick={onClose} className="absolute opacity-70 right-3 top-3">
           <img src="/images/close.png" alt="Close" className="h-6 w-6" />
         </button>
       </Card>
@@ -209,7 +226,7 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose }) => {
       {showSaveConfirm && (
         <SaveConfirm
           onConfirm={handleConfirmSave}
-          onCancel={handleCancelSave}
+          onCancel={() => setShowSaveConfirm(false)}
         />
       )}
     </div>
