@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\UserManagement\MWhitelistController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
+use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
@@ -85,6 +86,15 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::get('/download/source-code/{source_code}', DownloadSourceCodeController::class)
         ->name('user.source-code.download');
 
+    Route::get(
+        '/projects/{project}/user-manual',
+        [ProjectAttachmentController::class, 'downloadUserManual']
+    );
+    Route::get(
+        '/projects/{project}/usage-guide',
+        [ProjectAttachmentController::class, 'downloadUsageGuide']
+    );
+
     Route::get('/notifications', [NotificationController::class, 'index']);
 
     //whitelist routes general purpose
@@ -112,6 +122,9 @@ Route::prefix('proponent')->middleware('auth:sanctum')->group(function () {
 
     Route::post('/submit-source-code', SubmitSourceCodeController::class)
         ->name('source-code.submit');
+
+    Route::post('/submit-user-manual', [ProjectAttachmentController::class, 'submitUserManual']);
+    Route::post('/submit-usage-guide', [ProjectAttachmentController::class, 'submitUsageGuide']);
 });
 
 
