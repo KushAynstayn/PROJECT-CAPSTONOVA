@@ -33,6 +33,7 @@ async def get_suggestion(request: SuggestionInput):
         raise HTTPException(status_code=400, detail="No query text provided for suggestion.")
     try:
         result = service.get_ai_suggestions(request)
+        
         # Format the similar projects into the response schema
         formatted_projects = [SuggestedProject(title=p['title'], suggestion_text=p['suggestion_text']) for p in result['similar_projects']]
         
