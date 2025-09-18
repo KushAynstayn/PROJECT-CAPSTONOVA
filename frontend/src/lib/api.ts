@@ -11,7 +11,7 @@ export class ApiError extends Error {
 
   constructor(message: string, status: number, details: any) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.details = details;
   }
@@ -48,12 +48,12 @@ export const apiCall = async (
 
   if (body) {
     if (isForm) {
-        options.body = body;
+      options.body = body;
     } else {
-        options.body = JSON.stringify(body);
-        if (!headers['Content-Type']) {
-            headers['Content-Type'] = 'application/json';
-        }
+      options.body = JSON.stringify(body);
+      if (!headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
     }
   }
 
@@ -61,14 +61,18 @@ export const apiCall = async (
 
   if (response.status === 401) {
     authStore.clearAuth();
-    throw new ApiError("Unauthorized", 401, { message: "Please log in again." });
+    throw new ApiError("Unauthorized", 401, {
+      message: "Please log in again.",
+    });
   }
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: response.statusText }));
     // Throw a custom error with status and details
     throw new ApiError(
-      errorData.message || 'An error occurred during the API call.',
+      errorData.message || "An error occurred during the API call.",
       response.status,
       errorData.errors || {}
     );

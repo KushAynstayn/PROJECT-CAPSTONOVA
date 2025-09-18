@@ -26,9 +26,7 @@ class ProjectAttachmentController extends Controller
     {
         $user = Auth::user();
 
-        if (!Gate::allows('isProponent')) {
-            abort(403, 'Unauthorized - Proponent access required');
-        }
+
 
         $validator = Validator::make($request->all(), [
             'user_manual' => ['required', 'file', 'mimes:pdf,docx,txt', 'max:10240'], // Max 10MB
@@ -60,9 +58,7 @@ class ProjectAttachmentController extends Controller
     {
         $user = Auth::user();
 
-        if (!Gate::allows('isProponent')) {
-            abort(403, 'Unauthorized - Proponent access required');
-        }
+
 
         $validator = Validator::make($request->all(), [
             'usage_guide' => ['required', 'file', 'mimes:pdf,docx,txt', 'max:10240'], // Max 10MB

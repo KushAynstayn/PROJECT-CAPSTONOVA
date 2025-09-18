@@ -1,34 +1,45 @@
-// (MODIFIED)
-// Location: frontend/src/app/(dashboard)/proponent/upload-project/page.tsx
+// [MODIFIED FILE]
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ManuscriptUploadModal } from "../../../../components/proponent/upload-manuscript-modal";
 import { SourceCodeUploadModal } from "../../../../components/proponent/upload-source-code-modal";
+import { UploadUserManualModal } from "../../../../components/proponent/UploadUserManualModal";
+import { UploadUsageGuideModal } from "../../../../components/proponent/UploadUsageGuideModal";
 import SubmittedManuscriptView from "../../../../components/proponent/submitted-manuscript-view";
 import { apiCall } from "@/lib/api";
 
 const UploadProjectPage = () => {
   const [isManuscriptModalOpen, setIsManuscriptModalOpen] = useState(false);
   const [isSourceCodeModalOpen, setIsSourceCodeModalOpen] = useState(false);
+  const [isUserManualModalOpen, setIsUserManualModalOpen] = useState(false);
+  const [isUsageGuideModalOpen, setIsUsageGuideModalOpen] = useState(false);
 
   // States to track submission status
   const [manuscriptSubmitted, setManuscriptSubmitted] = useState(false);
   const [sourceCodeSubmitted, setSourceCodeSubmitted] = useState(false);
+  const [userManualSubmitted, setUserManualSubmitted] = useState(false);
+  const [usageGuideSubmitted, setUsageGuideSubmitted] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Check if a manuscript has already been submitted on page load
+  // Check if all files have been submitted on page load
   useEffect(() => {
     const checkSubmissionStatus = async () => {
       try {
         const hasManuscript = await apiCall("/util/check-manuscript", "POST");
         setManuscriptSubmitted(hasManuscript);
+
         const hasSourceCode = await apiCall("/util/check-source-code", "POST");
         setSourceCodeSubmitted(hasSourceCode);
+
+        const hasUserManual = await apiCall("/util/check-user-manual", "GET");
+        setUserManualSubmitted(hasUserManual.exists);
+
+        const hasUsageGuide = await apiCall("/util/check-usage-guide", "GET");
+        setUsageGuideSubmitted(hasUsageGuide.exists);
       } catch (error) {
         console.error("Failed to check submission status:", error);
-        // Optionally, show an error message to the user
       } finally {
         setIsChecking(false);
       }
@@ -45,6 +56,14 @@ const UploadProjectPage = () => {
     setSourceCodeSubmitted(true);
   };
 
+  const handleUserManualSuccess = () => {
+    setUserManualSubmitted(true);
+  };
+
+  const handleUsageGuideSuccess = () => {
+    setUsageGuideSubmitted(true);
+  };
+
   if (isChecking) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -53,7 +72,14 @@ const UploadProjectPage = () => {
     );
   }
 
-  if (manuscriptSubmitted && sourceCodeSubmitted) {
+  // Check if all necessary documents are submitted
+  const allDocumentsSubmitted =
+    manuscriptSubmitted &&
+    sourceCodeSubmitted &&
+    userManualSubmitted &&
+    usageGuideSubmitted;
+
+  if (allDocumentsSubmitted) {
     return <SubmittedManuscriptView />;
   }
 
@@ -64,8 +90,7 @@ const UploadProjectPage = () => {
           Upload Your Project
         </h1>
         <p className="text-muted-foreground mt-2">
-          Please upload both your manuscript and source code to complete your
-          submission.
+          Please upload all required files to complete your submission.
         </p>
       </div>
 
@@ -117,6 +142,62 @@ const UploadProjectPage = () => {
             {sourceCodeSubmitted ? "Submitted ✓" : "Upload Source Code"}
           </Button>
         </div>
+
+        {/* Upload User Manual Section */}
+        <div className="border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center space-y-4 rounded-lg text-center">
+          <img
+            src="/images/folder.png"
+            alt="User Manual Folder"
+            className="h-20 w-20"
+          />
+          <h2 className="text-2xl font-bold">User Manual</h2>
+          <p className="text-muted-foreground">
+            Submit the user manual for your project.
+          </p>
+          <Button
+            onClick={() => setIsUserManualModalOpen(true)}
+            disabled={
+              userManualSubmitted ||
+              !manuscriptSubmitted ||
+              !sourceCodeSubmitted
+            }
+            className={
+              userManualSubmitted
+                ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
+                : ""
+            }
+          >
+            {userManualSubmitted ? "Submitted ✓" : "Upload User Manual"}
+          </Button>
+        </div>
+
+        {/* Upload Usage Guide Section */}
+        <div className="border-2 border-dashed border-gray-300 p-8 flex flex-col items-center justify-center space-y-4 rounded-lg text-center">
+          <img
+            src="/images/folder.png"
+            alt="Usage Guide Folder"
+            className="h-20 w-20"
+          />
+          <h2 className="text-2xl font-bold">Usage Guide</h2>
+          <p className="text-muted-foreground">
+            Submit the usage guide for your project.
+          </p>
+          <Button
+            onClick={() => setIsUsageGuideModalOpen(true)}
+            disabled={
+              usageGuideSubmitted ||
+              !manuscriptSubmitted ||
+              !sourceCodeSubmitted
+            }
+            className={
+              usageGuideSubmitted
+                ? "bg-green-600 hover:bg-green-700 cursor-not-allowed"
+                : ""
+            }
+          >
+            {usageGuideSubmitted ? "Submitted ✓" : "Upload Usage Guide"}
+          </Button>
+        </div>
       </div>
 
       <ManuscriptUploadModal
@@ -128,6 +209,16 @@ const UploadProjectPage = () => {
         isOpen={isSourceCodeModalOpen}
         onOpenChange={setIsSourceCodeModalOpen}
         onSuccess={handleSourceCodeSuccess}
+      />
+      <UploadUserManualModal
+        isOpen={isUserManualModalOpen}
+        onOpenChange={setIsUserManualModalOpen}
+        onSuccess={handleUserManualSuccess}
+      />
+      <UploadUsageGuideModal
+        isOpen={isUsageGuideModalOpen}
+        onOpenChange={setIsUsageGuideModalOpen}
+        onSuccess={handleUsageGuideSuccess}
       />
 
       <div className="flex justify-center items-center gap-2 mt-20">
