@@ -3,31 +3,46 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\UserDetail;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = [
-            ['role' => 'Super Admin', 'first_name' => 'Super', 'last_name' => 'Admin'],
-            ['role' => 'Admin', 'first_name' => 'System', 'last_name' => 'Admin'],
-            ['role' => 'Adviser', 'first_name' => 'John', 'last_name' => 'Adviser'],
-            ['role' => 'Proponent', 'first_name' => 'Jane', 'last_name' => 'Proponent'],
-            ['role' => 'Viewer', 'first_name' => 'Guest', 'last_name' => 'Viewer'],
-        ];
+        $this->createUsersByRole('Super Admin', 1);
+        $this->createUsersByRole('Admin', 5);
 
-        foreach ($users as $userData) {
-            User::factory()->create([
-                'first_name' => $userData['first_name'],
-                'last_name' => $userData['last_name'],
-                'email' => strtolower($userData['first_name']) . '@example.com',
+        $this->createUsersByRole('Adviser', 10);
+        $adviserIds = User::where('role', 'Adviser')->pluck('id');
+
+        $this->createUsersByRole('Proponent', 20, $adviserIds);
+        $this->createUsersByRole('Viewer', 30, $adviserIds);
+    }
+
+    private function createUsersByRole(string $role, int $count, $adviserIds = null): void
+    {
+        for ($i = 1; $i <= $count; $i++) {
+            $roleHandle = str_replace(' ', '', strtolower($role));
+            $email = "{$roleHandle}{$i}@{$roleHandle}.com";
+
+            $user = User::factory()->create([
+                'first_name' => $role,
+                'last_name' => "User {$i}",
+                'role' => $role,
+                'encrypted_email' => Crypt::encryptString($email),
+                'hashed_email' => hash('sha256', $email),
                 'password' => Hash::make('password'),
-                'role' => $userData['role'],
             ]);
-        }
 
-        User::factory(10)->create();
+            if ($adviserIds && in_array($role, ['Proponent', 'Viewer'])) {
+                UserDetail::factory()->create([
+                    'user_id' => $user->id,
+                    'adviser_id' => $adviserIds->random(),
+                ]);
+            }
+        }
     }
 }
