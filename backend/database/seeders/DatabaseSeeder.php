@@ -9,22 +9,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // Independent Data
             ActionTypeSeeder::class,
             KeywordSeeder::class,
             ProgrammingLanguageSeeder::class,
             SystemSettingSeeder::class,
-            
-            // User Data
-            UserSeeder::class,
-            UserDetailSeeder::class,
+            UserSeeder::class, // This now handles User and UserDetail creation
             WhitelistSeeder::class,
-
-            // Project and related data
             CapstoneProjectSeeder::class,
             SuggestionSeeder::class,
-            
-            // Activity and Permissions
             DocumentRequestSeeder::class,
             NotificationSeeder::class,
         ]);
