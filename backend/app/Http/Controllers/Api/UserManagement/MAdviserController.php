@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\UserManagement;
 
-use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Foundation\Exceptions\Renderer\Exception;
 
 class MAdviserController extends Controller
 {
@@ -18,18 +21,19 @@ class MAdviserController extends Controller
         $nameQuery = $request->query('name');
 
         $baseQuery = "
-            SELECT
-                u.id,
-                u.first_name,
-                u.last_name,
-                u.middle_name,
-                u.email,
-                (SELECT COUNT(*) FROM capstone_projects cp WHERE cp.adviser_id = u.id) as advisees_count
-            FROM
-                users u
-            WHERE
-                u.role = ?
-        ";
+        SELECT
+            u.id,
+            u.first_name,
+            u.last_name,
+            u.middle_name,
+            u.encrypted_email,
+            u.hashed_email,
+            (SELECT COUNT(*) FROM capstone_projects cp WHERE cp.adviser_id = u.id) as advisees_count
+        FROM
+            users u
+        WHERE
+            u.role = ?
+    ";
 
         $bindings = ['Adviser'];
 
@@ -42,10 +46,18 @@ class MAdviserController extends Controller
 
         // Format the response
         $formattedAdvisers = array_map(function ($adviser) {
+            // Decrypt the email for display
+            try {
+                $decryptedEmail = Crypt::decryptString($adviser->encrypted_email);
+            } catch (Exception $e) {
+                // Fallback to hashed email if decryption fails
+                $decryptedEmail = $adviser->hashed_email;
+            }
+
             return [
                 'id' => $adviser->id,
                 'name' => trim($adviser->first_name . ' ' . ($adviser->middle_name ? $adviser->middle_name . ' ' : '') . $adviser->last_name),
-                'email' => $adviser->email,
+                'email' => $decryptedEmail, // Use the decrypted email
                 'advisees_count' => $adviser->advisees_count,
             ];
         }, $advisers);
@@ -62,25 +74,37 @@ class MAdviserController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users,hashed_email',
             'password' => 'required|string|min:8',
         ]);
 
-        $adviserId = DB::table('users')->insertGetId([
+        $userData = [
             'first_name' => $validatedData['first_name'],
             'last_name' => $validatedData['last_name'],
             'middle_name' => $validatedData['middle_name'],
-            'email' => $validatedData['email'],
+            'encrypted_email' => Crypt::encryptString($validatedData['email']),
+            'hashed_email' => hash('sha256', $validatedData['email']),
             'password' => Hash::make($validatedData['password']),
             'role' => 'Adviser',
             'status' => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        ];
 
-        $adviser = DB::table('users')->find($adviserId);
+        $adviser = User::create($userData);
 
-        return response()->json($adviser, 201);
+        // Prepare response with decrypted email
+        $responseData = [
+            'id' => $adviser->id,
+            'first_name' => $adviser->first_name,
+            'last_name' => $adviser->last_name,
+            'middle_name' => $adviser->middle_name,
+            'email' => $validatedData['email'], // Use the original email from request
+            'role' => $adviser->role,
+            'status' => $adviser->status,
+            'created_at' => $adviser->created_at,
+            'updated_at' => $adviser->updated_at,
+        ];
+
+        return response()->json($responseData, 201);
     }
 
     /**
