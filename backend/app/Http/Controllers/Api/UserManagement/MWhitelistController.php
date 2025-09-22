@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\Admin\ImportWhitelistRequest;
@@ -37,14 +38,13 @@ class MWhitelistController extends Controller
             'entries.*.student_email' => [
                 'required',
                 'email',
-                'distinct:ignore_case', // Ensures emails are unique within the request array
-                Rule::unique('whitelist', 'student_email'), // Ensures emails are unique in the database
+                'distinct:ignore_case',
             ],
             'entries.*.student_id' => [
                 'required',
                 'integer',
-                'distinct', // Ensures student IDs are unique within the request array
-                Rule::unique('whitelist', 'student_id'), // Ensures student IDs are unique in the database
+                'distinct',
+                Rule::unique('whitelist', 'student_id'),
             ],
             'entries.*.adviser_id' => [
                 'required',
@@ -57,8 +57,6 @@ class MWhitelistController extends Controller
 
         if ($validator->fails()) {
             $formattedErrors = [];
-            // This loop restructures the flat error array ("entries.1.field")
-            // into the desired nested format ("1": {"field": [...]})
             foreach ($validator->errors()->getMessages() as $key => $messages) {
                 [, $index, $field] = explode('.', $key);
                 $formattedErrors[$index][$field] = $messages;
@@ -77,7 +75,17 @@ class MWhitelistController extends Controller
             $createdEntries = DB::transaction(function () use ($validatedEntries) {
                 $result = [];
                 foreach ($validatedEntries as $entry) {
-                    $result[] = Whitelist::create($entry);
+                    // Transform the email to encrypted and hashed format
+                    $studentEmail = $entry['student_email'];
+
+                    $transformedEntry = [
+                        'student_id' => $entry['student_id'],
+                        'encrypted_email' => Crypt::encryptString($studentEmail),
+                        'hashed_email' => hash('sha256', $studentEmail),
+                        'adviser_id' => $entry['adviser_id'],
+                    ];
+
+                    $result[] = Whitelist::create($transformedEntry);
                 }
                 return $result;
             });
@@ -87,7 +95,7 @@ class MWhitelistController extends Controller
                 'data' => $createdEntries,
             ], Response::HTTP_CREATED);
         } catch (Throwable $e) {
-            report($e); // Log the exception
+            report($e);
 
             return response()->json([
                 'success' => false,
@@ -167,16 +175,16 @@ class MWhitelistController extends Controller
             ->select(
                 'whitelist.whitelist_id',
                 'whitelist.student_id',
-                'whitelist.student_email',
+                DB::raw("CONCAT(LEFT(whitelist.encrypted_email, 12), '...') AS student_email"),
                 DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS adviser_name")
             );
 
         if ($request->has('search')) {
             $searchTerm = '%' . $request->input('search') . '%';
-            $query->where('whitelist.student_email', 'like', $searchTerm);
+            $query->where('whitelist.encrypted_email', 'like', $searchTerm);
         }
 
-        $whitelistEntries = $query->latest('whitelist.created_at')->paginate(15);
+        $whitelistEntries = $query->latest('whitelist.created_at')->paginate(50);
 
         return response()->json($whitelistEntries);
     }
@@ -204,6 +212,14 @@ class MWhitelistController extends Controller
 
         if (!$whitelistEntry) {
             return response()->json(['message' => 'Entry not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Decrypt the email for display
+        try {
+            $decryptedEmail = Crypt::decryptString($whitelistEntry->encrypted_email);
+            $whitelistEntry->student_email = $decryptedEmail;
+        } catch (Exception $e) {
+            $whitelistEntry->student_email = 'Unable to decrypt email';
         }
 
         return response()->json($whitelistEntry);
