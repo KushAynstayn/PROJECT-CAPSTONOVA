@@ -23,8 +23,9 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        // Find the user by email.
-        $user = User::where('email', $request->email)->first();
+        // Hash the incoming email to find the user by the hashed_email column.
+        $hashedEmail = hash('sha256', $request->email);
+        $user = User::where('hashed_email', $hashedEmail)->first();
 
         // Verify user exists, password is correct, and status is active.
         if (!$user || !Hash::check($request->password, $user->password)) {
