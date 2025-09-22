@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\Admin\ImportWhitelistRequest;
 
@@ -266,49 +267,76 @@ class MWhitelistController extends Controller
         }
 
         try {
-            // This will automatically validate the request and throw an exception with
-            // detailed errors if it fails, which is caught below.
+            // Step 1: Validate incoming data format and other fields.
+            // Email uniqueness will be handled manually after this step because we need to hash it first.
             $validatedData = $request->validate([
                 'student_email' => [
                     'required',
                     'email',
-                    // Ensures the email is unique, ignoring the current entry being updated [cite: 259, 262]
-                    Rule::unique('whitelist', 'student_email')->ignore($whitelist->whitelist_id, 'whitelist_id'),
                 ],
                 'student_id' => [
                     'required',
                     'integer',
-                    // Ensures the student ID is unique, ignoring the current entry being updated [cite: 259-261]
+                    // Ensures the student ID is unique, ignoring the current entry being updated. [cite: 236]
                     Rule::unique('whitelist', 'student_id')->ignore($whitelist->whitelist_id, 'whitelist_id'),
                 ],
                 'adviser_id' => [
                     'required',
                     'integer',
-                    // Ensures the adviser exists in the 'users' table and has the 'Adviser' role [cite: 59, 263]
+                    // Ensures the adviser exists in the 'users' table and has the 'Adviser' role. [cite: 23, 239]
                     Rule::exists('users', 'id')->where('role', 'Adviser'),
                 ],
             ]);
 
-            // Perform the update within a database transaction for safety
-            DB::transaction(function () use ($whitelist, $validatedData) {
-                $whitelist->update($validatedData);
+            // Step 2: Manually check for email uniqueness against the 'hashed_email' column.
+            $hashedEmail = hash('sha256', $validatedData['student_email']);
+            $isDuplicateEmail = Whitelist::where('hashed_email', $hashedEmail)
+                ->where('whitelist_id', '!=', $whitelist->whitelist_id)
+                ->exists();
+
+            if ($isDuplicateEmail) {
+                // Manually throw a validation exception if a duplicate email is found.
+                throw ValidationException::withMessages([
+                    'student_email' => ['The provided email has already been whitelisted.'],
+                ]);
+            }
+
+            // Step 3: Prepare the data for the update, including encryption and hashing.
+            $updateData = [
+                'student_id' => $validatedData['student_id'],
+                'adviser_id' => $validatedData['adviser_id'],
+                'encrypted_email' => Crypt::encryptString($validatedData['student_email']), // [cite: 237]
+                'hashed_email' => $hashedEmail, // [cite: 238]
+            ];
+
+            // Step 4: Perform the update within a database transaction for safety.
+            DB::transaction(function () use ($whitelist, $updateData) {
+                $whitelist->update($updateData);
             });
 
-            // Re-fetch the data with the adviser's name to return the updated record
+            // Step 5: Re-fetch the data to return the updated record.
+            // We fetch the encrypted_email which will be decrypted before sending the response.
             $updatedEntry = DB::table('whitelist')
                 ->join('users', 'whitelist.adviser_id', '=', 'users.id')
                 ->where('whitelist.whitelist_id', $whitelist->whitelist_id)
                 ->select(
                     'whitelist.student_id',
-                    'whitelist.student_email',
+                    'whitelist.encrypted_email',
                     DB::raw("CONCAT(users.first_name, ' ', users.last_name) AS adviser_name")
                 )
                 ->first();
 
+            // Step 6: Prepare the final data for the JSON response, decrypting the email.
+            $responseData = [
+                'student_id' => $updatedEntry->student_id,
+                'student_email' => Crypt::decryptString($updatedEntry->encrypted_email),
+                'adviser_name' => $updatedEntry->adviser_name,
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Whitelist entry updated successfully.',
-                'data' => $updatedEntry
+                'data' => $responseData
             ]);
         } catch (Throwable $e) {
             // Log the detailed error for server-side debugging
@@ -318,7 +346,7 @@ class MWhitelistController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-            ], $e instanceof \Illuminate\Validation\ValidationException ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_INTERNAL_SERVER_ERROR);
+            ], $e instanceof ValidationException ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
