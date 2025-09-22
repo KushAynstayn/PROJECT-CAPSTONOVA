@@ -13,13 +13,12 @@ return new class extends Migration
     {
         Schema::create('whitelist', function (Blueprint $table) {
             $table->id('whitelist_id');
-            // NEW: Foreign key to the user being whitelisted
-            $table->foreignId('user_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
-            $table->integer('student_id');
-            // NEW: Replaced student_email with encrypted and hashed versions
-            $table->text('encrypted_email');
-            $table->string('hashed_email')->unique();
-            $table->foreignId('adviser_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            // REMOVED: The user_id foreign key was removed as the whitelist
+            // contains users who have not registered yet.
+            $table->integer('student_id')->unique(); // Based on Data Dictionary [cite: 28]
+            $table->text('encrypted_email'); // Based on Data Dictionary [cite: 28]
+            $table->string('hashed_email')->unique(); // Based on Data Dictionary [cite: 28]
+            $table->foreignId('adviser_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete(); // Based on Data Dictionary [cite: 28]
             $table->timestamps();
         });
     }

@@ -15,18 +15,14 @@ class WhitelistFactory extends Factory
      */
     public function definition(): array
     {
-        // Generate a fake email to be encrypted and hashed
         $email = fake()->unique()->safeEmail();
 
         return [
-            // NEW: Added user_id, defaults to creating a new Proponent user
-            'user_id'       => User::factory(['role' => 'Proponent']),
-            'student_id'    => fake()->randomNumber(8),
-            // NEW: Encrypts the email string for storage
-            'encrypted_email' => Crypt::encryptString($email),
-            // NEW: Hashes the email for quick lookups
-            'hashed_email'    => hash('sha256', $email),
-            'adviser_id'    => User::factory(['role' => 'Adviser']),
+            // REMOVED: 'user_id' is not part of the whitelist table.
+            'student_id'    => fake()->unique()->randomNumber(8), // Based on Data Dictionary (INTEGER) [cite: 28]
+            'encrypted_email' => Crypt::encryptString($email), // Based on Data Dictionary [cite: 28]
+            'hashed_email'    => hash('sha256', $email), // Based on Data Dictionary [cite: 28]
+            'adviser_id'    => User::factory(['role' => 'Adviser']), // Based on Data Dictionary [cite: 28]
         ];
     }
 }
