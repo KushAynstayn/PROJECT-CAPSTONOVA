@@ -7,6 +7,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
+use App\Models\User; // Add this import
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -49,7 +50,8 @@ class DocumentRequestController extends Controller
                 'viewer.id as viewer_id',
                 'viewer.first_name as viewer_first_name',
                 'viewer.last_name as viewer_last_name',
-                'viewer.email as viewer_email',
+                // Show only first 12 chars of decrypted email with ellipsis
+                DB::raw("CONCAT(LEFT(viewer.encrypted_email, 12), '...') as viewer_encrypted_email"),
                 'capstone_projects.id as project_id',
                 'capstone_projects.title as project_title',
                 'capstone_projects.abstract as project_abstract',
@@ -60,12 +62,15 @@ class DocumentRequestController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function ($row) {
+                // Decrypt the email for the response
+                $viewerEmail = $this->decryptEmail($row->viewer_encrypted_email);
+
                 return [
                     'request_id' => $row->request_id,
                     'viewer' => [
                         'id' => $row->viewer_id,
                         'full_name' => trim($row->viewer_first_name . ' ' . $row->viewer_last_name),
-                        'email' => $row->viewer_email,
+                        'email' => $viewerEmail, // Use decrypted email
                     ],
                     'project' => [
                         'id' => $row->project_id,
@@ -136,8 +141,19 @@ class DocumentRequestController extends Controller
             ]);
         });
 
-        // Refetch the updated request to return it
-        $updatedRequest = DB::table('document_requests')->where('request_id', $id)->first();
+        // Refetch the updated request to return it with decrypted email
+        $updatedRequest = DB::table('document_requests')
+            ->join('users as viewer', 'document_requests.viewer_id', '=', 'viewer.id')
+            ->where('document_requests.request_id', $id)
+            ->select(
+                'document_requests.*',
+                'viewer.encrypted_email as viewer_encrypted_email'
+            )
+            ->first();
+
+        if ($updatedRequest) {
+            $updatedRequest->viewer_email = $this->decryptEmail($updatedRequest->viewer_encrypted_email);
+        }
 
         return response()->json($updatedRequest);
     }
@@ -164,7 +180,19 @@ class DocumentRequestController extends Controller
             ->where('request_id', $id)
             ->update(['status' => 'rejected']);
 
-        $updatedRequest = DB::table('document_requests')->where('request_id', $id)->first();
+        // Refetch the updated request to return it with decrypted email
+        $updatedRequest = DB::table('document_requests')
+            ->join('users as viewer', 'document_requests.viewer_id', '=', 'viewer.id')
+            ->where('document_requests.request_id', $id)
+            ->select(
+                'document_requests.*',
+                'viewer.encrypted_email as viewer_encrypted_email'
+            )
+            ->first();
+
+        if ($updatedRequest) {
+            $updatedRequest->viewer_email = $this->decryptEmail($updatedRequest->viewer_encrypted_email);
+        }
 
         return response()->json($updatedRequest);
     }
@@ -202,11 +230,11 @@ class DocumentRequestController extends Controller
                 'viewer.id as viewer_id',
                 'viewer.first_name as viewer_first_name',
                 'viewer.last_name as viewer_last_name',
-                'viewer.email as viewer_email',
+                'viewer.encrypted_email as viewer_encrypted_email', // Changed from email to encrypted_email
                 'approver.id as approver_id',
                 'approver.first_name as approver_first_name',
                 'approver.last_name as approver_last_name',
-                'approver.email as approver_email',
+                'approver.encrypted_email as approver_encrypted_email', // Changed from email to encrypted_email
                 'capstone_projects.id as project_id',
                 'capstone_projects.title as project_title',
                 'approval_histories.request_date',
@@ -216,12 +244,16 @@ class DocumentRequestController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function ($row) {
+                // Decrypt emails for the response
+                $viewerEmail = $this->decryptEmail($row->viewer_encrypted_email);
+                $approverEmail = $this->decryptEmail($row->approver_encrypted_email);
+
                 return [
                     'history_id' => $row->history_id,
                     'viewer' => [
                         'id' => $row->viewer_id,
                         'full_name' => trim($row->viewer_first_name . ' ' . $row->viewer_last_name),
-                        'email' => $row->viewer_email,
+                        'email' => $viewerEmail, // Use decrypted email
                     ],
                     'project' => [
                         'id' => $row->project_id,
@@ -230,7 +262,7 @@ class DocumentRequestController extends Controller
                     'approver' => [
                         'id' => $row->approver_id,
                         'full_name' => trim($row->approver_first_name . ' ' . $row->approver_last_name),
-                        'email' => $row->approver_email,
+                        'email' => $approverEmail, // Use decrypted email
                     ],
                     'request_date' => $row->request_date,
                     'approval_date' => $row->approval_date,
@@ -239,5 +271,18 @@ class DocumentRequestController extends Controller
             });
 
         return response()->json($approvalHistories);
+    }
+
+    /**
+     * Helper method to decrypt email
+     */
+    private function decryptEmail($encryptedEmail)
+    {
+        try {
+            return decrypt($encryptedEmail);
+        } catch (\Exception $e) {
+            // If decryption fails, return the original value
+            return $encryptedEmail;
+        }
     }
 }

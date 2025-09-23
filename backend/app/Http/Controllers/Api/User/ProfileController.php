@@ -13,7 +13,7 @@ use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
-     /**
+    /**
      * Display the authenticated user's profile.
      *
      * Retrieves the currently authenticated user along with their associated
@@ -43,7 +43,10 @@ class ProfileController extends Controller
         // Eager load the userDetail relationship to avoid extra queries.
         $user = $request->user()->load('userDetail');
 
-        return response()->json($user);
+        // Transform the user data to include decrypted email for frontend compatibility
+        $userData = $this->transformUserData($user);
+
+        return response()->json($userData);
     }
 
     /**
@@ -64,6 +67,16 @@ class ProfileController extends Controller
             'first_name' => ['sometimes', 'required', 'string', 'max:100'],
             'last_name' => ['sometimes', 'required', 'string', 'max:100'],
             'middle_name' => ['nullable', 'string', 'max:100'],
+            'email' => [ // Maintain 'email' field for backward compatibility
+                'sometimes',
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'hashed_email')->ignore($user->id)->where(function ($query) use ($request) {
+                    // Check uniqueness against hashed_email column
+                    return $query->where('hashed_email', hash('sha256', $request->email));
+                })
+            ],
             'password' => ['nullable', 'string', 'confirmed', Password::min(8)],
 
             // UserDetail model fields (conditionally updatable)
@@ -94,6 +107,13 @@ class ProfileController extends Controller
         // Update the User model fields from the request.
         $user->fill($request->only(['first_name', 'last_name', 'middle_name']));
 
+        // Handle email update if provided (maintain backward compatibility)
+        if ($request->filled('email')) {
+            $email = $request->email;
+            $user->encrypted_email = encrypt($email);
+            $user->hashed_email = hash('sha256', $email);
+        }
+
         // Hash and update the password only if it was provided.
         if ($request->filled('password')) {
             $user->password = Hash::make($validated['password']);
@@ -106,9 +126,12 @@ class ProfileController extends Controller
             $user->userDetail->update($request->only(['department', 'program']));
         }
 
+        // Transform the updated user data to include decrypted email
+        $userData = $this->transformUserData($user->fresh('userDetail'));
+
         return response()->json([
             'message' => 'Profile updated successfully.',
-            'user' => $user->fresh('userDetail'), // Return the updated user data.
+            'user' => $userData,
         ]);
     }
 
@@ -118,5 +141,22 @@ class ProfileController extends Controller
     public function destroy(User $user)
     {
         //
+    }
+
+    /**
+     * Transform user data to maintain backward compatibility with frontend
+     * by including a decrypted email field in the response.
+     *
+     * @param  \App\Models\User  $user
+     * @return array
+     */
+    private function transformUserData(User $user): array
+    {
+        $userData = $user->toArray();
+
+        // Add the decrypted email to the response for backward compatibility
+        $userData['email'] = $user->encrypted_email; // This will use the accessor to decrypt
+
+        return $userData;
     }
 }

@@ -11,6 +11,12 @@ interface User {
 interface LoginResponse {
   user: User;
   token: string;
+  two_factor_required?: boolean;
+}
+
+interface TwoFactorResponse {
+  user: User;
+  token: string;
 }
 
 class AuthStore {
@@ -61,6 +67,17 @@ class AuthStore {
 
   async login(email: string, password: string): Promise<LoginResponse> {
     const response = await apiCall("/auth/login", "POST", { email, password });
+    if (!response.two_factor_required) {
+      this.setAuth(response.user, response.token);
+    }
+    return response;
+  }
+
+  async verifyTwoFactor(
+    email: string,
+    code: string
+  ): Promise<TwoFactorResponse> {
+    const response = await apiCall("/auth/verify-2fa", "POST", { email, code });
     this.setAuth(response.user, response.token);
     return response;
   }

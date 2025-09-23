@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendTwoFactorCodeJob;
 use App\Models\User;
+use App\Models\TwoFactorAuthentication;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -23,8 +27,9 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        // Find the user by email.
-        $user = User::where('email', $request->email)->first();
+        // Hash the incoming email to find the user by the hashed_email column.
+        $hashedEmail = hash('sha256', $request->email);
+        $user = User::where('hashed_email', $hashedEmail)->first();
 
         // Verify user exists, password is correct, and status is active.
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -37,13 +42,39 @@ class LoginController extends Controller
             return response()->json(['message' => 'This account is ' . $user->status . '. Please contact an administrator.'], 403);
         }
 
-        // Create a new Sanctum token.
-        $token = $user->createToken('auth-token')->plainTextToken;
+        // If 2FA is disabled in the .env, log the user in directly.
+        if (config('auth.two_factor_enabled') === false) {
+            $token = $user->createToken('auth-token')->plainTextToken;
+            return response()->json([
+                'message' => 'Login successful.',
+                'user' => $user,
+                'token' => $token,
+                'two_factor_required' => false,
+            ]);
+        }
 
+        // --- Start Two-Factor Authentication Process ---
+        $code = rand(100000, 999999); // Generate a 6-digit code.
+
+        // Store the encrypted code and its expiration time.
+
+        // app/Http/Controllers/Api/Auth/LoginController.php
+
+        TwoFactorAuthentication::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'code' => $code,
+                'expires_at' => Carbon::now()->addMinutes(10),
+            ]
+        );
+
+        // Dispatch a job to send the 2FA code via email.
+        SendTwoFactorCodeJob::dispatch($user, $code);
+
+        // Return a response indicating that 2FA is required.
         return response()->json([
-            'message' => 'Login successful.',
-            'user' => $user,
-            'token' => $token,
+            'message' => 'A verification code has been sent to your email.',
+            'two_factor_required' => true,
         ]);
     }
 }

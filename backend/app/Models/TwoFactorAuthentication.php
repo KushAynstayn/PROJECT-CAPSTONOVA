@@ -27,6 +27,24 @@ class TwoFactorAuthentication extends Model
     protected $guarded = [];
 
     /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'code', // Hide the encrypted code by default
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'expires_at' => 'datetime',
+    ];
+
+    /**
      * Get the user that owns the 2FA record.
      */
     public function user(): BelongsTo
@@ -44,5 +62,64 @@ class TwoFactorAuthentication extends Model
         } catch (Exception $e) {
             return $value; // Return raw value if decryption fails
         }
+    }
+
+    /**
+     * Mutator to automatically encrypt the code attribute when setting.
+     */
+    public function setCodeAttribute($value): void
+    {
+        $this->attributes['code'] = Crypt::encryptString($value);
+    }
+
+    /**
+     * Check if the 2FA code has expired.
+     */
+    public function isExpired(): bool
+    {
+        return $this->expires_at->isPast();
+    }
+
+    /**
+     * Check if the provided code matches the stored code.
+     */
+    public function verifyCode(string $code): bool
+    {
+        try {
+            // Get the raw encrypted code from the database
+            $encryptedCode = $this->getRawOriginal('code');
+
+            // Decrypt the stored code
+            $decryptedStoredCode = Crypt::decryptString($encryptedCode);
+
+            // Compare the decrypted stored code with the input code
+            return $decryptedStoredCode === $code;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get the raw encrypted code (bypasses the accessor).
+     */
+    public function getEncryptedCode(): string
+    {
+        return $this->getRawOriginal('code');
+    }
+
+    /**
+     * Scope a query to only include valid (non-expired) 2FA records.
+     */
+    public function scopeValid($query)
+    {
+        return $query->where('expires_at', '>', now());
+    }
+
+    /**
+     * Scope a query to only include expired 2FA records.
+     */
+    public function scopeExpired($query)
+    {
+        return $query->where('expires_at', '<=', now());
     }
 }

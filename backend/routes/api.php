@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Util\ProjectToolsController;
 
 use App\Http\Controllers\Api\Adviser\SuggestionController;
+use App\Http\Controllers\Api\Auth\TwoFactorAuthController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
 use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
@@ -35,17 +36,17 @@ use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
-use App\Http\Controllers\Api\Viewer\RequestProjectController;
 
+use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
+
+
 use App\Http\Controllers\Api\UserManagement\MProponentController;
-
-
 use App\Http\Controllers\Api\UserManagement\MWhitelistController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
@@ -61,6 +62,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', RegisterController::class)->name('auth.register');
 
     Route::post('/login', LoginController::class)->name('auth.login');
+    Route::post('/verify-2fa', TwoFactorAuthController::class);
 
     Route::post('/logout', LogoutController::class)
         ->middleware('auth:sanctum')
