@@ -115,14 +115,16 @@ const WhitelistView = ({
           />
         </div>
       </div>
-      <div className="relative max-h-[60vh] overflow-y-auto">
-        <Table removeWrapper aria-label="Whitelist data table">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+        <Table removeWrapper aria-label="Whitelist data table" isHeaderSticky>
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              EMAIL
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ID NUMBER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ADVISER
             </TableColumn>
           </TableHeader>
@@ -131,8 +133,9 @@ const WhitelistView = ({
               <TableRow
                 key={user.whitelist_id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.whitelist_id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.whitelist_id &&
+                    "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.whitelist_id)}
               >

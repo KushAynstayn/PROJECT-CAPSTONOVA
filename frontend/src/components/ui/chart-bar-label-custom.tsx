@@ -114,7 +114,15 @@ export function ChartBarLabelCustom() {
               layout="vertical"
               margin={{ left: 5, right: 5 }}
             >
-              <YAxis dataKey="adviser" type="category" hide />
+              <YAxis
+                dataKey="adviser"
+                type="category"
+                tickLine={false} // Cleaner look
+                axisLine={false} // Cleaner look
+                tickMargin={10}
+                width={120} // Give space for long names
+                tickFormatter={(value) => chartConfig[value]?.label ?? value}
+              />
               <XAxis dataKey="projects" type="number" hide />
               <ChartTooltip
                 cursor={false}
@@ -122,20 +130,10 @@ export function ChartBarLabelCustom() {
               />
               <Bar dataKey="projects" layout="vertical" radius={5}>
                 <LabelList
-                  dataKey="adviser"
-                  position="insideLeft"
-                  offset={8}
-                  className="fill-[var(--color-label)]"
-                  fontSize={12}
-                  formatter={(value: keyof typeof chartConfig) =>
-                    chartConfig[value]?.label ?? value
-                  }
-                />
-                <LabelList
                   dataKey="projects"
-                  position="right"
-                  offset={8}
-                  className="fill-foreground"
+                  position="insideRight" // Move count inside the bar
+                  offset={10}
+                  className="fill-white" // Make text white for contrast
                   fontSize={12}
                 />
               </Bar>

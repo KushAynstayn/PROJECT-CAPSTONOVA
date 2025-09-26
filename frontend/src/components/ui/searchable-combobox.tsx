@@ -25,6 +25,7 @@ interface SearchableComboboxProps {
   onValueChange: (value: string) => void;
   placeholder: string;
   onFocus?: (e: React.FocusEvent<HTMLButtonElement>) => void;
+   className?: string; 
 }
 
 export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
@@ -33,6 +34,7 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
   onValueChange,
   placeholder,
   onFocus,
+   className,
 }) => {
   const [open, setOpen] = React.useState(false);
   const selectedLabel = items.find((item) => item.value === value)?.label;
@@ -44,7 +46,11 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between rounded-none border-[rgba(0,0,0,0.5)]"
+           className={cn(
+            "w-full justify-between rounded-none border-[rgba(0,0,0,0.5)]",
+            !value && "text-muted-foreground", // This is the key change
+            className
+          )}
           onFocus={onFocus}
         >
           {selectedLabel || placeholder}

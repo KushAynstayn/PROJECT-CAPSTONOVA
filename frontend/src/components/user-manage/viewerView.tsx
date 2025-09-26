@@ -123,15 +123,19 @@ const ViewerView = ({
         </div>
       </div>
 
-      <div className="relative max-h-[60vh] overflow-y-auto">
-        <Table removeWrapper aria-label="Viewer user data table">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+        <Table removeWrapper aria-label="Viewer data table" isHeaderSticky>
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              NAME
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              EMAIL
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ID NUMBER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               DEPARTMENT
             </TableColumn>
           </TableHeader>
@@ -144,8 +148,8 @@ const ViewerView = ({
               <TableRow
                 key={user.id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.id && "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.id)}
               >
@@ -200,7 +204,11 @@ const ViewerView = ({
                   }
                   className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-red-500 text-white shadow-md hover:bg-red-600"
                 >
-                  <Trash2 className="h-12 w-12" />
+                  <img
+                    src="/images/trash.png"
+                    alt="Delete"
+                    className="h-12 w-12"
+                  />
                   <span className="text-sm">Restrict</span>
                 </Button>
               </div>

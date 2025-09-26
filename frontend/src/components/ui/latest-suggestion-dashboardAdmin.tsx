@@ -92,8 +92,8 @@ export const LatestSuggestion = () => {
         <CardTitle>Latest Suggestion</CardTitle>
       </CardHeader>
       <CardContent className="flex-1">{renderContent()}</CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full">
+      <CardFooter className="justify-center">
+        <Button className="w-1/2 bg-[#660000] text-white hover:bg-[#751717] active:bg-[#751717] transition-transform hover:scale-105">
           View All Suggestions
         </Button>
       </CardFooter>

@@ -109,7 +109,7 @@ const ProponentView = ({
       `}</style>
 
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="w-full grow">
+        <div className="w-full grow md:max-w-md">
           <InputWithClear
             type="search"
             placeholder={placeholder}
@@ -120,21 +120,25 @@ const ProponentView = ({
         </div>
       </div>
 
-      <div className="relative max-h-[60vh] overflow-y-auto">
-        <Table removeWrapper aria-label="Proponent user data table">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+        <Table removeWrapper aria-label="Viewer data table" isHeaderSticky>
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ADVISER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              NAME
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ID NUMBER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              EMAIL
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               DEPARTMENT
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               PROGRAM
             </TableColumn>
           </TableHeader>
@@ -147,8 +151,8 @@ const ProponentView = ({
               <TableRow
                 key={user.id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.id && "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.id)}
               >

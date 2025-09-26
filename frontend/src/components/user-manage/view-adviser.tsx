@@ -134,15 +134,19 @@ const AdviserView = ({
         </button>
       </div>
 
-      <div className="relative max-h-[60vh] overflow-y-auto">
-        <Table removeWrapper aria-label="Adviser user data table">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+        <Table removeWrapper aria-label="Viewer data table" isHeaderSticky>
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              NAME
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              EMAIL
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ADVISEES COUNT
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               SUGGESTIONS
             </TableColumn>
           </TableHeader>
@@ -151,8 +155,8 @@ const AdviserView = ({
               <TableRow
                 key={user.id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.id && "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.id)}
               >
