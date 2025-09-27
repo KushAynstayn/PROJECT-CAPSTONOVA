@@ -46,7 +46,7 @@ const SearchBar = ({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search for a topic or project title..."
-                    className="w-full py-3 pl-6 pr-20 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    className="w-full py-1 pl-6 pr-20 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 />
                 {query && (
                     <button
@@ -120,8 +120,8 @@ const ViewProjectsPage = ({ params }: { params: { id: string } }) => {
                 .fading-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #4a5568; }
                 .fading-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #2d3748; }
             `}</style>
-            <div className="bg-black h-screen text-white flex flex-col">
-                <header className="p-4 border-b border-gray-800 bg-black">
+            <div className="p-4 bg-black h-screen text-white flex flex-col">
+                <header className="p-4 px-8 mt-18 border-b border-gray-800 bg-black">
                     <div className="max-w-7xl mx-auto flex items-center gap-6">
                         <div className="w-full max-w-2xl">
                             <SearchBar onSearch={handleNewSearch} initialValue={searchTerm} />

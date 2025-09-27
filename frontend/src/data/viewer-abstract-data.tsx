@@ -7,6 +7,7 @@ export type Project = {
     adviser: string;
     datePublished: string;
     abstract: string;
+    panelists: string; 
 };
 
 // --- Mock Data ---
@@ -14,7 +15,8 @@ export type Project = {
 export const mockProjects: Project[] = [
   { 
     id: 1, 
-    category: "education", 
+    category: "education",
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "AI in Modern Education", 
     proponents: "Alice Johnson, Bob Williams", 
     adviser: "Dr. Emily Carter", 
@@ -24,6 +26,7 @@ export const mockProjects: Project[] = [
   { 
     id: 2, 
     category: "science", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Sustainable Agriculture Techniques", 
     proponents: "Charlie Brown, Diana Miller", 
     adviser: "Dr. Frank White", 
@@ -33,6 +36,7 @@ export const mockProjects: Project[] = [
   { 
     id: 3, 
     category: "business", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "The Future of E-Commerce", 
     proponents: "Eve Davis, George Harris", 
     adviser: "Dr. Helen Clark", 
@@ -42,6 +46,7 @@ export const mockProjects: Project[] = [
   { 
     id: 4, 
     category: "education", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Gamified Learning Platforms", 
     proponents: "Ivy Green, Jack Turner", 
     adviser: "Dr. Emily Carter", 
@@ -51,6 +56,7 @@ export const mockProjects: Project[] = [
   { 
     id: 5, 
     category: "science", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Renewable Energy for Urban Areas", 
     proponents: "Kate Lewis, Leo Hall", 
     adviser: "Dr. Michael Scott", 
@@ -60,6 +66,7 @@ export const mockProjects: Project[] = [
   { 
     id: 6, 
     category: "health", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Mental Health and Technology", 
     proponents: "Mia Adams, Noah King", 
     adviser: "Dr. Olivia Martinez", 
@@ -69,6 +76,7 @@ export const mockProjects: Project[] = [
   { 
     id: 7, 
     category: "business", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Blockchain for Supply Chain Management", 
     proponents: "Oscar Perry, Penny Quinn", 
     adviser: "Dr. Robert Steele", 
@@ -78,6 +86,7 @@ export const mockProjects: Project[] = [
   { 
     id: 8, 
     category: "health", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Wearable Tech for Remote Patient Monitoring", 
     proponents: "Quincy Roberts, Rachel Smith", 
     adviser: "Dr. Susan Taylor", 
@@ -87,6 +96,7 @@ export const mockProjects: Project[] = [
   { 
     id: 9, 
     category: "science", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "CRISPR Gene Editing in Plant Biology", 
     proponents: "Steve Turner, Tina Underwood", 
     adviser: "Dr. Frank White", 
@@ -96,6 +106,7 @@ export const mockProjects: Project[] = [
   { 
     id: 10, 
     category: "education", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Virtual Reality Labs for Chemistry", 
     proponents: "Uma Vance, Victor Walker", 
     adviser: "Dr. Emily Carter", 
@@ -105,6 +116,7 @@ export const mockProjects: Project[] = [
   { 
     id: 11, 
     category: "business", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "AI-Powered Customer Service Chatbots", 
     proponents: "Wendy Xiong, Xavier Young", 
     adviser: "Dr. Helen Clark", 
@@ -114,6 +126,7 @@ export const mockProjects: Project[] = [
   { 
     id: 12, 
     category: "health", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Predictive Analytics for Disease Outbreaks", 
     proponents: "Yara Zayne, Zack Adams", 
     adviser: "Dr. Olivia Martinez", 
@@ -123,6 +136,7 @@ export const mockProjects: Project[] = [
   { 
     id: 13, 
     category: "science", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Ocean Cleanup Using Autonomous Drones", 
     proponents: "Aaron Bell, Brenda Cook", 
     adviser: "Dr. Michael Scott", 
@@ -132,6 +146,7 @@ export const mockProjects: Project[] = [
   { 
     id: 14, 
     category: "education", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Adaptive Testing Systems with Machine Learning", 
     proponents: "Cathy Doyle, David Evans", 
     adviser: "Dr. Emily Carter", 
@@ -141,6 +156,7 @@ export const mockProjects: Project[] = [
   { 
     id: 15, 
     category: "business", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "FinTech Solutions for the Unbanked", 
     proponents: "Fiona Green, Gary Hill", 
     adviser: "Dr. Robert Steele", 
@@ -150,6 +166,7 @@ export const mockProjects: Project[] = [
   { 
     id: 16, 
     category: "health", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Genomic Data Privacy and Security", 
     proponents: "Hannah Irwin, Ian Jones", 
     adviser: "Dr. Susan Taylor", 
@@ -159,6 +176,7 @@ export const mockProjects: Project[] = [
   { 
     id: 17, 
     category: "science", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Next-Generation Battery Technology", 
     proponents: "Jack Klein, Laura Moore", 
     adviser: "Dr. Frank White", 
@@ -168,6 +186,7 @@ export const mockProjects: Project[] = [
   { 
     id: 18, 
     category: "education", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Peer-to-Peer Tutoring Network Platform", 
     proponents: "Megan Nash, Owen Price", 
     adviser: "Dr. Emily Carter", 
@@ -177,6 +196,7 @@ export const mockProjects: Project[] = [
   { 
     id: 19, 
     category: "business", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "Hyper-Personalized Marketing Engines", 
     proponents: "Paula Reed, Steve Taylor", 
     adviser: "Dr. Helen Clark", 
@@ -186,6 +206,7 @@ export const mockProjects: Project[] = [
   { 
     id: 20, 
     category: "health", 
+    panelists: "Dr. John Doe, Dr. Jane Smith, Dr. Alan Brown", 
     title: "3D Bioprinting of Human Tissues", 
     proponents: "Roger Evans, Ursula Vance", 
     adviser: "Dr. Olivia Martinez", 

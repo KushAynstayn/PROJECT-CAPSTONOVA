@@ -13,7 +13,7 @@ const SearchBar = ({ onSearch, initialValue = "" }: { onSearch: (query: string) 
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div className="relative">
-        <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search for a topic or project title..." className="w-full py-3 pl-6 pr-20 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+        <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search for a topic or project title..." className="w-full py-1 pl-6 pr-20 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400" />
         {query && (<button type="button" onClick={handleClear} className="absolute inset-y-0 right-14 flex items-center text-gray-500 hover:text-gray-900" aria-label="Clear search"><svg xmlns="http://www.w.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>)}
         <button type="submit" className="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-700 hover:text-yellow-800" aria-label="Search"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
       </div>
@@ -67,7 +67,7 @@ const ViewAbstract = ({ params: { id } }: { params: { id: string } }) => {
         .fading-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #2d3748; }
       `}</style>
       <div className="bg-gray min-h-screen text-black flex flex-col">
-        <header className=" p-4 border-b border-gray-800 bg-black">
+        <header className="px-8 mt-18 p-4 border-b border-gray-800 bg-black">
           <div className="max-w-7xl mx-auto flex items-center gap-6">
             <div className="w-full max-w-2xl">
               <SearchBar onSearch={handleNewSearch} />
@@ -75,7 +75,7 @@ const ViewAbstract = ({ params: { id } }: { params: { id: string } }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 max-w-10xl p-10 mt-4">
+        <main className="flex-1 overflow-y-auto p-8 max-w-10xl mt-4">
           <div className="flex flex-col lg:flex-row items-start gap-8">
             <div className="flex-1 w-full lg:w-80 bg-stone-200 p-6 rounded-lg shadow-lg max-h-[700px]">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 uppercase border-b pb-4">
@@ -101,6 +101,9 @@ const ViewAbstract = ({ params: { id } }: { params: { id: string } }) => {
                     day: "numeric",
                     year: "numeric",
                   })}
+                </p>
+                <p>
+                  <strong>Panelists:</strong> {project.panelists}
                 </p>
               </div>
             </div>

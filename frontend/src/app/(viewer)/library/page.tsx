@@ -11,6 +11,7 @@ type Project = {
   authors: string[];
   fullAdviserName: string;
   uploadDate: string;
+  panelists: string[];
 };
 
 const ViewLibrary = () => {
@@ -185,9 +186,10 @@ const ViewLibrary = () => {
       section: 'BSIS 3B',
       adviser: 'Angelbert Maghanoy',
       schoolYear: '2023-2024',
-      authors: ['Arado, Niño John', 'Canales, Kingston Harddy', 'Genson, Leah Faye', 'Jubahib, Shekinah Mae'],
+      authors: ['Arado Niño John,', ' ', 'Canales Kingston Harddy,', ' ', 'Genson Leah Faye,', ' ', 'Jubahib Shekinah Mae'],
       fullAdviserName: 'Angelbert P. Maghanoy, Ph.D.',
       uploadDate: '2025-05-20',
+      panelists: ['Dr. Noreen Fuentes', 'Prof. Janeth Ugang', 'Prof. Emilie Villaceran'],
     },
     {
       title: 'INVENTORY MASTER',
@@ -198,6 +200,7 @@ const ViewLibrary = () => {
       authors: ['Doe, Jane', 'Smith, John', 'Jones, Peter'],
       fullAdviserName: 'John Smith, Ph.D.',
       uploadDate: '2025-05-18',
+      panelists: ['Luffy', 'Zoro', 'Sanji'],
     },
     {
       title: 'DATA VISUALIZER',
@@ -208,6 +211,7 @@ const ViewLibrary = () => {
       authors: ['Jones, Peter', 'White, Emily', 'Brown, Chris'],
       fullAdviserName: 'Emily White, M.S.',
       uploadDate: '2024-06-15',
+      panelists: ['Luffy', 'Zoro', 'Sanji'],
     },
     {
       title: 'E-LEARNING PLATFORM',
@@ -218,6 +222,7 @@ const ViewLibrary = () => {
        authors: ['Clara, Maria', 'Rizal, Jose'],
       fullAdviserName: 'Jose Rizal, Ph.D.',
       uploadDate: '2025-05-19',
+      panelists: ['Luffy', 'Zoro', 'Sanji'],
     },
     {
       title: 'MOBILE ATTENDANCE SYSTEM',
@@ -228,6 +233,7 @@ const ViewLibrary = () => {
        authors: ['Bonifacio, Andres', 'Mabini, Apolinario'],
       fullAdviserName: 'Apolinario Mabini',
       uploadDate: '2024-06-25',
+      panelists: ['Luffy', 'Zoro', 'Sanji'],
     },
     {
       title: 'CAMPUS NAVIGATION APP',
@@ -238,6 +244,7 @@ const ViewLibrary = () => {
        authors: ['Silang, Gabriela', 'Aguinaldo, Emilio'],
       fullAdviserName: 'Emilio Aguinaldo',
       uploadDate: '2025-05-17',
+      panelists: ['Luffy', 'Zoro', 'Sanji'],
     },
   ];
 
@@ -257,10 +264,9 @@ const ViewLibrary = () => {
     });
 
   return (
-    <div className="p-4 bg-black min-h-screen text-white">
+    <div className="p-4 px-8 mt-32 bg-black min-h-screen text-white">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Library</h1>
-        <p className="mt-1 text-md text-neutral-400">Requested Capstone Projects</p>
+        <p className="mt-1 text-3xl text-[#E0A800]" style={{ fontFamily: "'Black Ops One', sans-serif" }}>Requested Capstone Projects</p>
       </div>
 
       {/* Search and Filter Controls */}
@@ -340,10 +346,11 @@ const ViewLibrary = () => {
                 <h2 className="text-xl font-bold text-center text-[#E0A800] tracking-wider">{project.title}</h2>
                 <hr className="my-4 border-neutral-700" />
                 <div className="space-y-2 text-sm text-neutral-300">
-                   <p><span className="font-bold text-neutral-100">Project Leader:</span> {project.leader}</p>
+                   <p><span className="font-bold text-neutral-100">Project Authors:</span> {project.authors}</p>
                    <p><span className="font-bold text-neutral-100">Yr & Section:</span> {project.section}</p>
                    <p><span className="font-bold text-neutral-100">Adviser:</span> {project.adviser}</p>
                    <p><span className="font-bold text-neutral-100">School Year:</span> {project.schoolYear}</p>
+                   <p><span className="font-bold text-neutral-100">Panelists:</span> {project.panelists}</p>
                 </div>
               </div>
               <div className="mt-6 flex justify-center gap-4">

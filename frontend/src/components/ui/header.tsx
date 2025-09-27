@@ -2,26 +2,27 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useState, useEffect, ReactNode } from "react";
-import {
-  Home,
-  Library,
-  Lightbulb,
-  TrendingUp,
-  Info,
-  Bell,
-  User,
-} from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useState, useEffect, ReactNode, memo } from "react";
+import { Home, Library, Lightbulb, TrendingUp, Info, Bell, User, LucideProps } from "lucide-react";
 import { usePathname } from "next/navigation";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-// Small helper so every menu item closes the popover before navigating
+// --- OPTIMIZATION 1: Data-driven Menu Items ---
+// Storing menu data in an array makes it easier to manage and scale.
+const menuItems = [
+  { href: "/", Icon: Home, label: "Home", delay: 50 },
+  { href: "/library", Icon: Library, label: "Library", delay: 100 },
+  { href: "/view-suggestions", Icon: Lightbulb, label: "View Suggestions", delay: 150 },
+  { href: "/view-trends", Icon: TrendingUp, label: "View Trends", delay: 200 },
+  { href: "/about", Icon: Info, label: "About Us", delay: 250 },
+  { href: "/notifications", Icon: Bell, label: "Notifications", delay: 300 },
+  { href: "/account", Icon: User, label: "Account", delay: 350 },
+];
+
+// --- OPTIMIZATION 2: Memoized MenuLink Component ---
+// React.memo prevents the component from re-rendering if its props haven't changed.
 interface MenuLinkProps {
   href: string;
   delay?: number;
@@ -29,8 +30,8 @@ interface MenuLinkProps {
   onClick: () => void;
 }
 
-const MenuLink = ({ href, delay, children, onClick }: MenuLinkProps) => (
-  <Link href={href}>
+const MenuLink = memo(({ href, delay, children, onClick }: MenuLinkProps) => (
+  <Link href={href} passHref>
     <div
       onClick={onClick}
       className="group bg-black/20 text-white rounded-md flex flex-col items-center justify-center gap-2 p-3 h-40 w-full backdrop-blur-md transition-all duration-300 ease-out transform scale-95 hover:scale-105 border border-yellow-500"
@@ -40,12 +41,15 @@ const MenuLink = ({ href, delay, children, onClick }: MenuLinkProps) => (
       {children}
     </div>
   </Link>
-);
+));
+MenuLink.displayName = 'MenuLink';
+
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname(); // App Router current path
+  const pathname = usePathname();
 
+  // Initialize AOS library on component mount
   useEffect(() => {
     AOS.init({
       once: true,
@@ -54,15 +58,22 @@ const Header = () => {
     });
   }, []);
 
-  // ✅ Close the popover on any route change
+  // Close the popover menu on any route change
   useEffect(() => {
-    setMenuOpen(false);
+    if (menuOpen) {
+      setMenuOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+  
+  // --- OPTIMIZATION 3: Consolidated Styles ---
+  // Keep styles in one place for consistency.
+  const STYLES = {
+      icon: "h-10 w-10 md:h-12 md:w-12 text-[#f5b301] group-hover:text-white transition-colors duration-300",
+      text: "text-xs md:text-sm font-semibold uppercase text-center group-hover:text-white transition-colors duration-300",
+  };
 
-  const iconStyle =
-    "h-10 w-10 md:h-12 md:w-12 text-[#f5b301] group-hover:text-white transition-colors duration-300";
-  const textStyle =
-    "text-xs md:text-sm font-semibold uppercase text-center group-hover:text-white transition-colors duration-300";
+  const hamburgerLine = `block w-7 h-0.75 rounded-full transition-all duration-300 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600`;
 
   return (
     <header className="group fixed inset-x-0 top-0 z-50 duration-200">
@@ -72,7 +83,7 @@ const Header = () => {
           mask: "linear-gradient(black, black, transparent)",
           backdropFilter: "blur(8px)",
         }}
-      ></div>
+      />
 
       <nav className="h-18 flex justify-between items-center relative py-12 px-4 md:px-8">
         <Link href="/" className="flex items-center">
@@ -84,25 +95,12 @@ const Header = () => {
           />
         </Link>
 
-        {/* ✅ Make the Popover controlled */}
         <Popover open={menuOpen} onOpenChange={setMenuOpen}>
           <PopoverTrigger asChild>
             <button className="relative w-7 h-7 flex flex-col items-center justify-center gap-1 focus:outline-none mr-10">
-              <span
-                className={`block w-7 h-0.75 rounded-full transition-all duration-300 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 ${
-                  menuOpen ? "rotate-46 translate-y-1.75" : ""
-                }`}
-              />
-              <span
-                className={`block w-7 h-0.75 rounded-full transition-all duration-300 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 ${
-                  menuOpen ? "opacity-0" : ""
-                }`}
-              />
-              <span
-                className={`block w-7 h-0.75 rounded-full transition-all duration-300 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 ${
-                  menuOpen ? "-rotate-45 -translate-y-1.75" : ""
-                }`}
-              />
+              <span className={`${hamburgerLine} ${menuOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
+              <span className={`${hamburgerLine} ${menuOpen ? "opacity-0" : ""}`} />
+              <span className={`${hamburgerLine} ${menuOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
             </button>
           </PopoverTrigger>
 
@@ -111,46 +109,20 @@ const Header = () => {
             className="w-screen max-w-[1280px] border-none rounded-xl mt-14 mx-10 p-4 flex items-center justify-center backdrop-blur-xl bg-black/30"
           >
             <div className="grid grid-cols-4 gap-4 w-full">
-              <MenuLink href="/" delay={50} onClick={() => setMenuOpen(false)}>
-                <Home className={iconStyle} />
-                <span className={textStyle}>Home</span>
-              </MenuLink>
+              {/* --- OPTIMIZATION 4: Render Menu Items with a Loop --- */}
+              {menuItems.map(({ href, Icon, label, delay }) => (
+                <MenuLink
+                  key={href}
+                  href={href}
+                  delay={delay}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon className={STYLES.icon} />
+                  <span className={STYLES.text}>{label}</span>
+                </MenuLink>
+              ))}
 
-              <MenuLink href="/library" delay={100} onClick={() => setMenuOpen(false)}>
-                <Library className={iconStyle} />
-                <span className={textStyle}>Library</span>
-              </MenuLink>
-
-              <MenuLink href="/view-suggestions" delay={150} onClick={() => setMenuOpen(false)}>
-                <Lightbulb className={iconStyle} />
-                <span className={textStyle}>View Suggestions</span>
-              </MenuLink>
-
-              <MenuLink href="/view-trends" delay={200} onClick={() => setMenuOpen(false)}>
-                <TrendingUp className={iconStyle} />
-                <span className={textStyle}>View Trends</span>
-              </MenuLink>
-
-              <MenuLink href="/about" delay={250} onClick={() => setMenuOpen(false)}>
-                <Info className={iconStyle} />
-                <span className={textStyle}>About Us</span>
-              </MenuLink>
-
-              <MenuLink href="/notifications" delay={300} onClick={() => setMenuOpen(false)}>
-                <Bell className={iconStyle} />
-                <span className={textStyle}>Notifications</span>
-              </MenuLink>
-
-              <MenuLink href="/account" delay={350} onClick={() => setMenuOpen(false)}>
-                <User className={iconStyle} />
-                <span className={textStyle}>Account</span>
-              </MenuLink>
-
-              <div
-                className="flex items-center justify-center"
-                data-aos="fade-up"
-                data-aos-delay={0}
-              >
+              <div className="flex items-center justify-center" data-aos="fade-up">
                 <Image
                   src="/images/logo_capstonova.png"
                   alt="Logo"
@@ -167,4 +139,3 @@ const Header = () => {
 };
 
 export default Header;
- 

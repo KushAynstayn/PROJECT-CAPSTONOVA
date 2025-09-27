@@ -9,13 +9,13 @@ const ViewAbout = () => {
           src="https://my.spline.design/robotfollowcursorforlandingpage-LfOjXWwWH9oxYXxDc7lKWtgm/"
           frameBorder="0"
           width="100%"
-          height="100%"
-          className="block"
+          height="900px"
+          className="mt-20 block"
         ></iframe>
       </div>
 
       {/* About Us section */}
-      <div className="py-12 text-center bg-white">
+      <div className="mt-68 py-12 text-center bg-white">
         <h1 className="text-3xl font-bold text-gray-800">About Us</h1>
         <p className="mt-4 max-w-2xl mx-auto text-gray-600">
           Welcome to Project CapstoNova, an innovative and secure web-based

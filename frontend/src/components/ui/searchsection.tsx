@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useState } from "react"; // Revision: Import useState to manage the input
 import { useRouter } from "next/navigation"; // Revision: Import useRouter for navigation
+import { AdvancedSearchModal } from "@/components/ui/advanced-search-modal";
 
 const HeroSection = () => {
   // Revision: Set up state for the search input and initialize the router
@@ -55,7 +56,7 @@ const HeroSection = () => {
               placeholder="Search for a topic like 'education'"
               value={searchTerm} // Revision: Control the input value with state
               onChange={(e) => setSearchTerm(e.target.value)} // Revision: Update state on change
-              className="w-full py-3 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full py-2 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
             {/* Revision: Changed the div to a button to submit the form */}
             <button
@@ -80,14 +81,11 @@ const HeroSection = () => {
             </button>
           </div>
           <div className="mt-4 flex justify-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-300 hover:text-white"
-              onClick={() => router.push('/advanced-search')} // Example of making the button useful
-            >
-              Advanced Search
-            </Button>
+            <AdvancedSearchModal>
+              <button className="text-gray-300 hover:text-white transition-colors duration-300 ease-in-out">
+                Advanced Search
+              </button>
+            </AdvancedSearchModal>
           </div>
         </form>
       </div>

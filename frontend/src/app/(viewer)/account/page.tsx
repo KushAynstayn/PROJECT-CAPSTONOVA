@@ -69,11 +69,11 @@ const ViewAccount = () => {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-4 my-10 font-sans text-gray-100">
+    <div className="p-4 px-8 mt-32 max-w-7xl mx-auto font-sans text-gray-100">
       
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Account Information</h1>
+        <h1 className="mt-1 text-3xl text-[#E0A800]" style={{ fontFamily: "'Black Ops One', sans-serif" }}>Requested Capstone Projects</h1>
         <p className="mt-1 text-gray-400">View and edit your account details below.</p>
       </div>
       
