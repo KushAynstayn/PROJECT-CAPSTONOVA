@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Suggestion;
-use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SuggestionController extends Controller
@@ -21,10 +20,11 @@ class SuggestionController extends Controller
     {
         try {
             $user = Auth::user();
+            // Eager load relationships, selecting the new 'encrypted_email' column instead of 'email'
             $query = Suggestion::with(['adviser' => function ($query) {
-                $query->select('id', 'first_name', 'last_name', 'email');
+                $query->select('id', 'first_name', 'last_name', 'encrypted_email');
             }, 'interestedStudent' => function ($query) {
-                $query->select('id', 'first_name', 'last_name', 'email');
+                $query->select('id', 'first_name', 'last_name', 'encrypted_email');
             }]);
 
             // Filter by current user's suggestions (as adviser)
@@ -121,6 +121,26 @@ class SuggestionController extends Controller
             $perPage = $request->input('per_page', 15);
             $suggestions = $query->paginate($perPage);
 
+            // Transform the user data for privacy before sending the response
+            $suggestions->getCollection()->transform(function ($suggestion) {
+                $processUser = function ($user) {
+                    if ($user) {
+                        // Get the raw encrypted email to avoid decryption by the model's accessor
+                        $rawEncrypted = $user->getRawOriginal('encrypted_email');
+                        // Create a truncated 'email' attribute for frontend compatibility and privacy
+                        $user->email = substr($rawEncrypted, 0, 14) . '...';
+                        // Hide the original encrypted attribute from the JSON output
+                        $user->makeHidden('encrypted_email');
+                    }
+                };
+
+                $processUser($suggestion->adviser);
+                $processUser($suggestion->interestedStudent);
+
+                return $suggestion;
+            });
+
+
             return response()->json([
                 'success' => true,
                 'data' => $suggestions,
@@ -144,11 +164,24 @@ class SuggestionController extends Controller
     public function show($id): JsonResponse
     {
         try {
+            // Eager load relationships, selecting the new 'encrypted_email' column
             $suggestion = Suggestion::with(['adviser' => function ($query) {
-                $query->select('id', 'first_name', 'last_name', 'email');
+                $query->select('id', 'first_name', 'last_name', 'encrypted_email');
             }, 'interestedStudent' => function ($query) {
-                $query->select('id', 'first_name', 'last_name', 'email');
+                $query->select('id', 'first_name', 'last_name', 'encrypted_email');
             }])->findOrFail($id);
+
+            // Process user data for privacy before sending the response
+            $processUser = function ($user) {
+                if ($user) {
+                    $rawEncrypted = $user->getRawOriginal('encrypted_email');
+                    $user->email = substr($rawEncrypted, 0, 14) . '...';
+                    $user->makeHidden('encrypted_email');
+                }
+            };
+
+            $processUser($suggestion->adviser);
+            $processUser($suggestion->interestedStudent);
 
             return response()->json([
                 'success' => true,

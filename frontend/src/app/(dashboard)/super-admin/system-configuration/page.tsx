@@ -1,24 +1,24 @@
 "use client";
 
-import React, { useState } from 'react';
-import AdminPanel from '../../../../components/sysconfig-panels/AdminPanel';
-import AdviserPanel from '../../../../components/sysconfig-panels/AdviserPanel';
-import ProponentPanel from '../../../../components/sysconfig-panels/ProponentPanel';
-import GuestPanel from '../../../../components/sysconfig-panels/GuestPanel';
+import React, { useState } from "react";
+import AdminPanel from "../../../../components/sysconfig-panels/AdminPanel";
+import AdviserPanel from "../../../../components/sysconfig-panels/AdviserPanel";
+import ProponentPanel from "../../../../components/sysconfig-panels/ProponentPanel";
+import ViewerPanel from "../../../../components/sysconfig-panels/ViewerPanel";
 
 const SystemConfigurationPage = () => {
-  const [activeTab, setActiveTab] = useState('Admin');
+  const [activeTab, setActiveTab] = useState("Admin");
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Admin':
+      case "Admin":
         return <AdminPanel />;
-      case 'Adviser':
+      case "Adviser":
         return <AdviserPanel />;
-      case 'Proponent':
+      case "Proponent":
         return <ProponentPanel />;
-      case 'Guest':
-        return <GuestPanel />;
+      case "Viewer":
+        return <ViewerPanel />;
       default:
         return null;
     }
@@ -27,14 +27,15 @@ const SystemConfigurationPage = () => {
   return (
     <div>
       <div className="flex justify-start space-x-8">
-        {['Admin', 'Adviser', 'Proponent', 'Guest'].map((tab) => (
+        {["Admin", "Adviser", "Proponent", "Viewer"].map((tab) => (
           <button
             key={tab}
             className={`
               text-xl font-semibold pb-2 
-              ${activeTab === tab 
-                ? 'text-[#511b10] border-b-2 border-[#511b10]' 
-                : 'text-gray-400'
+              ${
+                activeTab === tab
+                  ? "text-[#511b10] border-b-2 border-[#511b10]"
+                  : "text-gray-400"
               }
               transition-colors duration-200
             `}
@@ -44,9 +45,7 @@ const SystemConfigurationPage = () => {
           </button>
         ))}
       </div>
-      <div className="mt-8">
-        {renderContent()}
-      </div>
+      <div className="mt-8">{renderContent()}</div>
     </div>
   );
 };

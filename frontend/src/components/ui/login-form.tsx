@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TwoFactorAuthForm } from "./two-factor-auth-form"; // Import the new component
 
 export function LoginForm({
   className,
@@ -20,6 +21,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,29 +29,32 @@ export function LoginForm({
     setError(null);
 
     try {
-      // Call the login method from the authStore
-      const { user } = await authStore.login(email, password);
+      const response = await authStore.login(email, password);
 
-      // Redirect based on the user's role from the API response
-      switch (user.role.toLowerCase()) {
-        case "super admin":
-          router.push("/super-admin/dashboard");
-          break;
-        case "admin":
-          router.push("/admin/dashboard");
-          break;
-        case "adviser":
-          router.push("/adviser/dashboard");
-          break;
-        case "proponent":
-          router.push("/proponent/manage-account");
-          break;
-        default:
-          router.push("/"); // Default redirect for viewers or other roles
+      if (response.two_factor_required) {
+        setShowTwoFactor(true);
+      } else {
+        const { user } = response;
+        // Redirect based on the user's role from the API response
+        switch (user.role.toLowerCase()) {
+          case "super admin":
+            router.push("/super-admin/dashboard");
+            break;
+          case "admin":
+            router.push("/admin/dashboard");
+            break;
+          case "adviser":
+            router.push("/adviser/dashboard");
+            break;
+          case "proponent":
+            router.push("/proponent/manage-account");
+            break;
+          default:
+            router.push("/"); // Default redirect for viewers or other roles
+        }
       }
     } catch (err: any) {
       if (err instanceof ApiError) {
-        // Handle validation errors (e.g., incorrect credentials)
         if (err.status === 422 && err.details.email) {
           setError(err.details.email[0]);
         } else {
@@ -58,9 +63,14 @@ export function LoginForm({
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
+    } finally {
       setIsLoading(false);
     }
   };
+
+  if (showTwoFactor) {
+    return <TwoFactorAuthForm email={email} />;
+  }
 
   return (
     <form

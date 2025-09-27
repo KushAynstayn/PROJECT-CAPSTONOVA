@@ -1,97 +1,112 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
+import { apiCall } from "@/lib/api";
 
-// Define the type for a single notification object
+// --- Reusable NotificationItem Component ---
 interface Notification {
-  title: string;
-  date: string;
-  status: string;
+  notification_id: number;
+  message: string;
+  notification_date: string;
+  is_read: boolean;
 }
 
+const NotificationItem: React.FC<{ notification: Notification }> = ({
+  notification,
+}) => (
+  <div
+    className={`flex items-start gap-3 p-4 border rounded-lg shadow-sm mb-3 ${
+      notification.is_read ? "bg-gray-100" : "bg-white"
+    }`}
+  >
+    <div className="flex-shrink-0">
+      <svg
+        className={`w-6 h-6 ${
+          notification.is_read ? "text-gray-400" : "text-blue-500"
+        }`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        ></path>
+      </svg>
+    </div>
+    <div className="flex-grow">
+      <p className="text-gray-800 font-medium">{notification.message}</p>
+      <p className="text-sm text-gray-500 mt-1">
+        {new Date(notification.notification_date).toLocaleString()}
+      </p>
+    </div>
+    {!notification.is_read && (
+      <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+    )}
+  </div>
+);
+
+// --- Main Page Component ---
 const AdminNotificationsPage = () => {
-  const allNotifications: Notification[] = [
-    { title: "Request full document access by guest John Arado", date: "August 23, 2025", status: "New" },
-    { title: "New Whitelist Uploaded by Admin 1", date: "August 22, 2025", status: "Viewed" },
-    { title: "Admin 2 Archived Projects", date: "August 22, 2025", status: "Viewed" },
-    { title: "Admin 2 Returned Projects", date: "August 21, 2025", status: "Viewed" },
-    { title: "Adviser 1 Update his Account Information", date: "August 20, 2025", status: "Viewed" },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const unreadNotifications: Notification[] = [
-    { title: "Request full document access by guest John Arado", date: "August 23, 2025", status: "New" },
-  ];
+  const fetchNotifications = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Corrected API endpoint to /user/notifications
+      const response = await apiCall(`/user/notifications`);
+      setNotifications(response.data || []);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch notifications.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const [displayContent, setDisplayContent] = useState<Notification[]>(allNotifications);
-  
-  // 1. State to track the active button ('all' or 'unread')
-  const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
-  const handleAllClick = () => {
-    setDisplayContent(allNotifications);
-    // 2. Update the active button state on click
-    setActiveFilter('all');
-  };
-
-  const handleUnreadClick = () => {
-    setDisplayContent(unreadNotifications);
-    // 2. Update the active button state on click
-    setActiveFilter('unread');
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <p className="text-center text-gray-500">Loading notifications...</p>
+      );
+    }
+    if (error) {
+      return <p className="text-center text-red-500">{error}</p>;
+    }
+    if (notifications.length > 0) {
+      const unreadCount = notifications.filter((n) => !n.is_read).length;
+      return (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">
+            All Notifications ({unreadCount} unread)
+          </h2>
+          {notifications.map((notification) => (
+            <NotificationItem
+              key={notification.notification_id}
+              notification={notification}
+            />
+          ))}
+        </div>
+      );
+    }
+    return (
+      <p className="text-center text-gray-500">No notifications to display.</p>
+    );
   };
 
   return (
     <div>
-      <div className="flex justify-end space-x-2">
-        <button
-          // 3. Apply styles conditionally based on the active button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeFilter === 'all'
-              ? 'bg-[#511b10] text-white'
-              // Inactive styles:
-              : 'bg-gray-200 text-[#511b10] hover:bg-gray-300'
-          }`}
-          onClick={handleAllClick}
-        >
-          All
-        </button>
-        <button
-          // 3. Apply styles conditionally based on the active button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeFilter === 'unread'
-              ? 'bg-[#511b10] text-white'
-              // Inactive styles:
-              : 'bg-gray-200 text-[#511b10] hover:bg-gray-300'
-          }`}
-          onClick={handleUnreadClick}
-        >
-          Unread
-        </button>
-      </div>
-
-      <div className="mt-8">
-        {displayContent && displayContent.length > 0 ? (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">
-              {displayContent === allNotifications ? 'All Notifications' : 'New'}
-            </h2>
-            {displayContent.map((item, index) => (
-              <div key={index} className="bg-white rounded-lg p-4 mb-2 shadow-sm">
-                <p className="font-medium text-gray-800">{item.title}</p>
-                <div className="flex justify-between items-center">
-                    <p className="text-sm text-gray-500">{item.date} 
-                        <span className={`ml-2 font-bold ${item.status === 'New' ? 'text-red-600' : 'text-gray-400'}`}>
-                            {item.status}
-                        </span>
-                    </p>
-                    {item.status === 'New' && <span className="w-3 h-3 bg-red-600 rounded-full" />}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500">No notifications to display.</p>
-        )}
-      </div>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Notifications</h1>
+      <div className="mt-8">{renderContent()}</div>
     </div>
   );
 };

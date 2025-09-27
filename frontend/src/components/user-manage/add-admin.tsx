@@ -6,23 +6,24 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { InputWithClear } from "@/components/ui/inputWithClear";
-import Combobox from "@/components/ui/combobox";
 import { SaveConfirm } from "@/components/ui/save-new-admin";
 
 interface AddAdminProps {
   onClose: () => void;
+  onAdd: (adminData: any) => void;
 }
 
-const AddAdmin: React.FC<AddAdminProps> = ({ onClose }) => {
+const AddAdmin: React.FC<AddAdminProps> = ({ onClose, onAdd }) => {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    idNumber: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
     email: "",
-    branch: "",
-    department: "",
+    password: "",
+    password_confirmation: "",
   });
 
+  const [error, setError] = useState("");
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,35 +37,36 @@ const AddAdmin: React.FC<AddAdminProps> = ({ onClose }) => {
 
   const handleClearAll = () => {
     setFormData({
-      firstName: "",
-      lastName: "",
-      idNumber: "",
+      first_name: "",
+      last_name: "",
+      middle_name: "",
       email: "",
-      branch: "",
-      department: "",
+      password: "",
+      password_confirmation: "",
     });
-  };
-
-  const handleDepartmentChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, department: value }));
-  };
-
-  const handleBranchChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, branch: value }));
+    setError("");
   };
 
   const handleSaveClick = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== formData.password_confirmation) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    setError("");
     setShowSaveConfirm(true);
   };
 
   const handleConfirmSave = () => {
-    console.log("New Admin Data:", formData);
+    onAdd(formData);
   };
 
   const handleCancelSave = () => {
     setShowSaveConfirm(false);
-    onClose();
   };
 
   return (
@@ -80,118 +82,95 @@ const AddAdmin: React.FC<AddAdminProps> = ({ onClose }) => {
         </div>
         <CardContent className="pt-1">
           <form onSubmit={handleSaveClick} className="space-y-6">
-            {/* First row of inputs (First Name, Last Name, ID Number) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              {/* First Name */}
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="firstName" className="font-normal">
-                  First Name
-                </Label>
+                <Label htmlFor="first_name">First Name</Label>
                 <InputWithClear
-                  id="firstName"
-                  placeholder="Juan"
-                  value={formData.firstName}
+                  id="first_name"
+                  value={formData.first_name}
                   onChange={handleChange}
-                  onClear={() => handleClear("firstName")}
+                  onClear={() => handleClear("first_name")}
+                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="middle_name">Middle Name (Optional)</Label>
+                <InputWithClear
+                  id="middle_name"
+                  value={formData.middle_name}
+                  onChange={handleChange}
+                  onClear={() => handleClear("middle_name")}
                   className="rounded-none border-[rgba(0,0,0,0.5)]"
                 />
               </div>
-              {/* Last Name */}
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="lastName" className="font-normal">
-                  Last Name
-                </Label>
+                <Label htmlFor="last_name">Last Name</Label>
                 <InputWithClear
-                  id="lastName"
-                  placeholder="dela Cruz"
-                  value={formData.lastName}
+                  id="last_name"
+                  value={formData.last_name}
                   onChange={handleChange}
-                  onClear={() => handleClear("lastName")}
+                  onClear={() => handleClear("last_name")}
                   className="rounded-none border-[rgba(0,0,0,0.5)]"
-                />
-              </div>
-              {/* ID Number */}
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="idNumber" className="font-normal">
-                  ID Number
-                </Label>
-                <InputWithClear
-                  id="idNumber"
-                  placeholder="1331370"
-                  value={formData.idNumber}
-                  onChange={handleChange}
-                  onClear={() => handleClear("idNumber")}
-                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
                 />
               </div>
             </div>
 
-            {/* Second row of inputs (Email, Branch, Department) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              {/* Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="email" className="font-normal">
-                  Email
-                </Label>
+                <Label htmlFor="email">Email</Label>
                 <InputWithClear
                   id="email"
-                  placeholder="juan.delacruz@ctu.edu.ph"
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   onClear={() => handleClear("email")}
                   className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
                 />
               </div>
-              {/* Branch Combobox */}
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="branch" className="font-normal">
-                  Branch
-                </Label>
-                <Combobox
-                  value={formData.branch}
-                  onValueChange={handleBranchChange}
-                  items={[
-                    { value: "branch1", label: "BSIS" },
-                    { value: "branch2", label: "BSIT" },
-                    { value: "branch3", label: "BIT-CT" },
-                  ]}
-                  placeholder={"Select Branch"}
+                <Label htmlFor="password">Password</Label>
+                <InputWithClear
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onClear={() => handleClear("password")}
+                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
                 />
               </div>
-              {/* Department Combobox */}
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="department" className="font-normal">
-                  Department
-                </Label>
-                <Combobox
-                  value={formData.department}
-                  onValueChange={handleDepartmentChange}
-                  items={[
-                    { value: "department1", label: "CCICT" },
-                    { value: "department2", label: "CME" },
-                    { value: "department3", label: "CAS" },
-                  ]}
-                  placeholder={"Select Department"}
+              <div className="grid w-full items-center gap-1.5 md:col-span-2">
+                <Label htmlFor="password_confirmation">Confirm Password</Label>
+                <InputWithClear
+                  id="password_confirmation"
+                  type="password"
+                  value={formData.password_confirmation}
+                  onChange={handleChange}
+                  onClear={() => handleClear("password_confirmation")}
+                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
                 />
               </div>
             </div>
 
-            {/* Buttons */}
+            {error && (
+              <p className="text-sm text-center text-red-500">{error}</p>
+            )}
+
             <div className="flex justify-center gap-4 mt-6">
               <Button
                 type="button"
                 onClick={handleClearAll}
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-              transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-              active:shadow-lg active:shadow-gray-700/90"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
               >
                 Clear
               </Button>
               <Button
                 type="submit"
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-              transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-              active:shadow-lg active:shadow-gray-700/90"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
               >
                 Save
               </Button>

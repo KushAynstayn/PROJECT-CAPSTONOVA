@@ -12,19 +12,15 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
-// REMOVED: Import of AddProponent component
 
-// Proponent interface for type safety
 interface Proponent {
   id: number;
   name: string;
   email: string;
-  idNumber: string;
-  course: string;
+  id_number: string;
+  department: string;
+  program: string;
   adviser: string;
-  capstoneTitle: string; // New field
-  groupName: string; // New field
-  program: string; // New field
 }
 
 interface ProponentViewProps {
@@ -34,10 +30,8 @@ interface ProponentViewProps {
   placeholder: string;
   filteredUsers: Proponent[];
   onEditUser: (userId: number) => void;
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-  onStartDateChange: (date: Date | undefined) => void;
-  onEndDateChange: (date: Date | undefined) => void;
+  onDeleteUser: (userId: number) => void;
+  isLoading: boolean;
 }
 
 const ProponentView = ({
@@ -47,18 +41,13 @@ const ProponentView = ({
   placeholder,
   filteredUsers,
   onEditUser,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
+  onDeleteUser,
+  isLoading,
 }: ProponentViewProps) => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  // REMOVED: State for managing the AddProponent modal
-  // const [isAddProponentModalOpen, setIsAddProponentModalOpen] = useState(false);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
 
   const handleRowClick = (e: React.MouseEvent, userId: number) => {
@@ -83,18 +72,10 @@ const ProponentView = ({
     if (action === "edit") {
       onEditUser(userId);
     } else {
-      console.log(`Action: ${action} for User ID: ${userId}`);
+      onDeleteUser(userId);
     }
     handleCloseModal();
   };
-
-  // REMOVED: Handler functions for the AddProponent modal
-  // const handleOpenAddProponentModal = () => {
-  //   setIsAddProponentModalOpen(true);
-  // };
-  // const handleCloseAddProponentModal = () => {
-  //   setIsAddProponentModalOpen(false);
-  // };
 
   return (
     <div>
@@ -127,9 +108,8 @@ const ProponentView = ({
         }
       `}</style>
 
-      {/* Search bar */}
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="w-full grow">
+        <div className="w-full grow md:max-w-md">
           <InputWithClear
             type="search"
             placeholder={placeholder}
@@ -140,58 +120,56 @@ const ProponentView = ({
         </div>
       </div>
 
-      {/* Table */}
-      <div
-        ref={scrollContainerRef}
-        className="relative max-h-[60vh] overflow-y-auto"
-      >
-        <Table removeWrapper aria-label="Proponent user data table">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+        <Table removeWrapper aria-label="Viewer data table" isHeaderSticky>
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">GROUP NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              CAPSTONE TITLE
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ADVISER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">ID NUMBER</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">COURSE</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              NAME
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              ID NUMBER
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              EMAIL
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              DEPARTMENT
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               PROGRAM
             </TableColumn>
           </TableHeader>
-          <TableBody emptyContent={"No users match the current filters."}>
+          <TableBody
+            emptyContent={
+              isLoading ? "Loading..." : "No users match the current filters."
+            }
+          >
             {filteredUsers.map((user) => (
               <TableRow
                 key={user.id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.id && "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.id)}
               >
                 <TableCell className="border-b border-gray-200">
-                  {user.groupName}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
-                  {user.capstoneTitle}
-                </TableCell>
-                <TableCell className="border-b border-gray-200">
-                  {user.adviser}
+                  {user.adviser || "N/A"}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
                   {user.name}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.idNumber}
+                  {user.id_number}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
                   {user.email}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.course}
+                  {user.department}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
                   {user.program}
@@ -202,7 +180,6 @@ const ProponentView = ({
         </Table>
       </div>
 
-      {/* Action Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
@@ -254,11 +231,6 @@ const ProponentView = ({
           </div>
         </div>
       )}
-
-      {/* REMOVED: Conditionally render the AddProponent modal */}
-      {/* {isAddProponentModalOpen && (
-        <AddProponent onClose={handleCloseAddProponentModal} />
-      )} */}
     </div>
   );
 };

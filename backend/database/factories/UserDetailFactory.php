@@ -10,10 +10,11 @@ class UserDetailFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            // user_id is now expected to be passed from the Seeder.
             'student_id' => fake()->unique()->numerify('########'),
-            'department' => fake()->word(),
-            'program' => fake()->word(),
+            // Updated with your new business logic
+            'department' => fake()->randomElement(['BSIT', 'BIT-CT', 'BSIS']),
+            'program' => fake()->randomElement(['Day program', 'Evening program']),
             'adviser_id' => User::factory(['role' => 'Adviser']),
         ];
     }

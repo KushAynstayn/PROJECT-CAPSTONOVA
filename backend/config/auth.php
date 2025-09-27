@@ -12,6 +12,7 @@ return [
     | as required, but they're a perfect start for most applications.
     |
     */
+    'two_factor_enabled' => env('TWO_FACTOR_ENABLED', true),
 
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),

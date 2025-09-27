@@ -6,23 +6,24 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { InputWithClear } from "@/components/ui/inputWithClear";
-import Combobox from "@/components/ui/combobox";
-import { SaveConfirm } from "@/components/ui/save-new-adviser";
+import { SaveConfirm } from "@/components/ui/save-new-adviser"; // This can be generalized later
 
 interface AddAdviserProps {
   onClose: () => void;
+  onAdd: (adviserData: any) => void;
 }
 
-const AddAdviser: React.FC<AddAdviserProps> = ({ onClose }) => {
+const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    idNumber: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
     email: "",
-    numberOfAdvisees: "",
+    password: "",
+    confirmPassword: "",
   });
 
-  // State to control the visibility of the confirmation dialog
+  const [error, setError] = useState("");
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,40 +37,33 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose }) => {
 
   const handleClearAll = () => {
     setFormData({
-      firstName: "",
-      lastName: "",
-      idNumber: "",
+      first_name: "",
+      last_name: "",
+      middle_name: "",
       email: "",
-      numberOfAdvisees: "",
+      password: "",
+      confirmPassword: "",
     });
+    setError("");
   };
 
-  const handleDepartmentChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, department: value }));
-  };
-
-  const handleBranchChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, branch: value }));
-  };
-
-  // This function is called by the form's submit button.
   const handleSaveClick = (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSaveConfirm(true); // Show the confirmation dialog
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    setError("");
+    setShowSaveConfirm(true);
   };
 
-  // This function is passed as a prop to the SaveConfirm component.
-  // It is called when the user clicks "Yes" in the dialog.
   const handleConfirmSave = () => {
-    console.log("New Adviser Data:", formData);
-    // You can now proceed with your actual save logic here (e.g., API call).
-    // The dialog will handle the rest of the closing process.
-  };
-
-  // This function is called if the user confirms "No" in the dialog or closes the success dialog.
-  const handleCancelSave = () => {
-    setShowSaveConfirm(false); // Hide the entire dialog component.
-    onClose();
+    const { confirmPassword, ...adviserData } = formData;
+    onAdd(adviserData);
   };
 
   return (
@@ -88,94 +82,93 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose }) => {
           <form onSubmit={handleSaveClick} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="firstName" className="font-normal">
-                  First Name
-                </Label>
+                <Label htmlFor="first_name">First Name</Label>
                 <InputWithClear
-                  id="firstName"
-                  placeholder="Juan"
-                  value={formData.firstName}
+                  id="first_name"
+                  value={formData.first_name}
                   onChange={handleChange}
-                  onClear={() => handleClear("firstName")}
+                  onClear={() => handleClear("first_name")}
+                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="middle_name">Middle Name (Optional)</Label>
+                <InputWithClear
+                  id="middle_name"
+                  value={formData.middle_name}
+                  onChange={handleChange}
+                  onClear={() => handleClear("middle_name")}
                   className="rounded-none border-[rgba(0,0,0,0.5)]"
                 />
               </div>
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="lastName" className="font-normal">
-                  Last Name
-                </Label>
+                <Label htmlFor="last_name">Last Name</Label>
                 <InputWithClear
-                  id="lastName"
-                  placeholder="dela Cruz"
-                  value={formData.lastName}
+                  id="last_name"
+                  value={formData.last_name}
                   onChange={handleChange}
-                  onClear={() => handleClear("lastName")}
+                  onClear={() => handleClear("last_name")}
                   className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
                 />
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="idNumber" className="font-normal">
-                  ID Number
-                </Label>
+                <Label htmlFor="email">Email</Label>
                 <InputWithClear
-                  id="idNumber"
-                  placeholder="1331370"
-                  value={formData.idNumber}
+                  id="email"
+                  type="email"
+                  value={formData.email}
                   onChange={handleChange}
-                  onClear={() => handleClear("idNumber")}
+                  onClear={() => handleClear("email")}
                   className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="password">Password</Label>
+                <InputWithClear
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onClear={() => handleClear("password")}
+                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5 md:col-span-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <InputWithClear
+                  id="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  onClear={() => handleClear("confirmPassword")}
+                  className="rounded-none border-[rgba(0,0,0,0.5)]"
+                  required
                 />
               </div>
             </div>
 
-            <div className="flex justify-center w-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-md">
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="email" className="font-normal">
-                    Email
-                  </Label>
-                  <InputWithClear
-                    id="email"
-                    placeholder="juan.delacruz@ctu.edu.ph"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onClear={() => handleClear("email")}
-                    className="rounded-none border-[rgba(0,0,0,0.5)]"
-                  />
-                </div>
-
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="numberOfAdvisees" className="font-normal">
-                    Number of Advisees
-                  </Label>
-                  <InputWithClear
-                    id="numberOfAdvisees"
-                    placeholder="1"
-                    value={formData.numberOfAdvisees}
-                    onChange={handleChange}
-                    onClear={() => handleClear("numberOfAdvisees")}
-                    className="rounded-none border-[rgba(0,0,0,0.5)]"
-                  />
-                </div>
-              </div>
-            </div>
+            {error && (
+              <p className="text-sm text-center text-red-500">{error}</p>
+            )}
 
             <div className="flex justify-center gap-4 mt-6">
               <Button
                 type="button"
                 onClick={handleClearAll}
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-              transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-              active:shadow-lg active:shadow-gray-700/90"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
               >
                 Clear
               </Button>
               <Button
                 type="submit"
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md shadow-gray-500/80
-              transition-transform hover:scale-105 hover:bg-[#6b211d] hover:text-white
-              active:shadow-lg active:shadow-gray-700/90"
+                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
               >
                 Save
               </Button>
@@ -183,20 +176,15 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose }) => {
           </form>
         </CardContent>
 
-        {/* Correctly positioned and styled close button with image */}
-        <button
-          onClick={onClose}
-          className="absolute opacity-70 right-3 top-3 text-gray-400 hover:opacity-100 hover:text-gray-600 transition-transform hover:scale-110"
-        >
+        <button onClick={onClose} className="absolute opacity-70 right-3 top-3">
           <img src="/images/close.png" alt="Close" className="h-6 w-6" />
         </button>
       </Card>
 
-      {/* Conditionally render the SaveConfirm dialog */}
       {showSaveConfirm && (
         <SaveConfirm
           onConfirm={handleConfirmSave}
-          onCancel={handleCancelSave}
+          onCancel={() => setShowSaveConfirm(false)}
         />
       )}
     </div>

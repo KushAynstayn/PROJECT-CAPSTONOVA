@@ -3,7 +3,7 @@
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.routes import project_size_regression, tech_stack_association
+from app.routes import project_size_regression, tech_stack_association, suggestion
 from app.config import STATIC_DIR
 import os
 
@@ -24,6 +24,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # available under /models/ e.g., /models/project_size_regression/train
 app.include_router(project_size_regression.router, prefix="/models", tags=["Machine Learning Models"])
 app.include_router(tech_stack_association.router, prefix="/data_mining/tech_stack_association", tags=["Technology Stack Association"])
+app.include_router(suggestion.router, prefix="/cohere", tags=["Cohere Suggestions"])
 
 @app.get("/", tags=["Root"])
 async def read_root():

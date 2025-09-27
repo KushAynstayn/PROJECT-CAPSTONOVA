@@ -1,18 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-// ... other imports remain the same
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableHeader,
@@ -21,14 +12,13 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
-import AddProponent from "./add-proponent"; // <-- Correct import for the AddProponent modal
 
 interface User {
   id: number;
   name: string;
   email: string;
-  idNumber: string;
-  course: string;
+  id_number: string;
+  department: string;
   adviser: string;
 }
 
@@ -37,12 +27,10 @@ interface ProponentViewProps {
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   placeholder: string;
-  filteredUsers: User[]; // Use the defined User type
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-  onStartDateChange: (date: Date | undefined) => void;
-  onEndDateChange: (date: Date | undefined) => void;
+  filteredUsers: User[];
   onEditUser: (userId: number) => void;
+  onDeleteUser: (userId: number) => void;
+  onAddUser: () => void;
 }
 
 const ProponentView = ({
@@ -51,11 +39,9 @@ const ProponentView = ({
   onClear,
   placeholder,
   filteredUsers,
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
   onEditUser,
+  onDeleteUser,
+  onAddUser,
 }: ProponentViewProps) => {
   const [selectedUserId, setSelectedUserId] = React.useState<number | null>(
     null
@@ -63,10 +49,6 @@ const ProponentView = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
-  // Corrected state to handle the AddProponent modal's visibility
-  const [isAddProponentModalOpen, setIsAddProponentModalOpen] = useState(false);
-
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
 
   const handleRowClick = (e: React.MouseEvent, userId: number) => {
@@ -91,19 +73,9 @@ const ProponentView = ({
     if (action === "edit") {
       onEditUser(userId);
     } else {
-      console.log(`Action: ${action} for User ID: ${userId}`);
+      onDeleteUser(userId);
     }
     handleCloseModal();
-  };
-
-  // Handler to open the AddProponent modal
-  const handleOpenAddProponentModal = () => {
-    setIsAddProponentModalOpen(true);
-  };
-
-  // Handler to close the AddProponent modal
-  const handleCloseAddProponentModal = () => {
-    setIsAddProponentModalOpen(false);
   };
 
   return (
@@ -149,7 +121,7 @@ const ProponentView = ({
 
         <button
           className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:rounded-[25px] hover:scale-110 hover:opacity-100"
-          onClick={handleOpenAddProponentModal} // Correctly opens the AddProponent modal
+          onClick={onAddUser}
         >
           <img
             src="/images/add-user.png"
@@ -158,19 +130,22 @@ const ProponentView = ({
           />
         </button>
       </div>
-      <div
-        ref={scrollContainerRef}
-        className="relative max-h-[60vh] overflow-y-auto"
-      >
-        <Table removeWrapper aria-label="Proponent user data table">
+      <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+        <Table removeWrapper aria-label="Viewer data table" isHeaderSticky>
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              NAME
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              EMAIL
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ID NUMBER
             </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">DEGREE PROGRAM</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
+              DEPARTMENT
+            </TableColumn>
+            <TableColumn className={cn("bg-[#660000] text-left text-white")}>
               ADVISER
             </TableColumn>
           </TableHeader>
@@ -179,8 +154,8 @@ const ProponentView = ({
               <TableRow
                 key={user.id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.id && "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.id)}
               >
@@ -191,10 +166,10 @@ const ProponentView = ({
                   {user.email}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.idNumber}
+                  {user.id_number}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
-                  {user.course}
+                  {user.department}
                 </TableCell>
                 <TableCell className="border-b border-gray-200">
                   {user.adviser}
@@ -255,11 +230,6 @@ const ProponentView = ({
             </button>
           </div>
         </div>
-      )}
-
-      {/* Conditionally render the AddProponent modal */}
-      {isAddProponentModalOpen && (
-        <AddProponent onClose={handleCloseAddProponentModal} />
       )}
     </div>
   );

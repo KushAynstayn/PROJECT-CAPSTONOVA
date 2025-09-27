@@ -12,6 +12,8 @@ import PdfViewer from "@/components/ui/pdf-viewer";
 import { apiCall, ApiError } from "@/lib/api";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Interfaces based on the backend API
 interface SearchResult {
@@ -36,6 +38,7 @@ interface ProjectDetails extends SearchResult {
 export default function AdviserDashboardPage() {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
+  const [selectedYear, setSelectedYear] = useState<number | undefined>();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(
     null
@@ -53,10 +56,10 @@ export default function AdviserDashboardPage() {
     }
   }, [router]);
 
-  // Debounce search input
+  // --- DEBOUNCED SEARCH ---
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (searchValue.trim() !== "") {
+      if (searchValue.trim() !== "" || selectedYear) {
         handleSearch();
       } else {
         setSearchResults([]);
@@ -67,17 +70,25 @@ export default function AdviserDashboardPage() {
       clearTimeout(handler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchValue]);
+  }, [searchValue, selectedYear]);
 
   const handleSearch = async () => {
-    if (searchValue.trim() === "") return;
-
+    if (searchValue.trim() === "" && !selectedYear) return;
     setIsSearching(true);
     try {
-      const response = await apiCall(`/public/search?q=${searchValue}`);
+      const params = new URLSearchParams();
+      if (searchValue.trim()) {
+        params.append("q", searchValue);
+      }
+      if (selectedYear) {
+        params.append("submission_year", selectedYear.toString());
+      }
+
+      const response = await apiCall(`/public/search?${params.toString()}`);
       setSearchResults(response.data);
     } catch (error) {
       console.error("Search failed:", error);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -99,21 +110,25 @@ export default function AdviserDashboardPage() {
 
   const handleClearAll = () => {
     setSearchValue("");
+    setSelectedYear(undefined);
     setSearchResults([]);
     setSelectedProject(null);
     setShowFullDocument(false);
   };
 
   const renderContent = () => {
+    // 1. View Full PDF Document
     if (showFullDocument && selectedProject && selectedProject.manuscript_id) {
       return (
-        <div className="flex flex-col p-0 relative h-full overflow-y-auto">
-          <button
-            className="absolute top-3 right-3 text-gray-500 hover:text-red-700 font-bold z-10"
-            onClick={() => setShowFullDocument(false)}
+        <div className="flex flex-col p-0 relative h-[80vh] overflow-y-auto">
+          <Button
+            variant="ghost"
+            className="absolute top-2 right-2 z-10"
+            onClick={handleClearAll}
+            title="Main dashboard"
           >
-            ✕
-          </button>
+            <img src="/images/arrow.png" className="h-5 w-5" />
+          </Button>
           <PdfViewer
             url={`/user/stream/manuscript/${selectedProject.manuscript_id}`}
           />
@@ -121,9 +136,9 @@ export default function AdviserDashboardPage() {
       );
     }
 
+    // 2. View Project Details/Abstract
     if (selectedProject) {
       const proponents = [
-        selectedProject.team_roles.leader,
         selectedProject.team_roles.hacker,
         selectedProject.team_roles.hipster1,
         selectedProject.team_roles.hipster2,
@@ -132,13 +147,7 @@ export default function AdviserDashboardPage() {
         .join(", ");
 
       return (
-        <div className="flex flex-col bg-white rounded-lg shadow-md p-6 border border-gray-200 relative overflow-y-auto">
-          <button
-            className="absolute top-3 right-3 text-gray-500 hover:text-red-700 font-bold"
-            onClick={handleClearAll}
-          >
-            ✕
-          </button>
+        <div className="flex flex-col bg-white rounded-lg shadow-md p-6 border border-gray-200 relative overflow-y-auto mt-4">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             {selectedProject.title}
           </h2>
@@ -164,7 +173,7 @@ export default function AdviserDashboardPage() {
             </p>
           </div>
           <Button
-            className="bg-red-900 text-white w-80 px-6 py-2 rounded-md shadow hover:scale-105 transition-transform duration-200"
+            className="bg-red-900 text-white w-fit px-6 py-2 rounded-md shadow hover:scale-105 transition-transform duration-200"
             onClick={() => setShowFullDocument(true)}
             disabled={!selectedProject.manuscript_id}
           >
@@ -176,9 +185,10 @@ export default function AdviserDashboardPage() {
       );
     }
 
-    if (searchValue.trim() !== "") {
+    // 3. View Search Results
+    if (searchValue.trim() !== "" || selectedYear) {
       return (
-        <div className="flex flex-col bg-white rounded-lg shadow-md p-4 border border-gray-100 overflow-y-auto">
+        <div className="flex flex-col bg-white rounded-lg shadow-md p-4 border border-gray-100 overflow-y-auto mt-4">
           <h2 className="text-xl font-bold text-gray-800 mb-4">
             Search Results
           </h2>
@@ -210,14 +220,14 @@ export default function AdviserDashboardPage() {
 
     return (
       <div className="flex flex-1 flex-row gap-4 min-h-0">
-        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-50 min-h-0 ">
+        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-500 min-h-0 ">
           <div className="flex justify-between items-center w-full mb-2 p-4">
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-md font-bold text-gray-800">
               Your Suggestion Log
             </h2>
             <Link
               href="/adviser/suggest-ideas"
-              className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out"
+              className="bg-[#660000] text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-105 transition-transform duration-200 ease-in-out"
             >
               See More
             </Link>
@@ -227,14 +237,14 @@ export default function AdviserDashboardPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-50 min-h-0">
+        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-500 min-h-0">
           <div className="flex justify-between items-center w-full mb-2 p-4">
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-md font-bold text-gray-800">
               Your Project Advisory
             </h2>
             <Link
               href="/adviser/projects"
-              className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-115 transition-transform duration-200 ease-in-out"
+              className="bg-[#660000] text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-105 transition-transform duration-200 ease-in-out"
             >
               See More
             </Link>
@@ -254,16 +264,25 @@ export default function AdviserDashboardPage() {
       <div className="flex flex-1 flex-col h-full">
         <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <InputWithClear
-            type="search"
-            placeholder="Search capstone projects app-wide..."
-            className="w-full"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onClear={handleClearAll}
-          />
-          <Calendar22 />
+        <div className="mb-6 flex flex-col items-center gap-4 md:flex-row">
+          <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <InputWithClear
+              type="search"
+              placeholder="Search capstone projects app-wide..."
+              className={cn(
+                "ml-10 w-full border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              )}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onClear={handleClearAll}
+            />
+          </div>
+          <div className="relative flex items-left">
+            <Calendar22 year={selectedYear} setYear={setSelectedYear} />
+          </div>
         </div>
 
         {renderContent()}
