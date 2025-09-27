@@ -94,9 +94,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 // --- Main Component ---
 const ViewNotifications: React.FC = () => {
   return (
-    <div>
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold ml-10">Notifications</h1>
+    <div className="p-4 px-8">
+      <div className="mb-10 mt-32">
+        <h1 className="mt-1 text-3xl text-[#E0A800]" style={{ fontFamily: "'Black Ops One', sans-serif" }}>Notifications</h1>
       </div>
       <div className="ml-20 mr-20 pl-2 sm:p-1 lg:p-2">
         <main>

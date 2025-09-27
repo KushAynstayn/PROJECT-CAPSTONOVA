@@ -159,3 +159,42 @@
   animation: border-animate 5s linear infinite;
   filter: drop-shadow(0 0 8px #ffd700); /* glowing gold effect */
 }
+
+
+/* True 3D sphere rotation */
+@keyframes rotate-sphere {
+  0% {
+    transform: rotateX(20deg) rotateY(0deg);
+  }
+  50% {
+    transform: rotateX(20deg) rotateY(180deg) rotateZ(20deg);
+  }
+  100% {
+    transform: rotateX(20deg) rotateY(360deg) rotateZ(0deg);
+  }
+}
+
+.animate-rotate-sphere {
+  animation: rotate-sphere 80s linear infinite;
+  transform-style: preserve-3d;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+
+/* Hide scrollbar but keep functionality */
+::-webkit-scrollbar {
+  display: none;
+}
+

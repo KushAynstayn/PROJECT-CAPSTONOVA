@@ -48,7 +48,7 @@ const FullAccessPage = () => {
 
   return (
     <>
-      <div className="min-h-screen text-black flex flex-col">
+      <div className="px-8 mt-18 min-h-screen text-black flex flex-col">
         <main className="flex-1 overflow-y-auto p-6 max-w-10xl mt-4">
           <div className="flex flex-col lg:flex-row items-start gap-8">
             {/* Left Section - Document Viewer */}

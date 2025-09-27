@@ -18,6 +18,14 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        //blackops: ["var(--font-blackops)"],
+        blackops: ["'Black Ops One'", "sans-serif"],
+        sans: ['var(--font-geist-sans)', 'var(--font-inter)'], // Geist is primary, Inter is fallback
+        mono: ['var(--font-geist-mono)'],                   // Added Geist Mono for font-mono class
+        orbitron: ['var(--font-orbitron)'],
+        
+      },
       colors: {
         // --- YOUR CUSTOM COLORS ARE ADDED HERE ---
         brand: {

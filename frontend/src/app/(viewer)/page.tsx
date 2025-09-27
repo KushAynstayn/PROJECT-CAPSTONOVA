@@ -2,8 +2,10 @@
 
 // These would be components you create in your components folder
 import HeroSection from "@/components/ui/searchsection";
-import FeaturedProjects from "@/components/ui/featured-projects";
-import CapstoneTrends from "@/components/ui/capstone-trends";
+import AnalyticsSpotlight from "@/components/ui/prog-languages";
+import FrameworksArea from "@/components/ui/frameworks";
+import CapstoneTrends from "@/components/ui/capstonova-universe";
+import HowItWorks from "@/components/ui/how-it-works";
 import AboutSection from "@/components/ui/about-section";
 
 export default function Home() {
@@ -11,8 +13,10 @@ export default function Home() {
     // The <main> tag is now in layout.tsx, so we just need a container div or fragment
     <div>
       <HeroSection />
-      <FeaturedProjects />
+      <AnalyticsSpotlight />
+      <FrameworksArea />
       <CapstoneTrends />
+      <HowItWorks />
       <AboutSection />
     </div>
   );
