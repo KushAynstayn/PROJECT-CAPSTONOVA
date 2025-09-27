@@ -93,7 +93,7 @@ const AdviseesPage = () => {
         <h1 className="mb-4 text-2xl font-bold">Advisee</h1>
 
         <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-input bg-background overflow-hidden">
+          <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
@@ -110,16 +110,16 @@ const AdviseesPage = () => {
           </div>
         </div>
 
-        <div className="relative max-h-full overflow-y-auto">
-          <Table removeWrapper aria-label="Advisee data table">
+        <div className="relative max-h-[60vh] overflow-y-auto scrollbar-gutter-stable bg-[radial-gradient(farthest-side_at_50%_0,_rgba(0,0,0,0.2),_rgba(0,0,0,0))] bg-no-repeat [background-size:100%_15px] [background-attachment:local]">
+          <Table removeWrapper aria-label="Advisee data table" isHeaderSticky>
             <TableHeader>
-              <TableColumn className="sticky top-0 z-10 bg-[#EDB4B4] text-left">
+              <TableColumn className={cn("bg-[#660000] text-left text-white")}>
                 FULL NAME
               </TableColumn>
-              <TableColumn className="sticky top-0 z-10 bg-[#EDB4B4] text-left">
+              <TableColumn className={cn("bg-[#660000] text-left text-white")}>
                 DEPARTMENT
               </TableColumn>
-              <TableColumn className="sticky top-0 z-10 bg-[#EDB4B4] text-left">
+              <TableColumn className={cn("bg-[#660000] text-left text-white")}>
                 PROGRAM
               </TableColumn>
             </TableHeader>
@@ -128,8 +128,8 @@ const AdviseesPage = () => {
                 <TableRow
                   key={advisee.id}
                   className={cn(
-                    "hover:bg-gray-100 cursor-pointer",
-                    selectedUserId === advisee.id && "bg-gray-200"
+                    "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                    selectedUserId === advisee.id && "bg-[#660000] text-white"
                   )}
                 >
                   <TableCell className="border-b border-gray-200">

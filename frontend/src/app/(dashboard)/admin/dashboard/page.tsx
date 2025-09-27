@@ -114,9 +114,10 @@ const AdminDashboardPage: React.FC = () => {
           <Button
             variant="ghost"
             className="absolute top-2 right-2 z-10"
-            onClick={() => setShowFullDocument(false)}
+            onClick={handleClearAll}
+            title="Main dashboard"
           >
-            Back to Details
+            <img src="/images/arrow.png" className="h-5 w-5" />
           </Button>
           <PdfViewer
             url={`/user/stream/manuscript/${selectedProject.manuscript_id}`}
@@ -219,16 +220,18 @@ const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-2 md:flex-row">
-          <div className="w-full md:w-1/4">
+          <div className="w-full md:w-1/2">
             <ChartBarLabel />
           </div>
-          <div className="w-full md:w-1/4">
+          <div className="w-full md:w-1/2">
             <ChartPieLabelList />
           </div>
-          <div className="w-full md:w-1/4">
+        </div>
+        <div className="flex flex-col items-stretch gap-2 md:flex-row">
+          <div className="w-full md:w-1/2">
             <LatestSubmission />
           </div>
-          <div className="w-full md:w-1/4">
+          <div className="w-full md:w-1/2">
             <LatestSuggestion />
           </div>
         </div>

@@ -105,9 +105,8 @@ const ProjectsPage = () => {
     return (
       <div className="h-full flex flex-col">
         <div className="flex-shrink-0 p-4 border-b">
-          <Button variant="ghost" onClick={() => setViewState("details")}>
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Back to Details
+          <Button variant="ghost" onClick={() => setViewState("details")} className="absolute top-23 right-260 z-10" title="Project Details">
+            <img src="/images/arrow.png" className="h-5 w-5" />
           </Button>
         </div>
         <div className="flex-grow">
@@ -122,9 +121,13 @@ const ProjectsPage = () => {
   if (viewState === "details" && selectedProject) {
     return (
       <div className="p-4 md:p-8 overflow-y-auto">
-        <Button variant="ghost" onClick={handleBackToList} className="mb-4">
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Project List
+        <Button
+          variant="ghost"
+          onClick={handleBackToList}
+          className="absolute top-23 right-260 z-10"
+          title="Project List"
+        >
+          <img src="/images/arrow.png" className="h-5 w-5" />
         </Button>
         <div className="bg-white p-6 rounded-lg shadow-md border">
           <h1 className="text-3xl font-bold mb-4 text-gray-800">
@@ -151,6 +154,7 @@ const ProjectsPage = () => {
           <Button
             onClick={handleViewPdf}
             disabled={!selectedProject.manuscript_id}
+            className="bg-[#660000] text-white w-fit px-6 py-2 rounded-md shadow-md hover:bg-[#660000] hover:text-white hover:scale-105 hover:shadow-lg transition-transform duration-200"
           >
             {selectedProject.manuscript_id
               ? "View Full Document"

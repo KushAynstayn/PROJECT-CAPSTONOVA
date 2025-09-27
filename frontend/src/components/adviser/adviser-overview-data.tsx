@@ -71,20 +71,18 @@ const AdviserOverviewData = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-50 min-h-0">
+    <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-500 min-h-0">
       <div className="flex justify-between items-center w-full mb-2 p-4 flex-shrink-0">
-        <h2 className="text-xl font-bold text-gray-800">
+        <h2 className="text-md font-bold text-gray-800">
           Your Overview
           <br />
           Data
         </h2>
         <Link
           href="/adviser/analytics"
-          className="bg-red-900 text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-105 transition-transform duration-200 ease-in-out text-center leading-tight"
+          className="bg-[#660000] text-white text-sm font-semibold px-4 py-1 rounded-md shadow hover:scale-105 transition-transform duration-200 ease-in-out"
         >
-          See
-          <br />
-          More
+          See More
         </Link>
       </div>
 
