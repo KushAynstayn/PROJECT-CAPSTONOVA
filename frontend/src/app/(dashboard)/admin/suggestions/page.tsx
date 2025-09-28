@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SearchIcon, CalendarIcon } from "lucide-react";
+import { SearchIcon, CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -120,7 +120,7 @@ const AdminSuggestionsPage = () => {
     <div>
       {view === "list" ? (
         <>
-          <div className="bg-[#6b0000] text-white py-3 font-bold text-center text-lg tracking-wider rounded-t-md">
+          <div className="bg-[#660000] text-white font-semibold px-6 py-2 shadow">
             {showArchived ? "ARCHIVED SUGGESTIONS" : "ADVISERS' SUGGESTIONS"}
           </div>
 
@@ -142,6 +142,7 @@ const AdminSuggestionsPage = () => {
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
+                      style={{ paddingRight: "2.5rem" }}
                       className={cn(
                         "w-[240px] justify-start text-left font-normal",
                         !date && "text-muted-foreground"
@@ -164,15 +165,15 @@ const AdminSuggestionsPage = () => {
                   <Button
                     variant="ghost"
                     onClick={() => setDate(undefined)}
-                    className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full hover:bg-gray-200"
+                    className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full hover:bg-gray-200flex items-center justify-center "
                   >
-                    <span className="text-xl leading-none">&times;</span>
+                    <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
               <Button
                 onClick={handleToggleArchive}
-                className="bg-[#5c3c20] hover:bg-[#4a301a] text-white font-semibold px-6 py-2 rounded-full shadow transition-colors duration-200 whitespace-nowrap"
+                className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
               >
                 {showArchived ? "Back to Active" : "Archived Suggestions"}
               </Button>
@@ -194,9 +195,9 @@ const AdminSuggestionsPage = () => {
                     suggestions.map((s) => (
                       <Card
                         key={s.suggestion_id}
-                          className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0" 
+                        className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0"
                       >
-                        <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl"> 
+                        <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl">
                           <CardTitle className="text-xl font-extrabold tracking-wide">
                             {s.adviser_name}
                           </CardTitle>

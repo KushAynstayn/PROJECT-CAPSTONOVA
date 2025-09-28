@@ -11,6 +11,8 @@ import { InputWithClear } from "@/components/ui/inputWithClear";
 import { LatestSubmission } from "@/components/ui/latest-submission-dashboard";
 import { apiCall } from "@/lib/api";
 import PdfViewer from "@/components/ui/pdf-viewer";
+import { Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // --- INTERFACES FOR SEARCH FUNCTIONALITY ---
 interface SearchResult {
@@ -225,8 +227,10 @@ const SuperAdminDashboardPage: React.FC = () => {
           <div className=" md:w-1/4">
             <ChartPieLabelList />
           </div>
+        </div>
 
-          <div className=" md:w-1/4">
+        <div className="flex justify-center">
+          <div className="w-1/2">
             <LatestSubmission />
           </div>
         </div>
@@ -239,16 +243,25 @@ const SuperAdminDashboardPage: React.FC = () => {
       <main className="flex min-h-screen flex-col p-2 pt-2 sm:p-2 lg:p-4 lg:pt-0">
         <div className="mt-1">
           <h2 className="mb-4 text-2xl font-bold">Dashboard</h2>
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <InputWithClear
-              type="search"
-              placeholder="Search more capstone projects here"
-              className="w-full"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onClear={handleClearAll}
-            />
-            <Calendar22 year={selectedYear} setYear={setSelectedYear} />
+          <div className="mb-6 flex flex-col items-center gap-4 md:flex-row">
+            <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <InputWithClear
+                type="search"
+                placeholder="Search capstone projects app-wide..."
+                className={cn(
+                  "ml-10 w-full border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                )}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onClear={handleClearAll}
+              />
+            </div>
+            <div className="relative flex items-left">
+              <Calendar22 year={selectedYear} setYear={setSelectedYear} />
+            </div>
           </div>
           {renderContent()}
         </div>

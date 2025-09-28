@@ -202,17 +202,17 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
 
             <div className="flex justify-center gap-4 mt-4">
               <Button
-                type="button"
-                onClick={handleClearAll}
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
-              >
-                Clear
-              </Button>
-              <Button
                 type="submit"
-                className="bg-gray-200 text-gray font-serif rounded-1px shadow-md"
+                className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
               >
                 Save
+              </Button>
+              <Button
+                type="button"
+                onClick={handleClearAll}
+                className="bg-gray border-1 border-gray-700 hover:border-[#630808] hover:bg-[#630808] text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+              >
+                Clear
               </Button>
             </div>
           </form>
