@@ -13,8 +13,6 @@ const SuperAdminNotificationsPage = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Notifications</h1>
-
       {/* By waiting for isClient to be true, we ensure NotificationList only renders in the browser, avoiding the hydration error. */}
       {isClient ? (
         <NotificationList />

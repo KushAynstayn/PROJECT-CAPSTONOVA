@@ -20,7 +20,7 @@ import {
 const chartConfig = {
   advisers: {
     label: "Advisers",
-    color: "#0c284d",
+    color: "#C75B5B", // Changed to light maroon
   },
 } satisfies ChartConfig;
 
@@ -30,11 +30,11 @@ export function AdviserDistributionChart({
   adviserCount: number;
 }) {
   const chartData = [
-    { course: "Advisers", advisers: adviserCount, fill: "#2d8bba" },
+    { course: "Advisers", advisers: adviserCount, fill: "#C75B5B" }, // Changed to light maroon
   ];
 
   return (
-    <Card className="flex flex-col w-[300px]">
+    <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
         <CardTitle>Advisers</CardTitle>
         <CardDescription>Total: {adviserCount} Advisers</CardDescription>

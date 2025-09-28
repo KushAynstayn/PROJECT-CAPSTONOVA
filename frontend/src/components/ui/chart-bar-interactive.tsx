@@ -26,10 +26,13 @@ interface GuestDistributionChartProps {
   viewersData: ViewersData;
 }
 
+// --- MODIFIED THIS LINE ---
+// Changed the color palette to shades of maroon
+const PALETTE = ["#660000", "#8B0000", "#C75B5B"]; // Dark Maroon, Maroon, Light Maroon
+
 const chartConfig = {
   guests: {
     label: "Guests",
-    color: "#3b82f6",
   },
 } satisfies ChartConfig;
 
@@ -39,7 +42,7 @@ export function GuestDistributionChart({
   const chartData = viewersData.by_department.map((d, index) => ({
     course: d.department,
     guests: d.count,
-    fill: `hsl(${index * 60}, 70%, 50%)`,
+    fill: PALETTE[index % PALETTE.length], // Assigns color from the palette
   }));
 
   return (

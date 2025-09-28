@@ -165,7 +165,7 @@ const PendingAccessRequestsPage = () => {
   };
 
   return (
-    <main className="mt-4">
+    <main className="mt-0">
       <PendingRequestNavbar
         activeRole={activeRole}
         onSelectRole={(role) => {

@@ -237,14 +237,10 @@ const AccessRequestView = ({
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Access request data table">
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              DATE REQUESTED
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              REQUESTED DOCUMENT
-            </TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">NAME</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">EMAIL</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">DATE REQUESTED</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">REQUESTED DOCUMENT</TableColumn>
           </TableHeader>
           <TableBody
             emptyContent={

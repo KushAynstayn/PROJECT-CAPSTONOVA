@@ -250,28 +250,40 @@ const SuperAdminReportsPage = () => {
       )}
 
       {/* Content for User Account Report Tab */}
-      {activeTab === "user" && (
-        <div className="mt-8">
-          {isLoading && <p>Loading user data...</p>}
-          {error && <p className="text-red-500">{error}</p>}
-          {userCountData && (
-            <div className="flex flex-row items-start gap-8">
-              <div className="flex flex-col gap-8">
-                <AdminDistributionChart adminCount={userCountData.admins} />
-                <AdviserDistributionChart
-                  adviserCount={userCountData.advisers}
-                />
-              </div>
-              <div className="flex flex-col gap-8">
-                <GuestDistributionChart viewersData={userCountData.viewers} />
-                <ProponentDistributionChart
-                  proponentsData={userCountData.proponents}
-                />
-              </div>
-            </div>
-          )}
+{activeTab === "user" && (
+  <div className="mt-8">
+    {isLoading && <p>Loading user data...</p>}
+    {error && <p className="text-red-500">{error}</p>}
+    {userCountData && (
+      <div className="flex flex-col gap-4">
+
+        {/* --- MODIFIED TOP ROW --- */}
+        {/* Changed from 2 columns to a 3-column grid on large screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          
+          {/* Viewers chart now spans 2 of the 3 columns */}
+          <div className="lg:col-span-2">
+            <GuestDistributionChart viewersData={userCountData.viewers} />
+          </div>
+
+          {/* Proponents chart takes up the remaining single column */}
+          <ProponentDistributionChart
+            proponentsData={userCountData.proponents}
+          />
         </div>
-      )}
+
+        {/* Bottom Row (unchanged) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <AdminDistributionChart adminCount={userCountData.admins} />
+          <AdviserDistributionChart
+            adviserCount={userCountData.advisers}
+          />
+        </div>
+        
+      </div>
+    )}
+  </div>
+)}
     </div>
   );
 };

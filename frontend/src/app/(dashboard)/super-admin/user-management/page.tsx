@@ -376,7 +376,7 @@ const SuperAdminUserManagementPage = () => {
 
   return (
     <>
-      <main className="mt-4">
+      <main className="mt-0">
         <NavigationBar
           activeRole={currentRole as NavRole}
           onSelectRole={(role) => {

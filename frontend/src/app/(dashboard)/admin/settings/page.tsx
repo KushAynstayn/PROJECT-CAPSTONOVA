@@ -116,7 +116,6 @@ const AdminSettingsPage = () => {
     if (formData.middle_name !== originalData.middle_name)
       payload.middle_name = formData.middle_name ?? null;
 
-    // CORRECTED: Safely handle optional password fields
     if (formData.newPassword && formData.confirmPassword) {
       payload.password = formData.newPassword;
       payload.password_confirmation = formData.confirmPassword;
@@ -246,18 +245,17 @@ const ViewProfile = ({ userData }: { userData: Partial<AdminFormData> }) => {
       <h1 className="text-center text-3xl font-serif tracking-wider text-gray-800 mb-1">
         {fullName}
       </h1>
+      
+      {/* 1. Email is now here */}
+      <p className="text-center text-sm text-gray-500 mb-2">
+        {userData.email}
+      </p>
+
       <p className="text-center text-lg text-gray-500">{userData.userType}</p>
+      
       <div className="border-t my-8"></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-        <div>
-          <Label className="text-sm font-medium text-gray-600">CTU Email</Label>
-          <Input
-            value={userData.email}
-            readOnly
-            className="w-full mt-2 border-gray-300 rounded-md bg-gray-50 cursor-default"
-          />
-        </div>
-      </div>
+
+      {/* 2. The old email section has been removed from the bottom */}
     </>
   );
 };

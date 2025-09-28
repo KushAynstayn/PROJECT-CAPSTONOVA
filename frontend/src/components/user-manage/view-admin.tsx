@@ -139,8 +139,8 @@ const AdminView = ({
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Proponent user data table">
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">EMAIL</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">NAME</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">EMAIL</TableColumn>
           </TableHeader>
           <TableBody emptyContent={"No users match the current filters."}>
             {filteredUsers.map((user) => (
