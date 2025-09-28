@@ -23,7 +23,7 @@ const SuperAdminAnalyticsPage = () => {
 
   return (
     <>
-      <main className="mt-4">
+      <main className="mt-0">
         <DataAnalyticsNavbar
           activeRole={currentRole}
           onSelectRole={setCurrentRole}

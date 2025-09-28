@@ -228,7 +228,7 @@ const SuperAdminUploadWhitelistPage = () => {
     setSelectedFile(e.target.files?.[0] || null);
 
   return (
-    <main className="mt-4">
+    <main className="mt-0">
       <WhitelistNavigationBar
         activeView={currentView}
         onSelectView={setCurrentView}

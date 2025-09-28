@@ -22,14 +22,14 @@ const chartConfig = {
   },
   Admins: {
     label: "Admins",
-    color: "#0c284d",
+    color: "#8B0000", // Changed from dark blue to maroon
   },
 } satisfies ChartConfig;
 
 export function AdminDistributionChart({ adminCount }: { adminCount: number }) {
-  const chartData = [{ course: "Admins", count: adminCount, fill: "#0c284d" }];
+  const chartData = [{ course: "Admins", count: adminCount, fill: "#8B0000" }]; // Changed from dark blue to maroon
   return (
-    <Card className="flex flex-col w-[300px]">
+    <Card className="flex flex-col ">
       <CardHeader className="items-center pb-0">
         <CardTitle>Admins</CardTitle>
         <CardDescription>Total: {adminCount} Admins</CardDescription>

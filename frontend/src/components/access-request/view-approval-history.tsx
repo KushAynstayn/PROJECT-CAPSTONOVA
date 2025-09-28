@@ -131,21 +131,11 @@ const ApprovalHistoryView = ({
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Approval history data table">
           <TableHeader>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              REQUESTER
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              PROJECT TITLE
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              APPROVER
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              APPROVAL DATE
-            </TableColumn>
-            <TableColumn className="bg-[#EDB4B4] text-left">
-              EXPIRY DATE
-            </TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">REQUESTER</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">PROJECT TITLE</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">APPROVER</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">APPROVAL DATE</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">EXPIRY DATE</TableColumn>
           </TableHeader>
           <TableBody
             emptyContent={

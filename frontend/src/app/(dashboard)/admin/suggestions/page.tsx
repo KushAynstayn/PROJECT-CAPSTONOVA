@@ -194,9 +194,9 @@ const AdminSuggestionsPage = () => {
                     suggestions.map((s) => (
                       <Card
                         key={s.suggestion_id}
-                        className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
+                          className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0" 
                       >
-                        <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
+                        <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl"> 
                           <CardTitle className="text-xl font-extrabold tracking-wide">
                             {s.adviser_name}
                           </CardTitle>

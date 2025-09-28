@@ -214,20 +214,13 @@ const SuperAdminSettingsPage = () => {
               <h1 className="text-center text-3xl font-serif tracking-wider text-gray-800 mb-1">
                 {fullName}
               </h1>
+              {/* Email is now here */}
+              <p className="text-center text-md text-gray-500 mb-2">
+                {formData.email}
+              </p>
               <p className="text-center text-lg text-gray-500">Super Admin</p>
               <div className="border-t my-8"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">
-                    CTU Email
-                  </Label>
-                  <Input
-                    value={formData.email}
-                    readOnly
-                    className="w-full mt-2 border-gray-300 rounded-md bg-gray-50 cursor-default"
-                  />
-                </div>
-              </div>
+              {/* The old email section is removed */}
             </>
           )}
         </div>

@@ -122,26 +122,26 @@ const AdminReportsPage = () => {
         <button
           onClick={() => setActiveTab("project")}
           className={`
-                        text-lg font-semibold pb-2 transition-colors duration-200
-                        ${
-                          activeTab === "project"
-                            ? "text-[#511b10] border-b-2 border-[#511b10]"
-                            : "text-gray-400"
-                        }
-                    `}
+                                text-lg font-semibold pb-2 transition-colors duration-200
+                                ${
+                                  activeTab === "project"
+                                    ? "text-[#511b10] border-b-2 border-[#511b10]"
+                                    : "text-gray-400"
+                                }
+                            `}
         >
           Project Reports
         </button>
         <button
           onClick={() => setActiveTab("user")}
           className={`
-                        text-lg font-semibold pb-2 transition-colors duration-200
-                        ${
-                          activeTab === "user"
-                            ? "text-[#511b10] border-b-2 border-[#511b10]"
-                            : "text-gray-400"
-                        }
-                    `}
+                                text-lg font-semibold pb-2 transition-colors duration-200
+                                ${
+                                  activeTab === "user"
+                                    ? "text-[#511b10] border-b-2 border-[#511b10]"
+                                    : "text-gray-400"
+                                }
+                            `}
         >
           User Account Report
         </button>
@@ -255,20 +255,27 @@ const AdminReportsPage = () => {
           {isLoading && <p>Loading user data...</p>}
           {error && <p className="text-red-500">{error}</p>}
           {userCountData && (
-            <div className="flex flex-row items-start gap-8">
-              <div className="flex flex-col gap-8">
+            // --- START: MODIFIED LAYOUT TO MATCH SUPERADMIN ---
+            <div className="flex flex-col gap-4">
+              {/* Top Row: Viewers (wider) and Proponents */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <GuestDistributionChart viewersData={userCountData.viewers} />
+                </div>
+                <ProponentDistributionChart
+                  proponentsData={userCountData.proponents}
+                />
+              </div>
+
+              {/* Bottom Row: Admins and Advisers */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <AdminDistributionChart adminCount={userCountData.admins} />
                 <AdviserDistributionChart
                   adviserCount={userCountData.advisers}
                 />
               </div>
-              <div className="flex flex-col gap-8">
-                <GuestDistributionChart viewersData={userCountData.viewers} />
-                <ProponentDistributionChart
-                  proponentsData={userCountData.proponents}
-                />
-              </div>
             </div>
+            // --- END: MODIFIED LAYOUT ---
           )}
         </div>
       )}
