@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Orbitron, Black_Ops_One } from 'next/font/google';
+import { Inter, Orbitron, Black_Ops_One } from "next/font/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TopLoader } from "@/components/ui/top-loader";
@@ -15,20 +15,20 @@ const geistMono = Geist_Mono({
 });
 
 const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 const orbitron = Orbitron({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-orbitron',
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-orbitron",
 });
 
 const blackOpsOne = Black_Ops_One({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-blackops',
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-blackops",
 });
 
 export const metadata: Metadata = {
@@ -52,7 +52,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${blackOpsOne.variable} ${geistSans.variable} ${geistMono.variable} ${inter.variable} ${orbitron.variable} antialiased text-black bg-black`}
+        className={`${blackOpsOne.variable} ${geistSans.variable} ${geistMono.variable} ${inter.variable} ${orbitron.variable} antialiased text-black`}
       >
         <TopLoader />
         {children}
