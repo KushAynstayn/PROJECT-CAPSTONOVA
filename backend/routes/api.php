@@ -52,6 +52,7 @@ use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
+use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
@@ -270,8 +271,19 @@ Route::prefix('util')->group(function () {
         ->middleware('auth:sanctum');
     Route::get('/check-usage-guide', [CheckManualController::class, 'checkUsageGuide'])
         ->middleware('auth:sanctum');
-});
 
+
+    //Viewer util routes
+    Route::get(
+        'viewer-reports-analytics/programming-language-trends',
+        [ViewerReportsAnalyticsController::class, 'programmingLanguageTrends']
+    );
+
+    Route::get(
+        'viewer-reports-analytics/archived-projects-by-department',
+        [ViewerReportsAnalyticsController::class, 'archivedProjectsByDepartment']
+    );
+});
 
 
 
