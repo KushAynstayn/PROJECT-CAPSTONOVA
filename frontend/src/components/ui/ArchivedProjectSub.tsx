@@ -49,20 +49,21 @@ const ArchivedProjectCard: React.FC<ArchivedProjectCardProps> = ({
     {/* Matched the button container styles */}
     <div className="flex justify-center gap-4 mt-6">
       <Button
-        onClick={() => onRestore(project.id)}
-        // Kept the distinct "Restore" color but matched other button styles
-        className="bg-[#5c3c20] hover:bg-[#4a301a] text-white font-semibold"
-      >
-        Restore
-      </Button>
-      <Button
         onClick={() => onViewDetails(project)}
         variant="outline"
         // Matched the "See More" button styles
-        className="text-gray-800 font-semibold border-gray-300 hover:bg-gray-100"
+        className="bg-[#660000] hover:bg-[#630808] text-white hover:text-white font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
       >
         See More
       </Button>
+      <Button
+        onClick={() => onRestore(project.id)}
+        // Kept the distinct "Restore" color but matched other button styles
+        className="text-gray-700 border-gray-700 font-semibold bg-gray-200 hover:bg-[#630808] hover:text-white transition-transform duration-200 ease-in-out hover:scale-105"
+      >
+        Restore
+      </Button>
+      
     </div>
   </div>
 );

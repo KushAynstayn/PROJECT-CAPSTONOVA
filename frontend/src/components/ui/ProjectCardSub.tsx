@@ -42,17 +42,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     </div>
     <div className="flex justify-center gap-4 mt-6">
       <Button
-        onClick={() => onArchive(project.id)}
-        className="bg-[#6b0000] hover:bg-[#8a0000] text-white font-semibold"
-      >
-        Archive
-      </Button>
-      <Button
         onClick={() => onViewDetails(project)}
         variant="outline"
-        className="text-gray-800 font-semibold border-gray-300 hover:bg-gray-100"
+        className="bg-[#660000] hover:bg-[#630808] text-white hover:text-white font-semibold transition-transform duration-200 ease-in-out hover:scale-105"
       >
         See More
+      </Button>
+      <Button
+        onClick={() => onArchive(project.id)}
+        className="text-gray-700 border-gray-700 font-semibold bg-gray-200 hover:bg-[#630808] hover:text-white transition-transform duration-200 ease-in-out hover:scale-105"
+      >
+        Archive
       </Button>
     </div>
   </div>

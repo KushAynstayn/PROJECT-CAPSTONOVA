@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   ChevronDown,
   Settings,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -540,12 +541,13 @@ const AdviserSuggestionsPage = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
+                  style={{ paddingRight: "2.5rem" }}
                   className={cn(
                     "w-full md:w-auto justify-start text-left font-normal",
                     !date && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-0 h-4 w-4" />
                   {date ? format(date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
@@ -562,9 +564,9 @@ const AdviserSuggestionsPage = () => {
               <Button
                 variant="ghost"
                 onClick={() => setDate(undefined)}
-                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full hover:bg-gray-200"
+                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full hover:bg-gray-200 flex items-center justify-center "
               >
-                <span className="text-xl leading-none">&times;</span>
+                <X className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -624,9 +626,9 @@ const AdviserSuggestionsPage = () => {
                 suggestions.map((s) => (
                   <Card
                     key={s.suggestion_id}
-                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
+                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0"
                   >
-                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
+                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl">
                       <CardTitle className="text-xl font-extrabold tracking-wide">
                         {s.adviser?.first_name} {s.adviser?.last_name}
                       </CardTitle>

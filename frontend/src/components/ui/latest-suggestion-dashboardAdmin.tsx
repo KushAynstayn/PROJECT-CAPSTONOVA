@@ -93,7 +93,7 @@ export const LatestSuggestion = () => {
       </CardHeader>
       <CardContent className="flex-1">{renderContent()}</CardContent>
       <CardFooter className="justify-center">
-        <Button className="w-1/2 bg-[#660000] text-white hover:bg-[#751717] active:bg-[#751717] transition-transform hover:scale-105">
+       <Button className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105">
           View All Suggestions
         </Button>
       </CardFooter>

@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { Button } from "@/components/ui/button";
@@ -172,9 +173,15 @@ const AccessRequestView = ({
         }
       `}</style>
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="w-full grow md:max-w-md">
+        <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
           <InputWithClear
             type="search"
+            className={cn(
+              "ml-10 w-full border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            )}
             placeholder={placeholder}
             value={searchQuery}
             onChange={onSearchChange}
@@ -237,10 +244,18 @@ const AccessRequestView = ({
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Access request data table">
           <TableHeader>
-            <TableColumn className="bg-[#8B0000] text-white text-left">NAME</TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">EMAIL</TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">DATE REQUESTED</TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">REQUESTED DOCUMENT</TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">
+              NAME
+            </TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">
+              EMAIL
+            </TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">
+              DATE REQUESTED
+            </TableColumn>
+            <TableColumn className="bg-[#8B0000] text-white text-left">
+              REQUESTED DOCUMENT
+            </TableColumn>
           </TableHeader>
           <TableBody
             emptyContent={

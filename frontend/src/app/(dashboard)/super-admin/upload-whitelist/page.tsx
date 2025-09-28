@@ -305,9 +305,8 @@ const SuperAdminUploadWhitelistPage = () => {
                 <div className="relative">
                   <Button
                     asChild
-                    variant="outline"
                     size="sm"
-                    className="cursor-pointer"
+                    className="cursor-pointer bg-[#660000] text-white hover:bg-[#751717] active:bg-[#751717] transition-transform hover:scale-105"
                   >
                     <label htmlFor="file-upload">
                       {selectedFile ? selectedFile.name : "Choose File"}
@@ -324,17 +323,21 @@ const SuperAdminUploadWhitelistPage = () => {
                 <Button
                   onClick={handleExcelUpload}
                   disabled={isSubmitting || !selectedFile}
-                  variant="outline"
                   size="sm"
+                  className="cursor-pointer bg-[#660000] text-white hover:bg-[#751717] active:bg-[#751717] transition-transform hover:scale-105"
                 >
                   {isSubmitting ? "Uploading..." : "Upload Excel"}
                 </Button>
-                <Button onClick={handleClearAll} variant="outline" size="sm">
+                <Button
+                  onClick={handleClearAll}
+                  className="cursor-pointer bg-[#660000] text-white hover:bg-[#751717] active:bg-[#751717] transition-transform hover:scale-105"
+                  size="sm"
+                >
                   Clear Information
                 </Button>
                 <Button
                   onClick={handleManualSubmit}
-                  variant="outline"
+                  className="cursor-pointer bg-[#660000] text-white hover:bg-[#751717] active:bg-[#751717] transition-transform hover:scale-105"
                   size="sm"
                   disabled={isSubmitting}
                 >

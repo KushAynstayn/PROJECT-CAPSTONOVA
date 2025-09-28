@@ -144,19 +144,19 @@ const EditWhitelistView = ({
             </div>
           </div>
         </div>
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-8 flex items-center gap-2 justify-center">
+          <Button
+            onClick={handleSave}
+            className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+          >
+            Save Changes
+          </Button>
           <Button
             variant="outline"
             onClick={onCancel}
-            className="border-gray-400 text-gray-600 hover:bg-gray-100"
+            className="bg-gray hover:bg-[#630808] text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
           >
             Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="border border-black/50 bg-[#8B0000] text-white shadow-md hover:bg-[#7a0000]"
-          >
-            Save Changes
           </Button>
         </div>
       </div>

@@ -129,10 +129,10 @@ const AdviserSuggestionsDetails = ({
           <Button
             onClick={() => setViewMode("uploaded")}
             className={cn(
-              "px-6 py-2 rounded-full font-semibold transition-colors duration-200",
+              "bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105",
               viewMode === "uploaded"
-                ? "bg-[#6b0000] hover:bg-[#5c0000] text-white"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                ? "bg-[#660000] hover:bg-[#630808] text-white"
+                : "bg-gray-200 hover:bg-[#630808] text-gray-700"
             )}
           >
             Uploaded
@@ -140,10 +140,10 @@ const AdviserSuggestionsDetails = ({
           <Button
             onClick={() => setViewMode("archived")}
             className={cn(
-              "px-6 py-2 rounded-full font-semibold transition-colors duration-200",
+              "text-gray-700 border-gray-700 font-semibold bg-gray-200 hover:bg-[#630808] hover:text-white rounded-full transition-transform duration-200 ease-in-out hover:scale-105",
               viewMode === "archived"
-                ? "bg-gray-600 hover:bg-gray-700 text-white"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                ? "bg-[#660000] hover:bg-[#630808] text-white"
+                : "bg-gray-200 hover:bg-[#630808] text-gray-700"
             )}
           >
             Archived
@@ -165,9 +165,9 @@ const AdviserSuggestionsDetails = ({
                 suggestions.map((s) => (
                   <Card
                     key={s.suggestion_id}
-                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out"
+                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0"
                   >
-                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-lg">
+                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl">
                       <CardTitle className="text-xl font-extrabold tracking-wide">
                         {adviser.name}
                       </CardTitle>

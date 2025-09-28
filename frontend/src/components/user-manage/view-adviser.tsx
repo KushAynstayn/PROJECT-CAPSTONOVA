@@ -12,6 +12,7 @@ import {
   TableRow,
   TableCell,
 } from "@heroui/react";
+import { Search } from "lucide-react";
 
 interface Adviser {
   id: number;
@@ -113,8 +114,14 @@ const AdviserView = ({
       `}</style>
 
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="w-full grow md:max-w-md">
+        <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
           <InputWithClear
+            className={cn(
+              "ml-0 pl-10 w-full border-gray-500 bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            )}
             type="search"
             placeholder={placeholder}
             value={searchQuery}

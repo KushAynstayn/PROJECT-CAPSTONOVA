@@ -332,7 +332,7 @@ const SuperAdminSubmissionsPage = () => {
                     ? showArchivedProjects
                     : showSubmissions
                 }
-                className="bg-[#5c3c20] hover:bg-[#4a301a] text-white font-semibold px-6 py-2 rounded-full shadow transition-colors duration-200 whitespace-nowrap"
+                className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
               >
                 {view === "submissions"
                   ? "View Archived Projects"
