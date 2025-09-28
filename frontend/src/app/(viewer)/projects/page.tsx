@@ -6,10 +6,10 @@ import { useSearchParams, ReadonlyURLSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
 import { apiCall, ApiError } from "@/lib/api";
+import { SearchX } from "lucide-react";
 
-// Define the structure of a project based on your backend's transformed response
+// Define the structure of a project
 interface Project {
   id: number;
   title: string;
@@ -27,29 +27,41 @@ interface Project {
   };
 }
 
-// A component to display the active search filters
+// New component for the loading skeleton
+function SkeletonCard() {
+  return (
+    <div className="bg-neutral-900/80 border border-yellow-500/20 p-6 rounded-lg animate-pulse">
+      <div className="h-6 bg-gray-700 rounded w-3/4 mb-3"></div>
+      <div className="h-4 bg-gray-700 rounded w-1/2 mb-6"></div>
+      <div className="h-4 bg-gray-600 rounded w-full mb-2"></div>
+      <div className="h-4 bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="flex flex-wrap gap-2">
+        <div className="h-6 w-20 bg-gray-700 rounded-full"></div>
+        <div className="h-6 w-24 bg-gray-700 rounded-full"></div>
+      </div>
+    </div>
+  );
+}
+
+// ActiveFiltersDisplay component
 function ActiveFiltersDisplay({ params }: { params: ReadonlyURLSearchParams }) {
   if (params.toString() === "") {
-    return null; // Don't render anything if there are no search params
+    return null;
   }
-
   const filters = new Map<string, string[]>();
-
   params.forEach((value, key) => {
-    const cleanKey = key.replace("[]", ""); // Group keys like 'authors[]' into 'authors'
+    const cleanKey = key.replace("[]", "");
     if (filters.has(cleanKey)) {
       filters.get(cleanKey)!.push(value);
     } else {
       filters.set(cleanKey, [value]);
     }
   });
-
   const formatKey = (key: string) => {
     return key
       .replace(/_/g, " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
-
   return (
     <div className="mb-6 p-4 border border-yellow-500/30 rounded-lg bg-neutral-900/50">
       <h2 className="text-md font-semibold text-yellow-400 mb-3">
@@ -69,10 +81,10 @@ function ActiveFiltersDisplay({ params }: { params: ReadonlyURLSearchParams }) {
   );
 }
 
-// A component to display a single project card
+// Updated ProjectCard with enhanced hover effect
 function ProjectCard({ project }: { project: Project }) {
   return (
-    <Card className="bg-neutral-900 border-yellow-500/30 text-white mb-4 h-full transform transition-all duration-300 hover:border-yellow-400 hover:scale-[1.02]">
+    <Card className="bg-neutral-900 border-yellow-500/30 text-white h-full transform transition-all duration-300 hover:border-yellow-400 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/20">
       <CardHeader>
         <CardTitle className="text-yellow-400 text-lg">
           {project.title}
@@ -83,7 +95,9 @@ function ProjectCard({ project }: { project: Project }) {
         </p>
       </CardHeader>
       <CardContent>
-        <p className="text-gray-300 mb-4">{project.abstract_snippet}</p>
+        <p className="text-gray-300 mb-4 line-clamp-3">
+          {project.abstract_snippet}
+        </p>
         <div className="flex flex-wrap gap-2">
           {project.keyword_tags.map((tag, index) => (
             <Badge
@@ -105,7 +119,6 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-// The main search results component
 function SearchResults() {
   const searchParams = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -116,24 +129,20 @@ function SearchResults() {
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
-
-      const queryString = searchParams.toString();
-
       try {
-        const result = await apiCall(`/public/search?${queryString}`);
-        setProjects(result.data); // Data is under the 'data' key for paginated responses
+        const result = await apiCall(
+          `/public/search?${searchParams.toString()}`
+        );
+        setProjects(result.data);
       } catch (e) {
-        if (e instanceof ApiError) {
-          setError(e.message);
-        } else {
-          setError("An unexpected error occurred.");
-        }
+        setError(
+          e instanceof ApiError ? e.message : "An unexpected error occurred."
+        );
         console.error(e);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProjects();
   }, [searchParams]);
 
@@ -143,19 +152,37 @@ function SearchResults() {
         Search Results
       </h1>
       <ActiveFiltersDisplay params={searchParams} />
+
       {loading && (
-        <p className="text-center text-gray-300">Loading projects...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       )}
-      {error && <p className="text-center text-red-500">{error}</p>}
+
+      {error && <p className="text-center text-red-500 py-10">{error}</p>}
+
       {!loading && !error && projects.length === 0 && (
-        <p className="text-center text-gray-400">
-          No projects found matching your criteria.
-        </p>
+        <div className="text-center py-16 text-gray-400">
+          <SearchX className="mx-auto h-16 w-16 text-yellow-500/50 mb-4" />
+          <h2 className="text-2xl font-semibold text-white mb-2">
+            No Projects Found
+          </h2>
+          <p>
+            Your search did not match any projects. Try adjusting your filters.
+          </p>
+        </div>
       )}
+
       {!loading && !error && projects.length > 0 && (
-        <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {projects.map((project) => (
-            <Link href={`/projects/${project.id}`} key={project.id}>
+            <Link
+              href={`/abstract/${project.id}`}
+              key={project.id}
+              className="block"
+            >
               <ProjectCard project={project} />
             </Link>
           ))}
@@ -165,19 +192,23 @@ function SearchResults() {
   );
 }
 
-// The page component that wraps the results in a Suspense boundary
 export default function ProjectsPage() {
   return (
     <div className="bg-black min-h-screen text-white">
       <Header />
       <main className="pt-20">
         <Suspense
-          fallback={<div className="text-center p-8">Loading search...</div>}
+          fallback={
+            <div className="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          }
         >
           <SearchResults />
         </Suspense>
       </main>
-      <Footer />
     </div>
   );
 }

@@ -1,153 +1,213 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { mockProjects, type Project } from "@/data/viewer-abstract-data";
+import React, { useState, useEffect, Suspense } from "react";
+import Header from "@/components/ui/header";
+import { Badge } from "@/components/ui/badge";
+import { apiCall, ApiError } from "@/lib/api";
+import { User, Tag, Code, Info, Users } from "lucide-react";
 import AuthModal from "@/components/viewer/viewer-auth-modal";
 
-// --- SearchBar Component (No changes) ---
-const SearchBar = ({ onSearch, initialValue = "" }: { onSearch: (query: string) => void; initialValue?: string; }) => {
-  const [query, setQuery] = useState(initialValue);
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSearch(query.trim()); };
-  const handleClear = () => { setQuery(""); onSearch(""); };
-  return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <div className="relative">
-        <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search for a topic or project title..." className="w-full py-1 pl-6 pr-20 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-        {query && (<button type="button" onClick={handleClear} className="absolute inset-y-0 right-14 flex items-center text-gray-500 hover:text-gray-900" aria-label="Clear search"><svg xmlns="http://www.w.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>)}
-        <button type="submit" className="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-700 hover:text-yellow-800" aria-label="Search"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
-      </div>
-    </form>
-  );
-};
+// Define the detailed project structure based on the controller's response
+interface ProjectDetails {
+  id: number;
+  title: string;
+  abstract: string;
+  submission_date: string;
+  submission_year: number;
+  platform_type: string;
+  is_archived: boolean;
+  adviser: string | null;
+  team_roles: {
+    leader: string | null;
+    hacker: string | null;
+    hipster1: string | null;
+    hipster2: string | null;
+  };
+  keyword_tags: string[];
+  language_tags: string[];
+}
 
-// --- ViewAbstract Component (Page) ---
-// 1. Destructure 'id' directly from params in the function signature
-const ViewAbstract = ({ params: { id } }: { params: { id: string } }) => {
-  const router = useRouter();
+// Loading Skeleton Component
+function ProjectDetailSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-12 animate-pulse">
+      <div className="h-10 bg-gray-700 rounded w-3/4 mb-6"></div>
+      <div className="h-4 bg-gray-700 rounded w-1/3 mb-10"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="h-6 bg-gray-700 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-600 rounded w-full"></div>
+          <div className="h-4 bg-gray-600 rounded w-full"></div>
+          <div className="h-4 bg-gray-600 rounded w-5/6"></div>
+          <div className="h-4 bg-gray-600 rounded w-full"></div>
+        </div>
+        <div className="space-y-6">
+          <div className="h-12 bg-gray-700 rounded-lg w-full mb-4"></div>
+          <div className="h-6 bg-gray-700 rounded w-1/3 mb-4"></div>
+          <div className="h-8 bg-gray-700 rounded w-full"></div>
+          <div className="h-8 bg-gray-700 rounded w-full"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component to fetch and display project details
+function ProjectDetailsContent({ id }: { id: string }) {
+  const [project, setProject] = useState<ProjectDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [project, setProject] = useState<Project | null>(null);
 
   useEffect(() => {
-    // 2. Use the destructured 'id' variable
-    const foundProject = mockProjects.find((p) => p.id.toString() === id);
-    setProject(foundProject || null);
-  }, [id]); // 3. The dependency is now a safe primitive string
+    if (!id) return;
+    const fetchProjectDetails = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await apiCall(`/public/project/${id}`);
+        setProject(data);
+      } catch (e) {
+        setError(
+          e instanceof ApiError
+            ? `Error: ${e.message}`
+            : "Failed to load project details."
+        );
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjectDetails();
+  }, [id]);
 
-  const handleNewSearch = (newQuery: string) => {
-    const route = newQuery
-      ? `/projects/${encodeURIComponent(newQuery)}`
-      : "/projects/all";
-    router.push(route);
-  };
-
-  if (!project) {
+  if (loading) return <ProjectDetailSkeleton />;
+  if (error)
+    return <div className="text-center py-20 text-red-500">{error}</div>;
+  if (!project)
     return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold">Loading Project...</h1>
-        <p className="text-gray-500 mt-2">
-           If the project does not load, it may not exist.
-        </p>
-      </div>
+      <div className="text-center py-20 text-gray-400">Project not found.</div>
     );
-  }
 
-  // Find similar studies from the same category
-  const similarStudies = mockProjects
-    .filter((p) => p.category === project.category && p.id !== project.id)
-    .slice(0, 5);
+  const teamMembers = Object.entries(project.team_roles).filter(
+    ([, name]) => name
+  );
 
   return (
     <>
-      <style>{`
-        .fading-scrollbar::-webkit-scrollbar { width: 8px; }
-        .fading-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .fading-scrollbar::-webkit-scrollbar-thumb { background-color: transparent; border-radius: 20px; border: 3px solid transparent; }
-        .fading-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #4a5568; }
-        .fading-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #2d3748; }
-      `}</style>
-      <div className="bg-gray min-h-screen text-black flex flex-col">
-        <header className="px-8 mt-18 p-4 border-b border-gray-800 bg-black">
-          <div className="max-w-7xl mx-auto flex items-center gap-6">
-            <div className="w-full max-w-2xl">
-              <SearchBar onSearch={handleNewSearch} />
-            </div>
-          </div>
-        </header>
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
+          {/* Main Content: Title, Abstract, etc. */}
+          <main className="lg:col-span-2 bg-stone-900/50 p-8 rounded-lg">
+            <h1 className="text-4xl font-bold text-yellow-400 mb-2">
+              {project.title}
+            </h1>
+            <p className="text-lg text-gray-400 mb-8">
+              Submitted in {project.submission_year}
+            </p>
 
-        <main className="flex-1 overflow-y-auto p-8 max-w-10xl mt-4">
-          <div className="flex flex-col lg:flex-row items-start gap-8">
-            <div className="flex-1 w-full lg:w-80 bg-stone-200 p-6 rounded-lg shadow-lg max-h-[700px]">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 uppercase border-b pb-4">
-                {project.title}
-              </h2>
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Abstract
+            <h2 className="text-2xl font-semibold text-white mb-4 border-b-2 border-yellow-500/30 pb-2">
+              Abstract
+            </h2>
+            <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+              {project.abstract}
+            </p>
+
+            <div className="mt-8 pt-6 border-t border-gray-700">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Tag size={20} /> Keywords
               </h3>
-              <div className="text-gray-700 leading-relaxed text-justify prose mb-6 border-b pb-4">
-                <p>{project.abstract}</p>
-              </div>
-              <div className="text-sm text-gray-600">
-                <p>
-                  <strong>Proponents:</strong> {project.proponents}
-                </p>
-                <p>
-                  <strong>Adviser:</strong> {project.adviser}
-                </p>
-                <p>
-                  <strong>Date Published:</strong>{" "}
-                  {new Date(project.datePublished).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                <p>
-                  <strong>Panelists:</strong> {project.panelists}
-                </p>
+              <div className="flex flex-wrap gap-2">
+                {project.keyword_tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-gray-700 text-gray-200"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             </div>
 
-            <div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-orange-800 text-white text-sm h-12 w-full py-2 px-6 rounded-md shadow-md hover:bg-orange-700 transition-colors duration-300"
-              >
-                VIEW FULL DOCUMENT
-              </button>
-              <aside className="w-full lg:w-80 bg-stone-200 p-6 rounded-lg shadow-lg max-h-[500px] overflow-y-auto mt-10 fading-scrollbar">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 mt-2">
-                  Similar Studies
-                </h3>
-                <ul className="space-y-3">
-                  {mockProjects && mockProjects.length > 0 ? (
-                    mockProjects
-                      .filter((study) => study.id !== project.id)
-                      .slice(0, 20)
-                      .map((study) => (
-                        <li key={study.id}>
-                          <a
-                            href="#"
-                            className="text-blue-600 hover:underline text-sm block"
-                          >
-                            {study.title}
-                          </a>
-                        </li>
-                      ))
-                  ) : (
-                    <p className="text-gray-500 text-sm">
-                      No similar studies found.
-                    </p>
-                  )}
-                </ul>
-              </aside>
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Code size={20} /> Languages
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {project.language_tags.map((tag) => (
+                  <Badge key={tag} className="bg-blue-800 text-blue-200">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
-        </main>
-        {showModal && <AuthModal onClose={() => setShowModal(false)} />}
+          </main>
+
+          {/* Sidebar: Details and Actions */}
+          <aside className="space-y-8">
+            <button
+              onClick={() => setShowModal(true)}
+              className="w-full bg-yellow-600 text-black font-bold h-12 py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-colors duration-300"
+            >
+              VIEW FULL DOCUMENT
+            </button>
+
+            <div className="bg-stone-900/50 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Users size={20} /> Team Members
+              </h3>
+              <ul className="space-y-2 text-gray-300">
+                {teamMembers.map(([role, name]) => (
+                  <li key={role}>
+                    <span className="capitalize font-semibold">{role}:</span>{" "}
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-stone-900/50 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <User size={20} /> Adviser
+              </h3>
+              <p className="text-gray-300">{project.adviser || "N/A"}</p>
+            </div>
+
+            <div className="bg-stone-900/50 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Info size={20} /> Details
+              </h3>
+              <p className="text-gray-300">
+                <strong>Platform:</strong> {project.platform_type}
+              </p>
+              <p className="text-gray-300">
+                <strong>Submitted:</strong>{" "}
+                {new Date(project.submission_date).toLocaleDateString()}
+              </p>
+            </div>
+          </aside>
+        </div>
       </div>
+      {showModal && <AuthModal onClose={() => setShowModal(false)} />}
     </>
   );
-};
+}
 
-export default ViewAbstract;
+// Page component
+export default function AbstractPage({
+  params: { id },
+}: {
+  params: { id: string };
+}) {
+  return (
+    <div className="bg-black min-h-screen text-white">
+      <Header />
+      <main className="pt-16">
+        <Suspense fallback={<ProjectDetailSkeleton />}>
+          <ProjectDetailsContent id={id} />
+        </Suspense>
+      </main>
+    </div>
+  );
+}
