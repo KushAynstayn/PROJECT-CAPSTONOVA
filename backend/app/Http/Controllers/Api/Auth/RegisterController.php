@@ -26,14 +26,11 @@ class RegisterController extends Controller
     public function __invoke(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            // User validation rules. Note 'unique' rule is removed for manual checking.
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])],
-
-            // UserDetail validation rules.
             'student_id' => ['required_if:role,Proponent', 'nullable', 'string', 'max:50'],
             'department' => ['required', 'string', 'max:50'],
             'program' => ['required', 'string', 'max:50'],
@@ -48,28 +45,32 @@ class RegisterController extends Controller
         $hashedEmail = hash('sha256', $email);
         $adviserId = null;
 
-        // Manually check for email uniqueness using the hashed email.
         if (User::where('hashed_email', $hashedEmail)->exists()) {
-            return response()->json(['email' => ['The email has already been taken.']], 422);
+            return response()->json(
+                ['email' => ['An account with this email address already exists.']],
+                409
+            );
         }
 
-        // If the role is 'Proponent', validate against the whitelist using the correct fields.
         if ($validated['role'] === 'Proponent') {
             $whitelistEntry = Whitelist::where('student_id', $validated['student_id'])
                 ->where('hashed_email', $hashedEmail)
                 ->first();
 
             if (!$whitelistEntry) {
-                return response()->json(['message' => 'Your Student ID and Email are not whitelisted for registration as a Proponent.'], 403);
+                return response()->json(
+                    ['error' => 'Not authorized. The provided Student ID and Email are not whitelisted for Proponent registration.'],
+                    403
+                );
             }
-            // Capture the adviser_id from the whitelist entry[cite: 239].
+            // Capture the adviser_id from the whitelist entry.
             $adviserId = $whitelistEntry->adviser_id;
         }
 
         try {
             DB::beginTransaction();
 
-            // Create the User record with encrypted and hashed email fields[cite: 19, 20].
+            // Create the User record with encrypted and hashed email fields.
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -80,7 +81,6 @@ class RegisterController extends Controller
                 'status' => 'active',
             ]);
 
-            // Create the associated UserDetail record.
             UserDetail::create([
                 'user_id' => $user->id,
                 'student_id' => $validated['student_id'] ?? 'N/A',
@@ -91,7 +91,6 @@ class RegisterController extends Controller
 
             DB::commit();
 
-            // If a Proponent registers, notify their adviser.
             if ($user->role === 'Proponent' && !is_null($adviserId)) {
                 SendNotification::dispatch(
                     $adviserId,
@@ -109,7 +108,7 @@ class RegisterController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Registration Error: ' . $e->getMessage());
-            return response()->json(['message' => 'An unexpected error occurred. Please try again later.'], 500);
+            return response()->json(['message' => 'An unexpected error occurred during registration.'], 500);
         }
     }
 }

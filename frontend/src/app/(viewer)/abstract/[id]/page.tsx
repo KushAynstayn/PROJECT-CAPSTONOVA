@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/ui/header";
 import { Badge } from "@/components/ui/badge";
 import { apiCall, ApiError } from "@/lib/api";
+import { authStore } from "@/lib/auth";
 import { User, Tag, Code, Info, Users } from "lucide-react";
-import AuthModal from "@/components/viewer/viewer-auth-modal";
 
 // Define the detailed project structure based on the controller's response
 interface ProjectDetails {
@@ -54,10 +55,13 @@ function ProjectDetailSkeleton() {
 
 // Main component to fetch and display project details
 function ProjectDetailsContent({ id }: { id: string }) {
+  const router = useRouter();
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<
+    "idle" | "pending" | "success" | "error"
+  >("idle");
 
   useEffect(() => {
     if (!id) return;
@@ -80,6 +84,31 @@ function ProjectDetailsContent({ id }: { id: string }) {
     };
     fetchProjectDetails();
   }, [id]);
+
+  const handleRequestAccess = async () => {
+    if (!authStore.isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
+
+    const user = authStore.getUser();
+    if (user?.role.toLowerCase() !== "viewer") {
+      router.push("/login");
+      return;
+    }
+
+    setRequestStatus("pending");
+    try {
+      await apiCall(`/viewer/request-project/${id}`, "POST");
+      setRequestStatus("success");
+    } catch (err: any) {
+      if (err.response && err.response.status === 409) {
+        setRequestStatus("error");
+      } else {
+        setRequestStatus("error");
+      }
+    }
+  };
 
   if (loading) return <ProjectDetailSkeleton />;
   if (error)
@@ -147,10 +176,16 @@ function ProjectDetailsContent({ id }: { id: string }) {
           {/* Sidebar: Details and Actions */}
           <aside className="space-y-8">
             <button
-              onClick={() => setShowModal(true)}
-              className="w-full bg-yellow-600 text-black font-bold h-12 py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-colors duration-300"
+              onClick={handleRequestAccess}
+              disabled={
+                requestStatus === "pending" || requestStatus === "success"
+              }
+              className="w-full bg-yellow-600 text-black font-bold h-12 py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed"
             >
-              VIEW FULL DOCUMENT
+              {requestStatus === "idle" && "VIEW FULL DOCUMENT"}
+              {requestStatus === "pending" && "SUBMITTING REQUEST..."}
+              {requestStatus === "success" && "REQUEST SUBMITTED!"}
+              {requestStatus === "error" && "ALREADY REQUESTED"}
             </button>
 
             <div className="bg-stone-900/50 p-6 rounded-lg">
@@ -189,7 +224,6 @@ function ProjectDetailsContent({ id }: { id: string }) {
           </aside>
         </div>
       </div>
-      {showModal && <AuthModal onClose={() => setShowModal(false)} />}
     </>
   );
 }

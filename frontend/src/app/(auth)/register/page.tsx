@@ -1,17 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LoginForm } from "@/components/ui/login-form";
+import { RegisterForm } from "@/components/ui/register-form";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <div className="flex items-center gap-3">
             <Image
-              src="/images/capstonova_logo.png" // Path to your logo
+              src="/images/capstonova_logo.png"
               alt="Project Capstonova Logo"
-              width={40} // Adjust size as needed
+              width={40}
               height={40}
             />
             <span className="font-bold text-xl text-brand-red">
@@ -21,15 +21,16 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm />
+          {/* Removed max-w-xs to give the new card design more space */}
+          <div className="w-full max-w-md">
+            <RegisterForm />
             <div className="text-center text-sm text-gray-600 mt-4">
-              Don&apos;t have an account?{" "}
+              Already have an account?{" "}
               <Link
-                href="/register"
+                href="/login"
                 className="font-medium text-red-600 hover:underline"
               >
-                Sign up
+                Log in
               </Link>
             </div>
           </div>
