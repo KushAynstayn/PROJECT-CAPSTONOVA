@@ -77,7 +77,7 @@ class SuggestionService:
         
         # Use Cohere Chat to generate a response based on the context
         chat_response = self.cohere_client.chat(
-            message=f"Based on the user's query for '{payload.query_text}' and the provided context of similar projects, write a helpful and creative suggestion in a conversational, paragraph-based format. Instead of a numbered list, weave together a few innovative ideas into a cohesive text. The tone should be encouraging and direct, suitable for a user interface.\n\nContext:\n{context_string}",
+            message=f"Based on the user's query for '{payload.query_text}' and the provided context of similar projects, write a helpful and creative suggestion in a conversational, paragraph-based format. Instead of a numbered list, weave together a few innovative ideas into a cohesive text. The tone should be encouraging and direct, suitable for a user interface and make it short to fit in a card in the frot end and only provide one idea.\n\nContext:\n{context_string}",
             model="command-a-03-2025",
             chat_history=[
                 {"role": "user", "text": payload.query_text},
