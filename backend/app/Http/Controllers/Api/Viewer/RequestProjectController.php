@@ -18,16 +18,27 @@ class RequestProjectController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+    /**
+     * Display a listing of the capstone projects the viewer has access to.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(Request $request)
     {
         $viewerId = Auth::id();
 
-        // Retrieve the viewer's accessed projects with all related data eager-loaded.
+        // Retrieve the viewer's accessed projects, filtering for active grants.
         $accessedProjects = ViewerAccess::where('user_id', $viewerId)
+            // NEW LOGIC: This block ensures that only non-expired projects are returned.
+            ->where(function ($query) {
+                $query->where('expiry_date', '>', now()) // The expiry date is in the future.
+                    ->orWhereNull('expiry_date');      // Or there is no expiry date (permanent access).
+            })
             ->with([
-                'project.adviser', // Gets the adviser's details.
-                'project.projectResearcher.user.userDetail', // Gets researcher details like department and program.
-                'project.manuscript' // Gets the manuscript to extract its ID.
+                'project.adviser',
+                'project.projectResearcher.user.userDetail',
+                'project.manuscript'
             ])
             ->get();
 
@@ -37,12 +48,11 @@ class RequestProjectController extends Controller
             $researcherInfo = $project->projectResearcher;
             $mainProponent = $researcherInfo->user;
 
-            // Combine all project authors into a single array.
             $authors = collect([
                 $researcherInfo->member_hacker,
                 $researcherInfo->member_hipster1,
                 $researcherInfo->member_hipster2
-            ])->filter()->all(); // filter() removes any null or empty values.
+            ])->filter()->all();
 
             return [
                 'access_id' => $access->access_id,
