@@ -204,6 +204,9 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
 
     Route::post('request-project/{project_id}', [RequestProjectController::class, 'store']);
 
+    Route::get('accessed-projects', [RequestProjectController::class, 'index'])
+        ->name('viewer.accessed.projects');
+
     Route::post('suggestions/{id}/interest', [SuggestionInterestController::class, 'expressInterest']);
 
     Route::delete('suggestions/{id}/interest', [SuggestionInterestController::class, 'removeInterest']);
