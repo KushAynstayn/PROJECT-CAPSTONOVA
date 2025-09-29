@@ -57,7 +57,7 @@ const HeroSection = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search for a topic like 'education'"
+              placeholder="Enter title or abstract phrase to search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"

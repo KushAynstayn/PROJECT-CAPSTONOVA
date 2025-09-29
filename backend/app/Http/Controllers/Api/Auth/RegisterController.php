@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use App\Models\User;
-use App\Models\Whitelist;
-use App\Models\UserDetail;
-use Illuminate\Http\Request;
-use App\Jobs\SendNotification;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNotification;
+use App\Models\User;
+use App\Models\UserDetail;
+use App\Models\Whitelist;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class RegisterController extends Controller
 {
@@ -25,14 +26,14 @@ class RegisterController extends Controller
     public function __invoke(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            // User validation rules based on the 'users' table migration.
+            // User validation rules. Note 'unique' rule is removed for manual checking.
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])], // Only allows public roles.
+            'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])],
 
-            // UserDetail validation rules based on the 'user_details' table migration.
+            // UserDetail validation rules.
             'student_id' => ['required_if:role,Proponent', 'nullable', 'string', 'max:50'],
             'department' => ['required', 'string', 'max:50'],
             'program' => ['required', 'string', 'max:50'],
@@ -43,64 +44,70 @@ class RegisterController extends Controller
         }
 
         $validated = $validator->validated();
+        $email = $validated['email'];
+        $hashedEmail = hash('sha256', $email);
         $adviserId = null;
 
-        // If the role is 'Proponent', validate against the whitelist.
+        // Manually check for email uniqueness using the hashed email.
+        if (User::where('hashed_email', $hashedEmail)->exists()) {
+            return response()->json(['email' => ['The email has already been taken.']], 422);
+        }
+
+        // If the role is 'Proponent', validate against the whitelist using the correct fields.
         if ($validated['role'] === 'Proponent') {
             $whitelistEntry = Whitelist::where('student_id', $validated['student_id'])
-                ->where('student_email', $validated['email'])
+                ->where('hashed_email', $hashedEmail)
                 ->first();
 
             if (!$whitelistEntry) {
-                return response()->json(['message' => 'Student not authorized for registration.'], 403);
+                return response()->json(['message' => 'Your Student ID and Email are not whitelisted for registration as a Proponent.'], 403);
             }
-            // Capture the adviser_id from the whitelist entry.
+            // Capture the adviser_id from the whitelist entry[cite: 239].
             $adviserId = $whitelistEntry->adviser_id;
         }
 
         try {
             DB::beginTransaction();
 
-            // Create the User record.
+            // Create the User record with encrypted and hashed email fields[cite: 19, 20].
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
-                'email' => $validated['email'],
+                'encrypted_email' => Crypt::encryptString($email),
+                'hashed_email' => $hashedEmail,
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
-                'status' => 'active', // Default status for new users.
+                'status' => 'active',
             ]);
 
             // Create the associated UserDetail record.
             UserDetail::create([
                 'user_id' => $user->id,
-                'student_id' => $validated['student_id'] ?? 'N/A', // Use 'N/A' or similar for Viewers.
+                'student_id' => $validated['student_id'] ?? 'N/A',
                 'department' => $validated['department'],
                 'program' => $validated['program'],
-                'adviser_id' => $adviserId, // Assign adviser if Proponent, otherwise null.
+                'adviser_id' => $adviserId,
             ]);
 
             DB::commit();
 
-            // If the user is a Proponent, send a notification to the adviser.
+            // If a Proponent registers, notify their adviser.
             if ($user->role === 'Proponent' && !is_null($adviserId)) {
                 SendNotification::dispatch(
                     $adviserId,
-                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered."
+                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement."
                 );
             }
 
-            // Create a Sanctum token for the new user.
             $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
                 'message' => 'Registered successfully.',
-                'user' => $user->fresh('userDetail'), // Eager load the details.
+                'user' => $user->fresh('userDetail'),
                 'token' => $token,
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            // Log the exception message for debugging.
             Log::error('Registration Error: ' . $e->getMessage());
             return response()->json(['message' => 'An unexpected error occurred. Please try again later.'], 500);
         }
