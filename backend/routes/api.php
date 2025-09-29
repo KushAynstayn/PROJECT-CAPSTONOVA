@@ -38,14 +38,15 @@ use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
+use App\Http\Controllers\Api\MlService\MLSuggestionController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
+
+
 use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
-
-
 use App\Http\Controllers\Api\UserManagement\MProponentController;
 use App\Http\Controllers\Api\UserManagement\MWhitelistController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
@@ -380,4 +381,13 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
     // End Admin Management Routes
     // ============================
 
+});
+
+
+Route::prefix('ml-service')->group(function () {
+    // Route to send the training data to the Python service
+    Route::post('/train-suggestions', [MLSuggestionController::class, 'sendTrainingData']);
+
+    // Route to get a new suggestion from the Python service
+    Route::post('/get-suggestion', [MLSuggestionController::class, 'getSuggestion']);
 });
