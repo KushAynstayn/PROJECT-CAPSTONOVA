@@ -21,11 +21,12 @@ use App\Http\Controllers\Api\Util\CheckManualController;
 
 use App\Http\Controllers\Api\Util\ProjectTypeController;
 
+use App\Http\Controllers\Api\Util\ViewerTrendController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\API\User\NotificationController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
-use App\Http\Controllers\Api\Util\ProjectToolsController;
 
+use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Auth\TwoFactorAuthController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
@@ -35,17 +36,17 @@ use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\UserManagement\MAdminController;
-use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 
+use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\MlService\MLSuggestionController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
+
+
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
-
-
 use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
 use App\Http\Controllers\Api\UserManagement\MProponentController;
 use App\Http\Controllers\Api\UserManagement\MWhitelistController;
@@ -287,6 +288,22 @@ Route::prefix('util')->group(function () {
         'viewer-reports-analytics/archived-projects-by-department',
         [ViewerReportsAnalyticsController::class, 'archivedProjectsByDepartment']
     );
+
+    //Viewer trends routes
+    Route::get('/projects-per-year-department', [ViewerTrendController::class, 'getProjectsTrend']);
+    Route::get(
+        '//project-type-distribution/{year}',
+        [ViewerTrendController::class, 'getProjectTypeDistribution']
+    );
+    Route::get(
+        '/language-usage/{year}',
+        [ViewerTrendController::class, 'getLanguageUsageByYear']
+    )->whereNumber('year');
+    Route::get('/top-advisers', [ViewerTrendController::class, 'getTopAdvisers']);
+    Route::get(
+        '/keyword-usage/{year}',
+        [ViewerTrendController::class, 'getKeywordUsageByYear']
+    )->whereNumber('year');
 });
 
 
