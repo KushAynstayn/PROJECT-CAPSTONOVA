@@ -23,7 +23,6 @@ export function AiSuggestionCard({ prompt, category }: AiSuggestionCardProps) {
         const response = await apiCall("/ml-service/get-suggestion", "POST", {
           query_text: prompt,
         });
-        // The new response format has an `ai_response` key with a string value.
         setSuggestionText(response.ai_response);
       } catch (err) {
         if (err instanceof ApiError) {
@@ -37,23 +36,28 @@ export function AiSuggestionCard({ prompt, category }: AiSuggestionCardProps) {
       }
     };
 
-    fetchSuggestion();
+    // Intentionally delay fetching to prioritize adviser suggestions
+    const timer = setTimeout(() => {
+      fetchSuggestion();
+    }, 2500); // 2.5 second delay
+
+    return () => clearTimeout(timer);
   }, [prompt]);
 
   return (
-    <Card className="h-full flex flex-col bg-gray-900 border-gray-700 text-white shadow-lg transform hover:scale-105 transition-transform duration-300">
+    <Card className="h-full flex flex-col bg-neutral-900 border-yellow-500/30 text-gray-200 shadow-lg shadow-yellow-500/10 hover:border-yellow-500/60 transition-colors duration-300">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center space-x-3">
-          <BrainCircuit className="h-6 w-6 text-purple-400" />
-          <CardTitle className="text-xl font-bold text-purple-300">
-            AI Suggestion: {category}
+          <BrainCircuit className="h-6 w-6 text-[#E0A800]" />
+          <CardTitle className="text-xl font-bold text-[#E0A800]">
+            AI: {category}
           </CardTitle>
         </div>
       </CardHeader>
       <CardContent className="flex-grow overflow-y-auto">
         {isLoading && (
           <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E0A800]"></div>
           </div>
         )}
         {error && (
@@ -63,11 +67,8 @@ export function AiSuggestionCard({ prompt, category }: AiSuggestionCardProps) {
         )}
         {suggestionText && !isLoading && (
           <div className="space-y-4">
-            {/* We will render the AI response directly, processing for display */}
             <p className="text-gray-300 text-sm whitespace-pre-wrap">
-              {suggestionText
-                .replace(/\*\*/g, "") // Remove bold markdown for simplicity
-                .replace(/\\n/g, "\n")}
+              {suggestionText.replace(/\*\*/g, "").replace(/\\n/g, "\n")}
             </p>
           </div>
         )}

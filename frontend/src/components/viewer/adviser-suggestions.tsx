@@ -73,25 +73,34 @@ export function AdviserSuggestions() {
 
   return (
     <div>
-      <div className="mb-4 flex gap-2">
+      <div className="mb-6 flex gap-2">
         <form onSubmit={handleSearch} className="flex-grow flex gap-2">
           <Input
             name="search"
             placeholder="Search by adviser name..."
-            className="bg-gray-800 border-gray-700"
+            className="bg-neutral-900 border-gray-700 text-white placeholder-gray-500 focus:ring-[#E0A800] focus:border-[#E0A800]"
           />
-          <Button type="submit" variant="outline" size="icon">
+          <Button
+            type="submit"
+            variant="outline"
+            size="icon"
+            className="border-gray-700 text-gray-300 hover:border-[#E0A800] hover:text-[#E0A800]"
+          >
             <Search className="h-5 w-5" />
           </Button>
         </form>
       </div>
 
-      {isLoading && <p>Loading suggestions...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      {isLoading && (
+        <p className="text-center text-gray-400">
+          Loading adviser suggestions...
+        </p>
+      )}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
-      {!isLoading && !error && (
+      {!isLoading && !error && suggestions.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {suggestions.map((suggestion) => (
               <AdviserSuggestionCard
                 key={suggestion.id}
@@ -102,24 +111,34 @@ export function AdviserSuggestions() {
             ))}
           </div>
 
-          <div className="flex justify-center items-center mt-6 gap-2">
+          <div className="flex justify-center items-center mt-8 gap-2">
             <Button
               onClick={() => handlePageChange(page - 1)}
               disabled={page <= 1}
+              variant="outline"
+              className="text-gray-300 border-gray-700 hover:bg-neutral-800 hover:text-white"
             >
               Previous
             </Button>
-            <span className="text-sm">
+            <span className="text-sm text-gray-400">
               Page {page} of {totalPages}
             </span>
             <Button
               onClick={() => handlePageChange(page + 1)}
               disabled={page >= totalPages}
+              variant="outline"
+              className="text-gray-300 border-gray-700 hover:bg-neutral-800 hover:text-white"
             >
               Next
             </Button>
           </div>
         </>
+      )}
+
+      {!isLoading && !error && suggestions.length === 0 && (
+        <p className="text-center text-gray-500 py-8">
+          No adviser suggestions found.
+        </p>
       )}
     </div>
   );

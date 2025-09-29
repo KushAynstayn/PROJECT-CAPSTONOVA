@@ -72,31 +72,31 @@ export function AdviserSuggestionCard({
   };
 
   return (
-    <Card className="bg-gray-800 border-gray-700 text-white flex flex-col h-full">
+    <Card className="bg-neutral-900 border-yellow-500/30 text-gray-200 flex flex-col h-full shadow-lg shadow-yellow-500/10 hover:border-yellow-500/60 transition-colors duration-300">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-yellow-400">
+        <CardTitle className="text-lg font-semibold text-[#E0A800]">
           {suggestion.title}
         </CardTitle>
-        <p className="text-xs text-gray-400">
-          Suggested by:{" "}
-          <span className="font-medium">{`${suggestion.adviser.first_name} ${suggestion.adviser.last_name}`}</span>
+        <p className="text-xs text-gray-500">
+          By:{" "}
+          <span className="font-medium text-gray-400">{`${suggestion.adviser.first_name} ${suggestion.adviser.last_name}`}</span>
         </p>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col justify-between">
         <p className="text-sm text-gray-300 mb-4 overflow-y-auto max-h-28">
           {suggestion.suggestion_text}
         </p>
-        <div className="mt-auto pt-4 border-t border-gray-600">
+        <div className="mt-auto pt-4 border-t border-gray-700/50">
           {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
 
           {isInterestedByAnyone ? (
             <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center text-green-400">
+              <div className="flex items-center text-yellow-300/80">
                 <Eye className="h-4 w-4 mr-2" />
                 <span>
                   {isCurrentUserInterested
-                    ? "You are interested in this"
-                    : "Someone is eyeing this project"}
+                    ? "You are interested"
+                    : "Interest shown"}
                 </span>
               </div>
               {isCurrentUserInterested && (
@@ -108,14 +108,14 @@ export function AdviserSuggestionCard({
                   disabled={isLoading}
                 >
                   <HeartCrack className="h-4 w-4 mr-2" />
-                  {isLoading ? "..." : "Remove Interest"}
+                  {isLoading ? "..." : "Withdraw"}
                 </Button>
               )}
             </div>
           ) : (
             <Button
               size="sm"
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              className="w-full bg-[#E0A800] text-black font-bold hover:bg-yellow-500"
               onClick={handleInterestClick}
               disabled={isLoading}
             >

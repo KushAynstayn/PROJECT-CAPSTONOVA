@@ -45,29 +45,50 @@ const ViewSuggestionsPage = () => {
   ];
 
   return (
-    <div className="flex-1 p-6 space-y-6 bg-gray-900 text-white">
+    // Added pt-8 to fix overlap with the navbar
+    <div className="flex-1 p-6 md:p-8 pt-8 space-y-8 bg-black text-gray-200">
       {/* Search and Title Section */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Suggestions</h1>
+        <h1 className="text-3xl font-bold text-[#E0A800]">Suggestions</h1>
         <div className="flex items-center gap-2">
           <Input
             placeholder="Search projects..."
-            className="w-64 bg-gray-800 border-gray-700 placeholder-gray-400"
+            className="w-64 bg-neutral-900 border-gray-700 text-white placeholder-gray-500 focus:ring-[#E0A800] focus:border-[#E0A800]"
           />
-          <Button variant="outline" size="icon" className="border-gray-700">
+          <Button
+            variant="outline"
+            size="icon"
+            className="border-gray-700 hover:border-[#E0A800] hover:text-[#E0A800]"
+          >
             <Search className="h-5 w-5" />
           </Button>
           <AdvancedSearchModal>
-            <Button variant="outline" size="icon" className="border-gray-700">
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-gray-700 hover:border-[#E0A800] hover:text-[#E0A800]"
+            >
               <SlidersHorizontal className="h-5 w-5" />
             </Button>
           </AdvancedSearchModal>
         </div>
       </div>
 
+      {/* Adviser Suggestions Section - Now appears first visually */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-4 text-[#E0A800]">
+          Adviser Suggestions
+        </h2>
+        <Card className="bg-neutral-950 border-yellow-500/30">
+          <CardContent className="p-4 md:p-6">
+            <AdviserSuggestions />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* AI Suggestions Carousel */}
       <div>
-        <h2 className="text-2xl font-semibold mb-4 text-purple-300">
+        <h2 className="text-2xl font-semibold mb-4 text-[#E0A800]">
           AI-Powered Suggestions
         </h2>
         <Carousel
@@ -88,19 +109,9 @@ const ViewSuggestionsPage = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="text-white bg-gray-800 hover:bg-gray-700" />
-          <CarouselNext className="text-white bg-gray-800 hover:bg-gray-700" />
+          <CarouselPrevious className="text-white bg-neutral-800 hover:bg-neutral-700 border-gray-700" />
+          <CarouselNext className="text-white bg-neutral-800 hover:bg-neutral-700 border-gray-700" />
         </Carousel>
-      </div>
-
-      {/* Adviser Suggestions Section */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Adviser Suggestions</h2>
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-4">
-            <AdviserSuggestions />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
