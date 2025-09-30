@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-
-// TODO: Uncomment these lines once you create the chart components
 import { ArchivedProjectsChart } from "@/components/viewer-trends/archived-projects-chart";
 import { ProjectTypesChart } from "@/components/viewer-trends/project-types-chart";
 import { ProgrammingLanguagesChart } from "@/components/viewer-trends/programming-languages-chart";
@@ -12,16 +10,22 @@ import { TopAdvisersChart } from "@/components/viewer-trends/top-advisers-chart"
 
 const AnalyticsDashboardPage = () => {
   const currentYear = new Date().getFullYear();
-  // Generate a list of years, for example from 2018 to the current year
-  const years = Array.from({ length: currentYear - 2017 }, (_, i) => currentYear - i);
-  
+  // MODIFICATION: Generate a list of years from 2000 to the current year
+  const years = Array.from(
+    { length: currentYear - 1999 },
+    (_, i) => currentYear - i
+  );
+
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   return (
     <div className="p-4 md:p-8 mt-24 bg-black min-h-screen text-white">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-        <h1 className="text-3xl font-bold text-[#E0A800] mb-4 md:mb-0" style={{ fontFamily: "'Roboto', sans-serif" }}>
+        <h1
+          className="text-3xl font-bold text-[#E0A800] mb-4 md:mb-0"
+          style={{ fontFamily: "'Roboto', sans-serif" }}
+        >
           Project Data Analytics
         </h1>
 
@@ -55,39 +59,32 @@ const AnalyticsDashboardPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Row 1 */}
         <div className="lg:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
-          {/* Placeholder for ArchivedProjectsChart */}
-          {/* <ArchivedProjectsChart year={selectedYear} /> */}
-          <ArchivedProjectsChart year={selectedYear} />
+          {/* MODIFICATION: Pass selectedYear for highlighting, not fetching */}
+          <ArchivedProjectsChart selectedYear={selectedYear} />
         </div>
         <div className="bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
-          {/* Placeholder for ProjectTypesChart */}
-          {/* <ProjectTypesChart year={selectedYear} /> */}
+          {/* MODIFICATION: Pass year for fetching */}
           <ProjectTypesChart year={selectedYear} />
         </div>
 
         {/* Row 2 */}
         <div className="lg:col-span-3 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
-           {/* Placeholder for ProgrammingLanguagesChart */}
-          {/* <ProgrammingLanguagesChart year={selectedYear} /> */}
+          {/* MODIFICATION: Pass year for fetching */}
           <ProgrammingLanguagesChart year={selectedYear} />
         </div>
 
         {/* Row 3 */}
         <div className="lg:col-span-1 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
-          {/* Placeholder for TopAdvisersChart */}
-          {/* <TopAdvisersChart year={selectedYear} /> */}
-          <TopAdvisersChart year={selectedYear} />
+          {/* MODIFICATION: No year prop needed, fetches all-time data */}
+          <TopAdvisersChart />
         </div>
         <div className="lg:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
-          {/* Placeholder for EnvironmentStudyChart */}
-          {/* <EnvironmentStudyChart year={selectedYear} /> */}
+          {/* MODIFICATION: Pass year for fetching */}
           <EnvironmentStudyChart year={selectedYear} />
         </div>
-        
-         {/* Row 4 (Optional, if you want Tech Stacks on its own row) */}
+
+        {/* Row 4 (Tech Stacks - Unchanged as per instruction) */}
         <div className="mb-14 lg:col-span-3 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
-           {/* Placeholder for TechStackChart */}
-          {/* <TechStackChart year={selectedYear} /> */}
           <TechStackChart year={selectedYear} />
         </div>
       </div>

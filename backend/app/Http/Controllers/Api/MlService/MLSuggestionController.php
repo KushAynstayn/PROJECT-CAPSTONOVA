@@ -20,8 +20,11 @@ class MLSuggestionController extends Controller
         // Fetches all suggestions, formatting them for the Python service
         $suggestions = Suggestion::all(['title', 'suggestion_text'])->toArray();
 
+        // Use env variable for ML service base URL, fallback to localhost
+        $mlServiceUrl = rtrim(env('ML_SERVICE_URL', 'http://127.0.0.1:8001'), '/');
+
         // Sends the data to the FastAPI endpoint
-        $response = Http::post('http://127.0.0.1:8001/cohere/vectorize-and-save', [
+        $response = Http::post("{$mlServiceUrl}/cohere/vectorize-and-save", [
             'data' => $suggestions
         ]);
 
@@ -43,8 +46,11 @@ class MLSuggestionController extends Controller
             'query_text' => 'required|string',
         ]);
 
+        // Use env variable for ML service base URL, fallback to localhost
+        $mlServiceUrl = rtrim(env('ML_SERVICE_URL', 'http://127.0.0.1:8001'), '/');
+
         // Sends the prompt to the FastAPI endpoint
-        $response = Http::post('http://127.0.0.1:8001/cohere/suggest', [
+        $response = Http::post("{$mlServiceUrl}/cohere/suggest", [
             'query_text' => $validated['query_text']
         ]);
 

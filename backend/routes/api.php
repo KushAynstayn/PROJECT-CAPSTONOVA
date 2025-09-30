@@ -34,18 +34,19 @@ use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
 use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
+use App\Http\Controllers\Api\MlService\AssociationController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
-use App\Http\Controllers\Api\UserManagement\MAdminController;
 
+use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\MlService\MLSuggestionController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
+
+
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
-
-
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
 use App\Http\Controllers\Api\UserManagement\MProponentController;
@@ -407,4 +408,7 @@ Route::prefix('ml-service')->group(function () {
 
     // Route to get a new suggestion from the Python service
     Route::post('/get-suggestion', [MLSuggestionController::class, 'getSuggestion']);
+
+    Route::get('/train-association', [AssociationController::class, 'train'])->name('ml.association.train');
+    Route::get('/predict-association', [AssociationController::class, 'predict'])->name('ml.association.predict');
 });
