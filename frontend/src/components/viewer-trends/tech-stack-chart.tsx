@@ -1,125 +1,166 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import React, { useState, useEffect } from "react";
+import { apiCall } from "@/lib/api";
+import { ArrowRight } from "lucide-react";
 
-// Mock data for technology co-occurrence.
-// The matrix shows how many times technologies were used together.
-// For example, matrix[0][1] is the count for React + Node.js
-const dataByYear: Record<number, { technologies: string[]; matrix: number[][] }> = {
-  2024: {
-    technologies: ["React", "Node.js", "Python", "AWS", "Docker", "Next.js"],
-    matrix: [
-      [200, 150, 40, 90, 110, 180], // React
-      [150, 180, 70, 80, 100, 140], // Node.js
-      [40, 70, 150, 60, 50, 20],   // Python
-      [90, 80, 60, 120, 105, 85],  // AWS
-      [110, 100, 50, 105, 130, 100], // Docker
-      [180, 140, 20, 85, 100, 190], // Next.js
-    ],
-  },
-  2025: {
-    technologies: ["React", "Node.js", "Python", "AWS", "Docker", "Next.js"],
-    matrix: [
-      [220, 170, 50, 110, 130, 200], // React
-      [170, 200, 80, 95, 120, 160], // Node.js
-      [50, 80, 180, 75, 60, 30],   // Python
-      [110, 95, 75, 150, 125, 100],  // AWS
-      [130, 120, 60, 125, 160, 120], // Docker
-      [200, 160, 30, 100, 120, 210], // Next.js
-    ],
-  },
-};
+// --- Type Definitions for API Response ---
+interface Combination {
+  if_using: string[];
+  then_add: string[];
+  confidence: number;
+  lift: number;
+}
 
-// A helper function to determine the cell color based on its value
-// This creates the "heatmap" effect.
-const getColorForValue = (value: number, max: number) => {
-  if (value === 0) return "bg-gray-800/50";
-  const intensity = Math.sqrt(value / max); // Use sqrt for better visual distribution
-  if (intensity < 0.2) return "bg-amber-900/60 text-amber-200";
-  if (intensity < 0.4) return "bg-amber-800/70 text-amber-100";
-  if (intensity < 0.6) return "bg-amber-700/80 text-yellow-100";
-  if (intensity < 0.8) return "bg-amber-600 text-yellow-50";
-  return "bg-amber-500 text-black";
-};
+interface PlatformAssociations {
+  core_stack: string[]; // Although empty in example, good to have
+  popular_combinations: Combination[];
+}
 
-export function TechStackChart({ year }: { year: number }) {
-  const data = dataByYear[year] ?? dataByYear[2025];
-  const { technologies, matrix } = data;
+interface AssociationData {
+  [platform: string]: PlatformAssociations;
+}
 
-  // Find the max value (on the diagonal) for color scaling, ignoring self-comparison
-  const maxValue = Math.max(...matrix.flatMap((row, i) => row.filter((_, j) => i !== j)));
+// --- Main Component ---
+export const TechStackChart = () => {
+  const [data, setData] = useState<AssociationData | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await apiCall(
+          "/ml-service/predict-association",
+          "GET"
+        );
+
+        if (response && response.associations) {
+          setData(response.associations);
+          // Set the first platform as the default selection
+          const firstPlatform = Object.keys(response.associations)[0];
+          if (firstPlatform) {
+            setSelectedPlatform(firstPlatform);
+          }
+        } else {
+          setError("No association data found in the API response.");
+        }
+      } catch (err) {
+        setError("Failed to fetch technology stack associations.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); // Fetch data only once on component mount
+
+  if (loading) {
+    return (
+      <div className="text-center p-4">Loading Technology Associations...</div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-center p-4 text-red-500">{error}</div>;
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center p-10 text-gray-400">
+        No association data available.
+      </div>
+    );
+  }
+
+  const currentCombinations =
+    data[selectedPlatform]?.popular_combinations || [];
 
   return (
-    <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="p-0 pb-4">
-        <CardTitle className="text-lg text-yellow-400">
-          Technology Stack Insights
-        </CardTitle>
-        <CardDescription className="text-gray-400">
-          Co-occurrence of popular technologies in {year}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table className="border-collapse">
-            <TableHeader>
-              <TableRow className="border-gray-700">
-                <TableHead className="w-24 border-r border-gray-700"></TableHead>
-                {technologies.map((tech) => (
-                  <TableHead key={tech} className="text-center text-yellow-400">
-                    {tech}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {technologies.map((tech, rowIndex) => (
-                <TableRow key={tech} className="border-gray-700">
-                  <TableHead className="font-bold text-yellow-400 border-r border-gray-700">
-                    {tech}
-                  </TableHead>
-                  {matrix[rowIndex].map((value, colIndex) => {
-                    const isDiagonal = rowIndex === colIndex;
-                    const cellColor = isDiagonal
-                      ? "bg-gray-700 font-bold" // Style for total usage
-                      : getColorForValue(value, maxValue);
-                    
-                    const tech1 = technologies[rowIndex];
-                    const tech2 = technologies[colIndex];
-                    const tooltipText = isDiagonal
-                      ? `${tech1} was used in ${value} projects.`
-                      : `${tech1} and ${tech2} were used together in ${value} projects.`;
+    <div className="flex flex-col h-full">
+      <h3 className="text-xl font-semibold text-yellow-400 mb-4">
+        Technology Stack Association Rules
+      </h3>
 
-                    return (
-                      <TableCell
-                        key={`${rowIndex}-${colIndex}`}
-                        className={`text-center font-mono text-sm transition-colors ${cellColor}`}
-                        title={tooltipText}
+      {/* Platform Selector Tabs */}
+      <div className="flex gap-2 border-b border-gray-700 mb-4">
+        {Object.keys(data).map((platform) => (
+          <button
+            key={platform}
+            onClick={() => setSelectedPlatform(platform)}
+            className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+              selectedPlatform === platform
+                ? "border-b-2 border-yellow-400 text-yellow-400"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {platform}
+          </button>
+        ))}
+      </div>
+
+      {/* Content Display */}
+      <div className="flex-grow overflow-y-auto">
+        {currentCombinations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentCombinations.map((combo, index) => (
+              <div
+                key={index}
+                className="bg-gray-800/50 p-4 rounded-lg border border-gray-700 flex flex-col justify-between"
+              >
+                <div>
+                  <p className="text-xs text-gray-400 mb-2">If you use...</p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {combo.if_using.map((tech) => (
+                      <span
+                        key={tech}
+                        className="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded"
                       >
-                        {value}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-center items-center my-2">
+                    <ArrowRight className="w-6 h-6 text-gray-500" />
+                  </div>
+
+                  <p className="text-xs text-gray-400 mb-2">
+                    ...consider adding
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {combo.then_add.map((tech) => (
+                      <span
+                        key={tech}
+                        className="bg-green-900 text-green-200 text-xs px-2 py-1 rounded"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-700 mt-4 pt-3 flex justify-between text-xs text-gray-300">
+                  <span>
+                    Confidence:{" "}
+                    <strong>{(combo.confidence * 100).toFixed(0)}%</strong>
+                  </span>
+                  <span>
+                    Lift: <strong>{combo.lift.toFixed(2)}</strong>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-10 text-gray-400">
+            No popular combinations found for {selectedPlatform}.
+          </div>
+        )}
+      </div>
+    </div>
   );
-}
+};
