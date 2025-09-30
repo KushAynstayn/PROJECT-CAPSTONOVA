@@ -1,191 +1,267 @@
-'use client'; 
+"use client";
 
-import React, { useState } from 'react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authStore } from "@/lib/auth";
+import { apiCall } from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Style object for the glow effect
-const glowStyle = {
-    borderColor: 'rgba(251, 191, 36, 0.7)',
-    boxShadow: '0 0 10px rgba(251, 191, 36, 0.5), inset 0 0 5px rgba(251, 191, 36, 0.3)',
+interface UserProfile {
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  email: string;
+  user_detail?: {
+    department: string;
+    program: string;
+  };
+}
+
+/**
+ * Extracts a valid email address from a string that may contain extra characters.
+ * This is a workaround for the malformed email string coming from the API.
+ * @param apiEmail The email string from the API.
+ * @returns A cleaned-up email string.
+ */
+const cleanEmail = (apiEmail: string): string => {
+  if (typeof apiEmail !== "string") {
+    return "";
+  }
+  // This regex finds an email-like pattern in the string.
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+  const match = apiEmail.match(emailRegex);
+  // Return the first match found, or the original string if no match.
+  return match ? match[0] : apiEmail;
 };
 
-// Base styles for the fields
-const fieldBaseStyles = "mt-1 block w-full rounded-md border-2 bg-black bg-opacity-50 text-gray-100 p-2.5 " +
-                        "focus:ring-0 focus:border-yellow-300 transition-all duration-300";
+export default function AccountPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
-const editableStyles = "cursor-pointer";
-const disabledStyles = "cursor-not-allowed";
+  // Form state
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [program, setProgram] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
 
-const selectBaseStyles = `${fieldBaseStyles} appearance-none`;
+  // UI state
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-// --- Initial User Data ---
-const initialUserData = {
-    firstName: 'Juan',
-    lastName: 'Pabling',
-    idNumber: '1330699',
-    ctuEmail: 'viewer@gmail.com',
-    department: 'CCICT',
-    degreeProgram: 'BSIS',
-    programSchedule: 'Day Program',
-};
+  useEffect(() => {
+    const user = authStore.getUser();
+    if (!user || user.role !== "Viewer") {
+      router.push("/login");
+      return;
+    }
 
-const ViewAccount = () => {
-  // --- State Management ---
-  const [isEditing, setIsEditing] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState(initialUserData);
-  const [passwordData, setPasswordData] = useState({ password: '', confirmPassword: '' });
+    const fetchProfile = async () => {
+      try {
+        const userProfile: UserProfile = await apiCall("/user/profile", "GET");
+        setFirstName(userProfile.first_name);
+        setLastName(userProfile.last_name);
+        setMiddleName(userProfile.middle_name || "");
+        setEmail(cleanEmail(userProfile.email));
+        setDepartment(userProfile.user_detail?.department || "");
+        setProgram(userProfile.user_detail?.program || "");
+      } catch (err) {
+        setError("Failed to fetch profile data.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const firstLetter = formData.firstName.charAt(0).toUpperCase();
+    fetchProfile();
+  }, [router]);
 
-  // --- Dropdown Options Data ---
-  const departmentOptions = ['CCICT', 'COED', 'COT', 'COE', 'CAS'];
-  const degreeProgramOptions: { [key: string]: string[] } = {
-    'CCICT': ['BSIS', 'BSIT', 'BIT-CT'], 'COED': ['BSED-English', 'BSED-Math'], 'COT': ['BS in Automotive'], 'COE': ['BS in Civil Eng'], 'CAS': ['BS in Psychology'],
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess(null);
+    setError(null);
+
+    const payload: any = {
+      first_name: firstName,
+      last_name: lastName,
+      middle_name: middleName,
+      email,
+      department,
+      program,
+    };
+
+    if (password) {
+      payload.password = password;
+      payload.password_confirmation = passwordConfirmation;
+    }
+
+    try {
+      const response = await apiCall("/user/profile", "PUT", payload);
+      setSuccess(response.message);
+      setPassword("");
+      setPasswordConfirmation("");
+    } catch (err: any) {
+      setError(err.message || "An error occurred while updating the profile.");
+    }
   };
-  const scheduleOptions = ['Day Program', 'Night Program'];
-  const currentDegreeOptions = degreeProgramOptions[formData.department] || [];
 
-  // --- Event Handlers ---
-  const handleEditClick = () => setIsEditing(true);
-
-  const handleCancelClick = () => {
-    setFormData(initialUserData); 
-    setPasswordData({ password: '', confirmPassword: ''}); 
-    setIsEditing(false);
+  const handleLogout = async () => {
+    try {
+      await authStore.logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setError("Logout failed. Please try again.");
+    }
   };
 
-  const handleSaveClick = () => {
-    console.log("Saving data:", { ...formData, ...passwordData });
-    setIsEditing(false);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-  
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
-  };
-
+  if (loading) {
+    return (
+      <div className="pt-8 border-2 border-[#E0A800]/50 bg-black text-gray-200 rounded-lg p-8">
+        <h1 className="text-2xl font-bold text-[#E0A800] mb-6">Account</h1>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 px-8 mt-32 max-w-7xl mx-auto font-sans text-gray-100">
-      
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="mt-1 text-3xl text-[#E0A800]" style={{ fontFamily: "'Black Ops One', sans-serif" }}>Requested Capstone Projects</h1>
-        <p className="mt-1 text-gray-400">View and edit your account details below.</p>
-      </div>
-      
-      {/* User Profile Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 pb-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gray-700 text-3xl font-bold text-yellow-400 border-2" style={glowStyle}>
-            {firstLetter}
-          </div>
-          <div>
-            {/* This name is now linked to the form state */}
-            <h1 className="text-2xl font-bold text-yellow-400">{`${formData.firstName} ${formData.lastName}`}</h1>
-            {/* UPDATED: This email is now linked to the form state */}
-            <p className="text-gray-300">{formData.ctuEmail}</p>
-          </div>
-        </div>
-        
-        {/* Conditional Buttons */}
-        <div className="mt-4 sm:mt-0 flex gap-4">
-          {isEditing ? (
-            <>
-              <button onClick={handleCancelClick} className="bg-transparent border border-gray-500 text-gray-300 font-semibold py-2 px-6 rounded-md hover:bg-gray-700 hover:text-white transition-colors">
-                Cancel
-              </button>
-              <button onClick={handleSaveClick} className="bg-yellow-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-yellow-700 transition-colors" style={glowStyle}>
-                Save Changes
-              </button>
-            </>
-          ) : (
-            <button onClick={handleEditClick} className="bg-yellow-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-yellow-700 transition-colors" style={glowStyle}>
-              Edit
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="pt-8 space-y-8 bg-black text-gray-200 border-2 border-[#E0A800]/50 rounded-lg p-8">
+      <h1 className="text-2xl font-bold text-[#E0A800] mb-6">Account</h1>
+      <Card className="bg-neutral-950 border-gray-800 text-gray-200">
+        <CardHeader>
+          <CardTitle className="text-gray-50">Manage Information</CardTitle>
+          <CardDescription>Update your account details here.</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleUpdateProfile}>
+          <CardContent className="space-y-4">
+            {error && <p className="text-red-500 text-center">{error}</p>}
+            {success && <p className="text-green-500 text-center">{success}</p>}
 
-      {/* Form Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-8">
-        
-        {/* Text Inputs */}
-        <div>
-          <label className="block text-sm font-medium text-yellow-400">First name</label>
-          <input type="text" name="firstName" value={formData.firstName} onChange={handleFormChange} disabled={!isEditing} className={`${fieldBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-yellow-400">Last name</label>
-          <input type="text" name="lastName" value={formData.lastName} onChange={handleFormChange} disabled={!isEditing} className={`${fieldBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-yellow-400">ID Number</label>
-          <input type="text" name="idNumber" value={formData.idNumber} onChange={handleFormChange} disabled={!isEditing} className={`${fieldBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle} />
-        </div>
-        <div className="md:col-span-3">
-          <label className="block text-sm font-medium text-yellow-400">CTU Email</label>
-          <input type="email" name="ctuEmail" value={formData.ctuEmail} onChange={handleFormChange} disabled={!isEditing} className={`${fieldBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle} />
-        </div>
-
-        {/* Dropdown Selects */}
-        <div className="relative">
-          <label className="block text-sm font-medium text-yellow-400">Department</label>
-          <select name="department" value={formData.department} onChange={handleFormChange} disabled={!isEditing} className={`${selectBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle}>
-            {departmentOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-        </div>
-        <div className="relative">
-          <label className="block text-sm font-medium text-yellow-400">Degree Program</label>
-          <select name="degreeProgram" value={formData.degreeProgram} onChange={handleFormChange} disabled={!isEditing} className={`${selectBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle}>
-            {currentDegreeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-        </div>
-        <div className="relative">
-          <label className="block text-sm font-medium text-yellow-400">Program Schedule</label>
-          <select name="programSchedule" value={formData.programSchedule} onChange={handleFormChange} disabled={!isEditing} className={`${selectBaseStyles} ${isEditing ? editableStyles : disabledStyles}`} style={glowStyle}>
-            {scheduleOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-        </div>
-        
-        {/* Conditional Password Section */}
-        {isEditing && (
-          <>
-            <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-              <div>
-                  <label className="block text-sm font-medium text-yellow-400">Password</label>
-                  <input type={showPassword ? "text" : "password"} name="password" value={passwordData.password} onChange={handlePasswordChange} className={`${fieldBaseStyles} ${editableStyles}`} style={glowStyle} />
-                  <p className="mt-2 text-xs text-gray-400">
-                      Use 8 or more characters with a mix of letters, numbers & symbols
-                  </p>
-              </div>
-              <div>
-                  <label className="block text-sm font-medium text-yellow-400">Confirm password</label>
-                  <input type={showPassword ? "text" : "password"} name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChange} className={`${fieldBaseStyles} ${editableStyles}`} style={glowStyle} />
-              </div>
-            </div>
-
-            <div className="md:col-span-3 -mt-4">
-              <div className="flex items-center">
-                <input
-                  id="show-password"
-                  type="checkbox"
-                  checked={showPassword}
-                  onChange={() => setShowPassword(!showPassword)}
-                  className="h-4 w-4 rounded border-2 bg-black bg-opacity-50 text-yellow-400 focus:ring-offset-gray-800 focus:ring-yellow-300 checked:bg-yellow-400 transition-colors"
-                  style={glowStyle}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first-name">First Name</Label>
+                <Input
+                  id="first-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="bg-neutral-900 border-gray-700"
                 />
-                <label htmlFor="show-password" className="ml-2 block text-sm text-gray-100">Show password</label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last-name">Last Name</Label>
+                <Input
+                  id="last-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="bg-neutral-900 border-gray-700"
+                />
               </div>
             </div>
-          </>
-        )}
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="middle-name">Middle Name</Label>
+              <Input
+                id="middle-name"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                className="bg-neutral-900 border-gray-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-neutral-900 border-gray-700"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger className="bg-neutral-900 border-gray-700">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-neutral-900 border-gray-700 text-gray-200">
+                    <SelectItem value="BSIS">BSIS</SelectItem>
+                    <SelectItem value="BSIT">BSIT</SelectItem>
+                    <SelectItem value="BIT-CT">BIT-CT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="program">Program</Label>
+                <Select value={program} onValueChange={setProgram}>
+                  <SelectTrigger className="bg-neutral-900 border-gray-700">
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-neutral-900 border-gray-700 text-gray-200">
+                    <SelectItem value="Day program">Day program</SelectItem>
+                    <SelectItem value="Evening program">
+                      Evening program
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">New Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Leave blank to keep current"
+                  className="bg-neutral-900 border-gray-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={passwordConfirmation}
+                  onChange={(e) => setPasswordConfirmation(e.target.value)}
+                  className="bg-neutral-900 border-gray-700"
+                />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="mt-6 flex justify-between">
+            <Button type="button" variant="destructive" onClick={handleLogout}>
+              Logout
+            </Button>
+            <Button
+              type="submit"
+              variant="ghost"
+              className="border border-[#E0A800] hover:bg-[#E0A800]/10"
+            >
+              Save Changes
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
-};
-
-export default ViewAccount;
+}

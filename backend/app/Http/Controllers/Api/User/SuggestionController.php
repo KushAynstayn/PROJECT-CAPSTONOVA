@@ -20,7 +20,7 @@ class SuggestionController extends Controller
     {
         try {
             $user = Auth::user();
-            // Eager load relationships, selecting the new 'encrypted_email' column instead of 'email'
+            // Eager load relationships, selecting the 'encrypted_email' column
             $query = Suggestion::with(['adviser' => function ($query) {
                 $query->select('id', 'first_name', 'last_name', 'encrypted_email');
             }, 'interestedStudent' => function ($query) {
@@ -91,7 +91,6 @@ class SuggestionController extends Controller
             if ($request->has('start_date')) {
                 $query->whereDate('submission_date', '>=', $request->input('start_date'));
             }
-
             if ($request->has('end_date')) {
                 $query->whereDate('submission_date', '<=', $request->input('end_date'));
             }
@@ -121,7 +120,7 @@ class SuggestionController extends Controller
             $perPage = $request->input('per_page', 15);
             $suggestions = $query->paginate($perPage);
 
-            // Transform the user data for privacy before sending the response
+            // Transform the user data for privacy and add suggestion ID for compatibility
             $suggestions->getCollection()->transform(function ($suggestion) {
                 $processUser = function ($user) {
                     if ($user) {
@@ -136,6 +135,9 @@ class SuggestionController extends Controller
 
                 $processUser($suggestion->adviser);
                 $processUser($suggestion->interestedStudent);
+
+                // SUPER CRITICAL: Ensure an 'id' field is present for frontend compatibility.
+                $suggestion->id = $suggestion->suggestion_id;
 
                 return $suggestion;
             });

@@ -1,120 +1,106 @@
 "use client";
 
-import * as React from "react";
-import { Pie, PieChart, Cell } from "recharts";
-
+import React, { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import { apiCall } from "@/lib/api"; // Corrected: Import apiCall function
 
-// Mock data grouped by year with more project types and amber-like colors
-const dataByYear: Record<number, { type: string; count: number; fill: string }[]> = {
-  2023: [
-    { type: "Web Applications", count: 275, fill: "var(--color-web)" },
-    { type: "Mobile Apps", count: 200, fill: "var(--color-mobile)" },
-    { type: "AI/ML", count: 110, fill: "var(--color-aiml)" },
-    { type: "IoT", count: 90, fill: "var(--color-iot)" },
-    { type: "Cloud", count: 45, fill: "var(--color-cloud)" },
-    { type: "Social Media", count: 30, fill: "var(--color-social)" },
-    { type: "Data Science", count: 60, fill: "var(--color-data-science)" }, // New type
-    { type: "Cybersecurity", count: 50, fill: "var(--color-cybersecurity)" }, // New type
-  ],
-  2024: [
-    { type: "Web Applications", count: 250, fill: "var(--color-web)" },
-    { type: "Mobile Apps", count: 220, fill: "var(--color-mobile)" },
-    { type: "AI/ML", count: 130, fill: "var(--color-aiml)" },
-    { type: "IoT", count: 100, fill: "var(--color-iot)" },
-    { type: "Cloud", count: 60, fill: "var(--color-cloud)" },
-    { type: "Social Media", count: 25, fill: "var(--color-social)" },
-    { type: "Data Science", count: 70, fill: "var(--color-data-science)" }, // New type
-    { type: "Cybersecurity", count: 55, fill: "var(--color-cybersecurity)" }, // New type
-  ],
-  2025: [
-    { type: "Web Applications", count: 210, fill: "var(--color-web)" },
-    { type: "Mobile Apps", count: 250, fill: "var(--color-mobile)" },
-    { type: "AI/ML", count: 150, fill: "var(--color-aiml)" },
-    { type: "IoT", count: 120, fill: "var(--color-iot)" },
-    { type: "Cloud", count: 80, fill: "var(--color-cloud)" },
-    { type: "Social Media", count: 20, fill: "var(--color-social)" },
-    { type: "Data Science", count: 90, fill: "var(--color-data-science)" }, // New type
-    { type: "Cybersecurity", count: 65, fill: "var(--color-cybersecurity)" }, // New type
-  ],
-};
+// Define expected data structure
+interface PlatformData {
+  platform_type: string;
+  count: number;
+}
 
-const chartConfig = {
-  "Web Applications": { label: "Web Applications", color: "#fcd34d" }, // yellow-300
-  "Mobile Apps": { label: "Mobile Apps", color: "#fbbf24" }, // amber-400
-  "AI/ML": { label: "AI/ML", color: "#f59e0b" }, // amber-500
-  IoT: { label: "IoT", color: "#d97706" }, // amber-600
-  Cloud: { label: "Cloud", color: "#b45309" }, // amber-700
-  "Social Media": { label: "Social Media", color: "#92400e" }, // amber-800
-  "Data Science": { label: "Data Science", color: "#78350f" }, // amber-900 (New)
-  "Cybersecurity": { label: "Cybersecurity", color: "#facc15" }, // yellow-400 (New)
-} satisfies ChartConfig;
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
 
+export const ProjectTypesChart = ({ year }: { year: number }) => {
+  const [data, setData] = useState<PlatformData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function ProjectTypesChart({ year }: { year: number }) {
-  // Select data for the year, with a fallback to the latest year's data
-  const chartData = dataByYear[year] ?? dataByYear[2025]; 
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!year) return;
+      try {
+        setLoading(true);
+        // Corrected: Use apiCall with the correct path and method
+        const response = await apiCall(
+          `/util/project-type-distribution/${year}`,
+          "GET"
+        );
+        if (response && response.data && response.data.platforms) {
+          setData(response.data.platforms);
+        } else {
+          setData([]); // Clear data if none exists for the year
+        }
+        setError(null);
+      } catch (err) {
+        setError(`Failed to fetch project type data for ${year}.`);
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const totalProjects = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.count, 0);
-  }, [chartData]);
+    fetchData();
+  }, [year]); // Re-fetch when the year changes
+
+  if (loading) {
+    return <div className="text-center p-4">Loading Chart...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center p-4 text-red-500">{error}</div>;
+  }
 
   return (
-    <Card className="bg-transparent border-none shadow-none relative">
-      <CardHeader className="items-center p-0 pb-4">
-        <CardTitle className="text-lg text-yellow-400">Project Type Distribution</CardTitle>
-        <CardDescription className="text-gray-400">
-          Breakdown for the year {year}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square h-[250px]"
-        >
+    <div>
+      <h3 className="text-xl font-semibold text-yellow-400 mb-4">
+        Project Type Distribution ({year})
+      </h3>
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
           <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
             <Pie
-              data={chartData}
-              dataKey="count"
-              nameKey="type"
-              innerRadius={60}
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
               outerRadius={80}
-              strokeWidth={2}
-              paddingAngle={4}
+              fill="#8884d8"
+              dataKey="count"
+              nameKey="platform_type"
+              label={({ name, percent }) =>
+                `${name} ${(percent * 100).toFixed(0)}%`
+              }
             >
-                {chartData.map((entry) => (
-                    <Cell key={entry.type} fill={chartConfig[entry.type as keyof typeof chartConfig]?.color || "#ccc"} />
-                ))}
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
             </Pie>
-            <ChartLegend
-              content={<ChartLegendContent nameKey="type" />}
-              className="-translate-y-[2px]"
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "rgba(30, 30, 30, 0.85)",
+                borderColor: "#f5b301",
+              }}
             />
+            <Legend />
           </PieChart>
-        </ChartContainer>
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%-1.5rem)] flex flex-col items-center pointer-events-none">
-            <span className="text-3xl font-bold text-white">{totalProjects}</span>
-            <span className="text-xs text-gray-400">Total Projects</span>
+        </ResponsiveContainer>
+      ) : (
+        <div className="text-center p-10 text-gray-400">
+          No project type data available for {year}.
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
-}
+};

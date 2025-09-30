@@ -1,106 +1,93 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
-
+import React, { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { apiCall } from "@/lib/api"; // Corrected: Import apiCall function
 
-// Mock data for the chart. In a real application, you would fetch this.
-const chartData = [
-  { year: 2018, BSIS: 170, BSIT: 220, "BIT-CT": 85 },
-  { year: 2019, BSIS: 180, BSIT: 320, "BIT-CT": 120 },
-  { year: 2020, BSIS: 240, BSIT: 255, "BIT-CT": 135 },
-  { year: 2021, BSIS: 260, BSIT: 200, "BIT-CT": 150 },
-  { year: 2022, BSIS: 240, BSIT: 265, "BIT-CT": 170 },
-  { year: 2023, BSIS: 220, BSIT: 340, "BIT-CT": 190 },
-  { year: 2024, BSIS: 245, BSIT: 210, "BIT-CT": 175 },
-  { year: 2025, BSIS: 220, BSIT: 200, "BIT-CT": 160 },
-];
-
-const chartConfig = {
-  BSIS: {
-    label: "BSIS",
-    color: "#fbbf24", // amber-400
-  },
-  BSIT: {
-    label: "BSIT",
-    color: "#f59e0b", // amber-500
-  },
-  "BIT-CT": {
-    label: "BIT-CT",
-    color: "#d97706", // amber-600
-  },
-} satisfies ChartConfig;
-
-interface ArchivedProjectsChartProps {
-  year: number; // The year selected from the picker
+// Define the expected data structure
+interface ProjectTrendData {
+  year: string;
+  bsis: number;
+  bsit: number;
+  "bit-ct": number;
 }
 
-export function ArchivedProjectsChart({ year: selectedYear }: ArchivedProjectsChartProps) {
+export const ArchivedProjectsChart = ({
+  selectedYear,
+}: {
+  selectedYear: number;
+}) => {
+  const [data, setData] = useState<ProjectTrendData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Corrected: Use apiCall with the correct path and method
+        const response = await apiCall(
+          "/util/projects-per-year-department",
+          "GET"
+        );
+        if (response && response.data) {
+          setData(response.data);
+        }
+        setError(null);
+      } catch (err) {
+        setError("Failed to fetch project trend data.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); // Empty dependency array means this runs once on mount
+
+  if (loading) {
+    return <div className="text-center p-4">Loading Chart...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center p-4 text-red-500">{error}</div>;
+  }
+
   return (
-    <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="p-0 pb-4">
-        <CardTitle className="text-lg text-yellow-400">
-          Archived Capstone Projects
-        </CardTitle>
-        <CardDescription className="text-gray-400">
-          Total projects archived annually by course, highlighting {selectedYear}.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ChartContainer config={chartConfig} className="h-[250px] w-full">
-          <BarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-            <XAxis
-              dataKey="year"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              stroke="#a1a1aa"
-              fontSize={12}
-            />
-            <YAxis 
-              tickLine={false} 
-              axisLine={false} 
-              stroke="#a1a1aa" 
-              fontSize={12} 
-            />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="dot" />}
-              wrapperStyle={{ background: 'rgba(0,0,0,0.8)', border: '1px solid #333', borderRadius: '0.5rem' }}
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-            
-            {/* Render bars for each course */}
-            {Object.entries(chartConfig).map(([key, config]) => (
-              <Bar key={key} dataKey={key} radius={4}>
-                {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={config.color}
-                    // Apply opacity to highlight the selected year
-                    fillOpacity={entry.year === selectedYear ? 1 : 0.3}
-                  />
-                ))}
-              </Bar>
-            ))}
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <div>
+      <h3 className="text-xl font-semibold text-yellow-400 mb-4">
+        Archived Projects by Department
+      </h3>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={data}>
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="rgba(255, 255, 255, 0.1)"
+          />
+          <XAxis dataKey="year" stroke="#888888" />
+          <YAxis stroke="#888888" />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "rgba(30, 30, 30, 0.85)",
+              borderColor: "#f5b301",
+              color: "#ffffff",
+            }}
+          />
+          <Legend wrapperStyle={{ color: "#ffffff" }} />
+          <Bar dataKey="bsis" name="BSIS" fill="#3b82f6" />
+          <Bar dataKey="bsit" name="BSIT" fill="#84cc16" />
+          <Bar dataKey="bit-ct" name="BIT-CT" fill="#f97316" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
-}
+};

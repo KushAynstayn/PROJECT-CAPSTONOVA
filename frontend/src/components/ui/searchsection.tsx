@@ -1,21 +1,26 @@
-"use client"; // Revision: Add this for hooks like useState and useRouter in Next.js App Router
+"use client";
 
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { useState } from "react"; // Revision: Import useState to manage the input
-import { useRouter } from "next/navigation"; // Revision: Import useRouter for navigation
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdvancedSearchModal } from "@/components/ui/advanced-search-modal";
 
 const HeroSection = () => {
-  // Revision: Set up state for the search input and initialize the router
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
-  // Revision: Create a function to handle the search submission
+  // This function now builds a query string for the 'q' parameter
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent the form from reloading the page
-    if (!searchTerm.trim()) return; // Don't search if the input is empty
-    router.push(`/projects/${searchTerm}`); // Navigate to the dynamic project page
+    e.preventDefault();
+    const trimmedSearchTerm = searchTerm.trim();
+    if (!trimmedSearchTerm) return;
+
+    // Use URLSearchParams to correctly format the query
+    const params = new URLSearchParams();
+    params.append("q", trimmedSearchTerm);
+
+    // Navigate to the projects page with the query parameter
+    router.push(`/projects?${params.toString()}`);
   };
 
   return (
@@ -23,7 +28,7 @@ const HeroSection = () => {
       {/* Background Image Container (Layer 1 - Bottom) */}
       <div
         className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat z-0"
-        style={{ backgroundImage: "url('/images/caps-bg.jpg')" }} // Revision: Added '/' for public folder path
+        style={{ backgroundImage: "url('/images/caps-bg.jpg')" }}
       ></div>
 
       {/* Semi-transparent Overlay (Layer 2 - Middle) */}
@@ -48,24 +53,22 @@ const HeroSection = () => {
           priority
         />
 
-        {/* Revision: Changed the container to a <form> and added the onSubmit handler */}
         <form onSubmit={handleSearch} className="-mt-55 w-full max-w-3xl px-4">
           <div className="relative">
             <input
               type="text"
-              placeholder="Search for a topic like 'education'"
-              value={searchTerm} // Revision: Control the input value with state
-              onChange={(e) => setSearchTerm(e.target.value)} // Revision: Update state on change
+              placeholder="Enter title or abstract phrase to search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
-            {/* Revision: Changed the div to a button to submit the form */}
             <button
               type="submit"
               className="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-700 hover:text-yellow-800"
               aria-label="Search"
             >
               <svg
-                xmlns="http://www.w.org/2000/svg"
+                xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6"
                 fill="none"
                 viewBox="0 0 24"
@@ -82,7 +85,10 @@ const HeroSection = () => {
           </div>
           <div className="mt-4 flex justify-center">
             <AdvancedSearchModal>
-              <button className="text-gray-300 hover:text-white transition-colors duration-300 ease-in-out">
+              <button
+                type="button" // Add type="button" to prevent form submission
+                className="text-gray-300 hover:text-white transition-colors duration-300 ease-in-out"
+              >
                 Advanced Search
               </button>
             </AdvancedSearchModal>

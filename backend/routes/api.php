@@ -21,11 +21,12 @@ use App\Http\Controllers\Api\Util\CheckManualController;
 
 use App\Http\Controllers\Api\Util\ProjectTypeController;
 
+use App\Http\Controllers\Api\Util\ViewerTrendController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\API\User\NotificationController;
 use App\Http\Controllers\Api\Util\FetchAdviserController;
-use App\Http\Controllers\Api\Util\ProjectToolsController;
 
+use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Auth\TwoFactorAuthController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
@@ -33,25 +34,28 @@ use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
 use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
+use App\Http\Controllers\Api\MlService\AssociationController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
+
 use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
-
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
+use App\Http\Controllers\Api\MlService\MLSuggestionController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
+
+
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
-
-
 use App\Http\Controllers\Api\UserManagement\MProponentController;
 use App\Http\Controllers\Api\UserManagement\MWhitelistController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
+use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
@@ -203,6 +207,9 @@ Route::prefix('viewer')->middleware('auth:sanctum')->group(function () {
 
     Route::post('request-project/{project_id}', [RequestProjectController::class, 'store']);
 
+    Route::get('accessed-projects', [RequestProjectController::class, 'index'])
+        ->name('viewer.accessed.projects');
+
     Route::post('suggestions/{id}/interest', [SuggestionInterestController::class, 'expressInterest']);
 
     Route::delete('suggestions/{id}/interest', [SuggestionInterestController::class, 'removeInterest']);
@@ -270,8 +277,35 @@ Route::prefix('util')->group(function () {
         ->middleware('auth:sanctum');
     Route::get('/check-usage-guide', [CheckManualController::class, 'checkUsageGuide'])
         ->middleware('auth:sanctum');
-});
 
+
+    //Viewer util routes
+    Route::get(
+        'viewer-reports-analytics/programming-language-trends',
+        [ViewerReportsAnalyticsController::class, 'programmingLanguageTrends']
+    );
+
+    Route::get(
+        'viewer-reports-analytics/archived-projects-by-department',
+        [ViewerReportsAnalyticsController::class, 'archivedProjectsByDepartment']
+    );
+
+    //Viewer trends routes
+    Route::get('/projects-per-year-department', [ViewerTrendController::class, 'getProjectsTrend']);
+    Route::get(
+        '//project-type-distribution/{year}',
+        [ViewerTrendController::class, 'getProjectTypeDistribution']
+    );
+    Route::get(
+        '/language-usage/{year}',
+        [ViewerTrendController::class, 'getLanguageUsageByYear']
+    )->whereNumber('year');
+    Route::get('/top-advisers', [ViewerTrendController::class, 'getTopAdvisers']);
+    Route::get(
+        '/keyword-usage/{year}',
+        [ViewerTrendController::class, 'getKeywordUsageByYear']
+    )->whereNumber('year');
+});
 
 
 
@@ -365,4 +399,16 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
     // End Admin Management Routes
     // ============================
 
+});
+
+
+Route::prefix('ml-service')->group(function () {
+    // Route to send the training data to the Python service
+    Route::post('/train-suggestions', [MLSuggestionController::class, 'sendTrainingData']);
+
+    // Route to get a new suggestion from the Python service
+    Route::post('/get-suggestion', [MLSuggestionController::class, 'getSuggestion']);
+
+    Route::get('/train-association', [AssociationController::class, 'train'])->name('ml.association.train');
+    Route::get('/predict-association', [AssociationController::class, 'predict'])->name('ml.association.predict');
 });
