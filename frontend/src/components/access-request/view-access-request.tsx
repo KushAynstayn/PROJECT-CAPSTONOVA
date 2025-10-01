@@ -244,16 +244,16 @@ const AccessRequestView = ({
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Access request data table">
           <TableHeader>
-            <TableColumn className="bg-[#8B0000] text-white text-left">
+            <TableColumn className="bg-[#660000] text-white text-left">
               NAME
             </TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">
+            <TableColumn className="bg-[#660000] text-white text-left">
               EMAIL
             </TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">
+            <TableColumn className="bg-[#660000] text-white text-left">
               DATE REQUESTED
             </TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">
+            <TableColumn className="bg-[#660000] text-white text-left">
               REQUESTED DOCUMENT
             </TableColumn>
           </TableHeader>
@@ -265,7 +265,7 @@ const AccessRequestView = ({
             {requests.map((request) => (
               <TableRow
                 key={request.request_id}
-                className="hover:bg-gray-100 cursor-pointer"
+                className="hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200"
                 onClick={() => handleRowClick(request)}
               >
                 <TableCell className="border-b border-gray-200">

@@ -30,11 +30,11 @@ export function Calendar22({ year, setYear }: Calendar22Props) {
       <Popover open={open} onOpenChange={setOpen}>
         <div className="flex items-center gap-2">
           {/* Trigger Button */}
-          <PopoverTrigger asChild>
+          <PopoverTrigger asChild className="text-gray-500">
             <Button
               variant="outline"
               id="year"
-              className="w-48 justify-between font-normal"
+              className="w-48 justify-between font-normal border-gray-500"
             >
               {year ? year : "Select Year"}
               <ChevronDownIcon />

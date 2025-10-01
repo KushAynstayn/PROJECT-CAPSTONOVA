@@ -87,7 +87,7 @@ export const LatestSuggestion = () => {
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col border-gray-500">
       <CardHeader>
         <CardTitle>Latest Suggestion</CardTitle>
       </CardHeader>

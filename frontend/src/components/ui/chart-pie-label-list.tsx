@@ -84,7 +84,7 @@ export function ChartPieLabelList() {
   }, [chartData]);
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex h-full flex-col border-1 border-gray-500">
       <CardHeader>
         <CardTitle>Role Distribution</CardTitle>
       </CardHeader>

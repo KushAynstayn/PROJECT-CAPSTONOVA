@@ -146,10 +146,10 @@ const AdminView = ({
       <div className="relative max-h-[60vh] overflow-y-auto">
         <Table removeWrapper aria-label="Proponent user data table">
           <TableHeader>
-            <TableColumn className="bg-[#8B0000] text-white text-left">
+            <TableColumn className="bg-[#660000] text-white text-left">
               NAME
             </TableColumn>
-            <TableColumn className="bg-[#8B0000] text-white text-left">
+            <TableColumn className="bg-[#660000] text-white text-left">
               EMAIL
             </TableColumn>
           </TableHeader>
@@ -158,8 +158,8 @@ const AdminView = ({
               <TableRow
                 key={user.id}
                 className={cn(
-                  "hover:bg-gray-100 cursor-pointer",
-                  selectedUserId === user.id && "bg-gray-200"
+                  "hover:bg-[#660000] hover:text-white cursor-pointer transition-colors duration-200",
+                  selectedUserId === user.id && "bg-[#660000] text-white"
                 )}
                 onClick={(e) => handleRowClick(e, user.id)}
               >

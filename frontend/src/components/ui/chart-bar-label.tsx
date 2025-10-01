@@ -74,7 +74,7 @@ export function ChartBarLabel() {
   }, []);
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex h-full flex-col border-1 border-gray-500">
       <CardHeader>
         <CardTitle>Projects by Type</CardTitle>
       </CardHeader>
