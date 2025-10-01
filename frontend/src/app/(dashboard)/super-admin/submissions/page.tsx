@@ -24,7 +24,7 @@ const ProjectDetailsPage = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewPdf, setViewPdf] = useState(false);
 
-  const handleSourceCodeClick = () => {
+  const handleSourceCodeClick = () => { 
     if (project.source_code_id) {
       setIsModalOpen(true);
     } else {
@@ -37,6 +37,22 @@ const ProjectDetailsPage = ({
       setViewPdf(true);
     } else {
       alert("No manuscript available for this project.");
+    }
+  };
+
+   const handleUserGuideClick = () => {
+    if (project.source_code_id) {
+      setIsModalOpen(true);
+    } else {
+      alert("No source code available for this project.");
+    }
+  };
+
+  const handleSystemManualClick = () => {
+    if (project.source_code_id) {
+      setIsModalOpen(true);
+    } else {
+      alert("No source code available for this project.");
     }
   };
 
@@ -95,20 +111,7 @@ const ProjectDetailsPage = ({
           className="mr-4 text-gray-600 hover:text-gray-900 transition-colors"
           aria-label="Go back"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
+          <img src="/images/arrow.png" className="h-5 w-5 " />
         </button>
         <h1 className="text-2xl font-bold text-gray-800">{project.title}</h1>
       </div>
@@ -146,6 +149,42 @@ const ProjectDetailsPage = ({
             </svg>
             <span className="text-lg font-semibold text-gray-800">
               Source Code
+            </span>
+          </button>
+        </div>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleUserGuideClick}
+            className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <svg
+              className="w-16 h-16 text-yellow-500"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
+            </svg>
+            <span className="text-lg font-semibold text-gray-800">
+              User Guide
+            </span>
+          </button>
+        </div>
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleSystemManualClick}
+            className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <svg
+              className="w-16 h-16 text-yellow-500"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
+            </svg>
+            <span className="text-lg font-semibold text-gray-800">
+              System Manual
             </span>
           </button>
         </div>
