@@ -13,8 +13,13 @@ import { apiCall, ApiError } from "@/lib/api";
 
 // Define interfaces for the data shapes
 interface TopAdviserData {
-  name: string;
-  projects_handled: number;
+  adviser_name: string;
+  project_count: number;
+}
+
+interface ApiResponse {
+  message: string;
+  data: TopAdviserData[];
 }
 
 interface ChartData {
@@ -51,23 +56,38 @@ export function ChartBarLabelCustom() {
     const fetchTopAdvisers = async () => {
       try {
         setIsLoading(true);
-        const advisers: TopAdviserData[] = await apiCall("/util/top-advisers");
+        setError(null);
 
-        // Generate a key-friendly name (e.g., "Dr. Reyes" -> "drReyes")
+        const response: ApiResponse = await apiCall("/util/top-advisers");
+        const advisers = response.data;
+
+        // Debug: log the received data
+        console.log("Fetched advisers data:", advisers);
+
+        // Check if data is empty
+        if (!advisers || advisers.length === 0) {
+          setChartData([]);
+          return;
+        }
+
+        // Generate a key-friendly name (e.g., "Adviser User 5" -> "adviseruser5")
         const generateKey = (name: string) =>
-          name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+          name
+            .replace(/\s+/g, "")
+            .replace(/[^a-zA-Z0-9]/g, "")
+            .toLowerCase();
 
         const newChartData: ChartData[] = advisers.map((adviser, index) => ({
-          adviser: generateKey(adviser.name),
-          projects: adviser.projects_handled,
+          adviser: generateKey(adviser.adviser_name),
+          projects: adviser.project_count,
           fill: PALETTE[index % PALETTE.length],
         }));
 
         const newChartConfig = advisers.reduce(
           (config, adviser, index) => {
-            const key = generateKey(adviser.name);
+            const key = generateKey(adviser.adviser_name);
             config[key] = {
-              label: adviser.name,
+              label: adviser.adviser_name,
               color: PALETTE[index % PALETTE.length],
             };
             return config;
@@ -77,14 +97,16 @@ export function ChartBarLabelCustom() {
 
         setChartData(newChartData);
         setChartConfig(newChartConfig);
-        setError(null);
+
+        console.log("Processed chart data:", newChartData);
       } catch (err) {
+        console.error("Failed to fetch top advisers:", err);
         if (err instanceof ApiError) {
           setError(err.message);
         } else {
-          setError("An unexpected error occurred.");
+          setError("An unexpected error occurred while fetching data.");
         }
-        console.error("Failed to fetch top advisers:", err);
+        setChartData([]);
       } finally {
         setIsLoading(false);
       }
@@ -92,6 +114,21 @@ export function ChartBarLabelCustom() {
 
     fetchTopAdvisers();
   }, []);
+
+  if (!isLoading && !error && chartData.length === 0) {
+    return (
+      <Card className="w-full h-full border-1 border-gray-500">
+        <CardHeader>
+          <CardTitle>Projects Handled by Adviser</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[140px]">
+            <p className="text-gray-500">No data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full border-1 border-gray-500">
@@ -112,16 +149,16 @@ export function ChartBarLabelCustom() {
             <BarChart
               data={chartData}
               layout="vertical"
-              margin={{ left: 5, right: 5 }}
+              margin={{ top: 5, left: 5, right: 5, bottom: 5 }}
             >
               <YAxis
                 dataKey="adviser"
                 type="category"
-                tickLine={false} // Cleaner look
-                axisLine={false} // Cleaner look
+                tickLine={false}
+                axisLine={false}
                 tickMargin={10}
-                width={120} // Give space for long names
-                tickFormatter={(value) => chartConfig[value]?.label ?? value}
+                width={120}
+                tickFormatter={(value) => chartConfig[value]?.label || value}
               />
               <XAxis dataKey="projects" type="number" hide />
               <ChartTooltip
@@ -131,10 +168,11 @@ export function ChartBarLabelCustom() {
               <Bar dataKey="projects" layout="vertical" radius={5}>
                 <LabelList
                   dataKey="projects"
-                  position="insideRight" // Move count inside the bar
-                  offset={10}
-                  className="fill-white" // Make text white for contrast
+                  position="insideRight"
+                  offset={8}
+                  className="fill-white font-medium"
                   fontSize={12}
+                  formatter={(value: number) => value.toString()}
                 />
               </Bar>
             </BarChart>
