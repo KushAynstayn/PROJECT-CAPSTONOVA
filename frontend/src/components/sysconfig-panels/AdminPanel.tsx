@@ -79,42 +79,42 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">PROFILE MANAGEMENT</h2>
         <ToggleSwitch label="Update profile" isToggled={adminToggles.updateProfile} onToggle={() => handleToggle('updateProfile')} />
         <ToggleSwitch label="Change password" isToggled={adminToggles.changePassword} onToggle={() => handleToggle('changePassword')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">ADVISER MANAGEMENT</h2>
         <ToggleSwitch label="Create adviser account" isToggled={adminToggles.createAdviserAccount} onToggle={() => handleToggle('createAdviserAccount')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">WHITELIST MANAGEMENT</h2>
         <ToggleSwitch label="Upload whitelist" isToggled={adminToggles.uploadWhitelist} onToggle={() => handleToggle('uploadWhitelist')} />
         <ToggleSwitch label="View whitelist" isToggled={adminToggles.viewWhitelist} onToggle={() => handleToggle('viewWhitelist')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">SUBMISSIONS MANAGEMENT</h2>
         <ToggleSwitch label="View submissions" isToggled={adminToggles.viewSubmissions} onToggle={() => handleToggle('viewSubmissions')} />
         <ToggleSwitch label="Search projects" isToggled={adminToggles.searchProjects} onToggle={() => handleToggle('searchProjects')} />
         <ToggleSwitch label="Archive projects" isToggled={adminToggles.archiveProjects} onToggle={() => handleToggle('archiveProjects')} />
         <ToggleSwitch label="Restore projects" isToggled={adminToggles.restoreProjects} onToggle={() => handleToggle('restoreProjects')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">SUGGESTIONS</h2>
         <ToggleSwitch label="View suggestions" isToggled={adminToggles.viewSuggestions} onToggle={() => handleToggle('viewSuggestions')} />
         <ToggleSwitch label="View archived" isToggled={adminToggles.viewArchived} onToggle={() => handleToggle('viewArchived')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">DATA ANALYTICS</h2>
         <ToggleSwitch label="View" isToggled={adminToggles.dataAnalyticsView} onToggle={() => handleToggle('dataAnalyticsView')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">REPORTS</h2>
         <ToggleSwitch label="View" isToggled={adminToggles.reportsView} onToggle={() => handleToggle('reportsView')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">NOTIFICATION</h2>
         <ToggleSwitch label="Get Notifications" isToggled={adminToggles.getNotifications} onToggle={() => handleToggle('getNotifications')} />
       </div>

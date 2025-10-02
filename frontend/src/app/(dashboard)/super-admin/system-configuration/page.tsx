@@ -34,7 +34,7 @@ const SystemConfigurationPage = () => {
               text-xl font-semibold pb-2 
               ${
                 activeTab === tab
-                  ? "text-[#511b10] border-b-2 border-[#511b10]"
+                  ? "text-blue border-b-2 border-blue"
                   : "text-gray-400"
               }
               transition-colors duration-200
