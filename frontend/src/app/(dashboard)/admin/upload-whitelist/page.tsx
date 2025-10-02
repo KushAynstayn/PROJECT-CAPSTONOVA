@@ -238,14 +238,14 @@ const AdminUploadWhitelistPage = () => {
           />
         ) : currentView === "Form" ? (
           <div className="flex justify-center items-center">
-            <Card className="w-full max-w-3xl center rounded-1px border-black shadow-lg shadow-gray-800/50">
+            <Card className="w-full max-w-3xl center rounded-md border-gray-300 shadow-md">
               <CardHeader className="p-0 pt-1 pb-0">
                 <CardTitle className="m-0 text-center text-2xl font-serif font-normal tracking-wider opacity-60">
                   WHITELIST
                 </CardTitle>
               </CardHeader>
               <div className="w-3/5 mx-auto mb-1">
-                <Separator className="bg-black" />
+                <Separator className="bg-gray-300" />
               </div>
               <CardContent className="pt-1 px-6">
                 <form className="space-y-6">
@@ -260,7 +260,7 @@ const AdminUploadWhitelistPage = () => {
                         value={formData.student_email}
                         onChange={handleChange}
                         onClear={() => handleClear("student_email")}
-                        className="rounded-none border-[rgba(0,0,0,0.5)]"
+                        className="rounded-md border-gray-300 shadow-md"
                       />
                     </div>
                     <div className="grid w-full items-center gap-1.5">
@@ -273,7 +273,7 @@ const AdminUploadWhitelistPage = () => {
                         value={formData.student_id}
                         onChange={handleChange}
                         onClear={() => handleClear("student_id")}
-                        className="rounded-none border-[rgba(0,0,0,0.5)]"
+                        className="rounded-md border-gray-300 shadow-md"
                       />
                     </div>
                     <div className="grid w-full items-center gap-1.5 md:col-span-2">
@@ -282,6 +282,7 @@ const AdminUploadWhitelistPage = () => {
                       </Label>
                       <SearchableCombobox
                         value={formData.adviser_id}
+                        className="rounded-md border-gray-300 shadow-md"
                         onValueChange={handleAdviserChange}
                         items={advisers.map((adviser) => ({
                           value: adviser.id.toString(),
@@ -297,7 +298,7 @@ const AdminUploadWhitelistPage = () => {
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 {success && <p className="text-green-500 text-sm">{success}</p>}
               </div>
-              <div className="flex flex-wrap justify-center items-center gap-2 mt-2 py-4 px-6 border-t border-gray-200">
+              <div className="flex flex-wrap justify-center items-center gap-2 mt-2 py-4 px-6 border-none">
                 <div className="relative">
                   <Button
                     asChild

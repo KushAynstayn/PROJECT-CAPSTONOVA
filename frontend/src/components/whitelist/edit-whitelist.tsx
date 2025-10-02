@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { apiCall } from "@/lib/api";
+import { InputWithClear } from "../ui/inputWithClear";
 
 // The WhitelistEntry interface now uses a number for student_id to align with the backend.
 interface WhitelistEntry {
@@ -55,6 +56,9 @@ const EditWhitelistView = ({
     fetchAdvisers();
   }, []);
 
+   const handleClear = (field: string) =>
+    setFormData((prev) => ({ ...prev, [field]: "" }));
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -73,7 +77,7 @@ const EditWhitelistView = ({
   };
 
   return (
-    <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
+    <div className="mx-auto max-w-4xl rounded-md border border-gray-300 bg-white shadow-md">
       <img
         src="/images/hands.jpg"
         alt="Header"
@@ -85,7 +89,7 @@ const EditWhitelistView = ({
           <h2 className="text-center font-serif text-2xl uppercase tracking-wider text-gray-700">
             Edit Whitelist Information
           </h2>
-          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
+          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-300" />
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 md:flex-row md:gap-6">
@@ -96,13 +100,14 @@ const EditWhitelistView = ({
               >
                 Email
               </label>
-              <input
+              <InputWithClear
                 id="student_email"
                 type="email"
                 name="student_email"
                 value={formData.student_email}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f] font-normal"
+                onClear={() => handleClear("student_email")}
+                className="rounded-md border-gray-300 shadow-md"
               />
             </div>
             <div className="flex-1">
@@ -112,13 +117,14 @@ const EditWhitelistView = ({
               >
                 ID Number
               </label>
-              <input
+              <InputWithClear
                 id="student_id"
                 type="text"
                 name="student_id"
                 value={formData.student_id}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f] font-normal"
+                onClear={() => handleClear("student_id")}
+                className="rounded-md border-gray-300 shadow-md"
               />
             </div>
           </div>
@@ -135,6 +141,7 @@ const EditWhitelistView = ({
                   formData.adviser_id ? formData.adviser_id.toString() : ""
                 }
                 onValueChange={handleAdviserChange}
+                className="rounded-md border-gray-300 shadow-md"
                 items={advisers.map((adv) => ({
                   value: adv.id.toString(),
                   label: adv.full_name,
@@ -154,7 +161,7 @@ const EditWhitelistView = ({
           <Button
             variant="outline"
             onClick={onCancel}
-            className="bg-gray hover:bg-[#630808] text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+            className="bg-gray hover:bg-[#630808] border-1 border-gray-300 text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
           >
             Cancel
           </Button>

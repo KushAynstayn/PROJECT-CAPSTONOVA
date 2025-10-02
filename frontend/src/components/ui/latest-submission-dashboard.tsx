@@ -75,7 +75,7 @@ export function LatestSubmission() {
   };
 
   return (
-    <Card className="flex h-full flex-col border-1 border-gray-500">
+    <Card className="flex h-full flex-col border-1 border-gray-300 shadow-md">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Latest Submission</CardTitle>
       </CardHeader>

@@ -58,8 +58,8 @@ const AdviserSuggestionLog = () => {
   return (
     <div className="flex-1 overflow-y-auto space-y-2 mt-2 pr-2">
       {suggestions.map((suggestion) => (
-        <Card key={suggestion.suggestion_id} className="w-full shadow-md">
-          <CardHeader className="p-3 pb-1">
+        <Card key={suggestion.suggestion_id} className="w-full shadow-md border border-gray-300">
+          <CardHeader className="p-3 pb-0">
             <CardTitle className="text-md font-semibold text-gray-800 leading-tight">
               {suggestion.title}
             </CardTitle>

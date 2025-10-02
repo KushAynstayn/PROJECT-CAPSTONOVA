@@ -61,7 +61,7 @@ export function ChartLineLinear() {
   }, []);
 
   return (
-    <Card className="w-full h-full border-1 border-gray-500">
+    <Card className="w-full h-full border-1 border-gray-300 shadow-md">
       <CardHeader>
         <CardTitle>Programming Tools Usage</CardTitle>
       </CardHeader>

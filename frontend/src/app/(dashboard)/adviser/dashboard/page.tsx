@@ -220,7 +220,7 @@ export default function AdviserDashboardPage() {
 
     return (
       <div className="flex flex-1 flex-row gap-4 min-h-0">
-        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-500 min-h-0 ">
+        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-300 min-h-0 ">
           <div className="flex justify-between items-center w-full mb-2 p-4">
             <h2 className="text-md font-bold text-gray-800">
               Your Suggestion Log
@@ -237,7 +237,7 @@ export default function AdviserDashboardPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-500 min-h-0">
+        <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-300 min-h-0">
           <div className="flex justify-between items-center w-full mb-2 p-4">
             <h2 className="text-md font-bold text-gray-800">
               Your Project Advisory
@@ -249,7 +249,7 @@ export default function AdviserDashboardPage() {
               See More
             </Link>
           </div>
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 ">
             <AdviserProjectAdvisory />
           </div>
         </div>
@@ -265,7 +265,7 @@ export default function AdviserDashboardPage() {
         <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>
 
         <div className="mb-6 flex flex-col items-center gap-4 md:flex-row">
-          <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+          <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-300 shadow-md bg-background overflow-hidden">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
@@ -273,7 +273,7 @@ export default function AdviserDashboardPage() {
               type="search"
               placeholder="Search capstone projects app-wide..."
               className={cn(
-                "ml-10 w-full border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                "ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
               )}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}

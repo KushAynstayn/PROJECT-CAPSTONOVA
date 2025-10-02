@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { InputWithClear } from "../ui/inputWithClear";
 
 interface User {
   id: number;
@@ -53,6 +54,9 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
     }));
   };
 
+  const handleClear = (field: string) =>
+    setFormData((prev) => ({ ...prev, [field]: "" }));
+
   const handleSave = () => {
     onSave(formData);
   };
@@ -70,7 +74,7 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
           <h2 className="text-center font-serif text-2xl uppercase tracking-widest text-gray-700">
             Edit Information
           </h2>
-          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
+          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-300" />
         </div>
         <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
           <div>
@@ -80,13 +84,14 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
             >
               First Name
             </label>
-            <input
+            <InputWithClear
               id="first_name"
               type="text"
               name="first_name"
               value={formData.first_name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("first_name")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
           <div>
@@ -96,13 +101,14 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
             >
               Last Name
             </label>
-            <input
+            <InputWithClear
               id="last_name"
               type="text"
               name="last_name"
               value={formData.last_name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("last_name")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
           <div>
@@ -112,13 +118,14 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
             >
               CTU Email
             </label>
-            <input
+            <InputWithClear
               id="email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("email")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
           <div>
@@ -128,13 +135,14 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
             >
               ID Number
             </label>
-            <input
+            <InputWithClear
               id="student_id"
               type="text"
               name="student_id"
               value={formData.user_detail?.student_id || ""}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("student_id")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
           <div>
@@ -148,7 +156,7 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
               value={formData.user_detail?.department || ""}
               onValueChange={(value) => handleSelectChange("department", value)}
             >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-md">
                 <SelectValue placeholder="Select a Department" />
               </SelectTrigger>
               <SelectContent>
@@ -169,7 +177,7 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
               value={formData.user_detail?.program || ""}
               onValueChange={(value) => handleSelectChange("program", value)}
             >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-md">
                 <SelectValue placeholder="Select Program" />
               </SelectTrigger>
               <SelectContent>
@@ -189,7 +197,7 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
           <Button
             variant="outline"
             onClick={onCancel}
-            className="bg-gray hover:bg-[#630808] text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+            className="bg-gray hover:bg-[#630808] border-1 border-gray-300 text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
           >
             Cancel
           </Button>

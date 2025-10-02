@@ -71,7 +71,7 @@ const AdviserOverviewData = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-500 min-h-0">
+    <div className="flex-1 flex flex-col rounded-lg bg-white shadow-md p-4 border border-gray-300 min-h-0">
       <div className="flex justify-between items-center w-full mb-2 p-4 flex-shrink-0">
         <h2 className="text-md font-bold text-gray-800">
           Your Overview
