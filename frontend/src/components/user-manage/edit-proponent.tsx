@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { apiCall } from "@/lib/api";
+import { InputWithClear } from "../ui/inputWithClear";
 
 interface User {
   id: number;
@@ -56,6 +57,9 @@ const EditProponentView = ({
     fetchAdvisers();
   }, []);
 
+  const handleClear = (field: string) =>
+    setFormData((prev) => ({ ...prev, [field]: "" }));
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -95,7 +99,7 @@ const EditProponentView = ({
           <h2 className="text-center font-serif text-2xl uppercase tracking-widest text-gray-700">
             Edit Proponent Information
           </h2>
-          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
+          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-300" />
         </div>
 
         <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
@@ -106,13 +110,14 @@ const EditProponentView = ({
             >
               First Name
             </label>
-            <input
+           <InputWithClear
               id="first_name"
               type="text"
               name="first_name"
               value={formData.first_name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("first_name")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
           <div>
@@ -122,13 +127,14 @@ const EditProponentView = ({
             >
               Last Name
             </label>
-            <input
+            <InputWithClear
               id="last_name"
               type="text"
               name="last_name"
               value={formData.last_name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("last_name")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -139,13 +145,14 @@ const EditProponentView = ({
             >
               CTU Email
             </label>
-            <input
+            <InputWithClear
               id="email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("email")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -156,13 +163,14 @@ const EditProponentView = ({
             >
               ID Number
             </label>
-            <input
+            <InputWithClear
               id="student_id"
               type="text"
               name="student_id"
               value={formData.student_id}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("student_id")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -177,7 +185,7 @@ const EditProponentView = ({
               value={formData.department}
               onValueChange={(value) => handleSelectChange("department", value)}
             >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-md ">
                 <SelectValue placeholder="Select a Course" />
               </SelectTrigger>
               <SelectContent>
@@ -201,7 +209,7 @@ const EditProponentView = ({
               value={formData.program}
               onValueChange={(value) => handleSelectChange("program", value)}
             >
-              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]">
+              <SelectTrigger className="mt-1 w-full rounded-md border-gray-300 p-2 shadow-md ">
                 <SelectValue placeholder="Select a Program" />
               </SelectTrigger>
               <SelectContent>
@@ -229,6 +237,7 @@ const EditProponentView = ({
                 label: adviser.full_name,
               }))}
               placeholder={"Select Adviser"}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
         </div>
@@ -243,7 +252,7 @@ const EditProponentView = ({
           <Button
             variant="outline"
             onClick={onCancel}
-            className="bg-gray hover:bg-[#630808] text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+            className="bg-gray hover:bg-[#630808] border-1 border-gray-300 text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
           >
             Cancel
           </Button>

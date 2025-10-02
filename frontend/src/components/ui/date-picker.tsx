@@ -34,7 +34,7 @@ export function Calendar22({ year, setYear }: Calendar22Props) {
             <Button
               variant="outline"
               id="year"
-              className="w-48 justify-between font-normal border-gray-500"
+              className="w-48 justify-between font-normal border-gray-300 shadow-md"
             >
               {year ? year : "Select Year"}
               <ChevronDownIcon />

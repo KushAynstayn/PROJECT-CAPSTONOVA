@@ -52,7 +52,7 @@ const AdviserProjectAdvisory = () => {
     // This container enables the custom scrollbar
     <div className="flex-1 overflow-y-auto space-y-2 mt-2 pr-2">
       {projects.map((project) => (
-        <Card key={project.id} className="w-full shadow-md">
+        <Card key={project.id} className="w-full shadow-md border border-gray-300">
           <CardContent className="p-3">
             <CardDescription className="text-md text-gray-800 font-semibold">
               {project.title}

@@ -243,16 +243,17 @@ const SuperAdminDashboardPage: React.FC = () => {
       <main className="flex min-h-screen flex-col p-2 pt-2 sm:p-2 lg:p-4 lg:pt-0">
         <div className="mt-1">
           <h2 className="mb-4 text-2xl font-bold">Dashboard</h2>
+
           <div className="mb-6 flex flex-col items-center gap-4 md:flex-row">
-            <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+            <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-300 shadow-md bg-background overflow-hidden">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <InputWithClear
                 type="search"
-                placeholder="Search capstone projects app-wide..."
+                placeholder="Search viewer"
                 className={cn(
-                  "ml-10 w-full border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  "ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 )}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
@@ -263,6 +264,7 @@ const SuperAdminDashboardPage: React.FC = () => {
               <Calendar22 year={selectedYear} setYear={setSelectedYear} />
             </div>
           </div>
+
           {renderContent()}
         </div>
       </main>

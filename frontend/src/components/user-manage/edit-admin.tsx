@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { InputWithClear } from "../ui/inputWithClear";
 
 interface User {
   id: number;
@@ -21,6 +22,9 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
   // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
 
+   const handleClear = (field: string) =>
+    setFormData((prev) => ({ ...prev, [field]: "" }));
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -32,7 +36,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
 
   return (
     // Main container with border, rounded corners, and shadow
-    <div className="mx-auto max-w-4xl rounded-lg border border-gray-400 bg-white shadow-xl">
+    <div className="mx-auto max-w-4xl rounded-md border border-gray-300 bg-white shadow-md">
       {/* 1. IMAGE INSERTED HERE */}
       <img
         src="/images/ctubldg.png"
@@ -47,7 +51,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
           <h2 className="text-center font-serif text-2xl uppercase tracking-widest text-gray-700">
             Edit Admin Information
           </h2>
-          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-400" />
+          <hr className="mx-auto mt-2 w-1/3 border-t border-gray-300" />
         </div>
 
         {/* REVISED: Form Fields using a Grid layout */}
@@ -60,13 +64,14 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
             >
               First Name
             </label>
-            <input
+            <InputWithClear
               id="first_name"
               type="text"
               name="first_name"
               value={formData.first_name}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("first_name")}
+                className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -78,13 +83,14 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
             >
               Last Name
             </label>
-            <input
+            <InputWithClear
               id="last_name"
               type="text"
               name="last_name"
               value={formData.last_name}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+              onClear={() => handleClear("last_name")}
+                className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -96,13 +102,14 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
             >
               Middle Name (Optional)
             </label>
-            <input
+            <InputWithClear
               id="middle_name"
               type="text"
               name="middle_name"
               value={formData.middle_name || ""}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+            onClear={() => handleClear("middle_name")}
+                className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -114,13 +121,14 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
             >
               Email
             </label>
-            <input
+             <InputWithClear
               id="email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-transparent focus:ring-2 focus:ring-[#a7561f]"
+             onClear={() => handleClear("email")}
+                className="rounded-md border-gray-300 shadow-md"
             />
           </div>
         </div>
@@ -136,7 +144,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
           <Button
             variant="outline"
             onClick={onCancel}
-            className="bg-gray hover:bg-[#630808] text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+             className="bg-gray hover:bg-[#630808] border-1 border-gray-300 text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
           >
             Cancel
           </Button>
