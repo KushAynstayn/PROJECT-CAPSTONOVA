@@ -64,7 +64,7 @@ const PlatformTypeInput = ({
           onValueChange(e.target.value);
         }}
         className={cn(
-          "flex-1 bg-transparent outline-none shadow-none focus-visible:ring-0 p-0 h-auto",
+            "flex-1 bg-transparent outline-none shadow-none focus-visible:ring-0 px-3 py-2 h-auto",
           className
         )}
         {...props}
@@ -303,7 +303,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="member_hipster2" className="text-right">
+            <Label
+              htmlFor="member_hipster2"
+              className="text-right whitespace-nowrap text-xs"
+            >
               Member 3 (Optional)
             </Label>
             <div className="col-span-3">

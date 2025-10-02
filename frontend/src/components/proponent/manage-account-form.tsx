@@ -45,7 +45,7 @@ export const ProponentManageAccountForm: React.FC<
             placeholder="Juan"
             value={formData.first_name}
             onChange={onFormChange}
-            className="rounded-none border-[rgba(0,0,0,0.5)]"
+            className="w-full mt-1 border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
           />
         </div>
         {/* Middle Name */}
@@ -56,7 +56,7 @@ export const ProponentManageAccountForm: React.FC<
             placeholder="Rizal"
             value={formData.middle_name}
             onChange={onFormChange}
-            className="rounded-none border-[rgba(0,0,0,0.5)]"
+            className="w-full mt-1 border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
           />
         </div>
         {/* Last Name */}
@@ -67,7 +67,7 @@ export const ProponentManageAccountForm: React.FC<
             placeholder="dela Cruz"
             value={formData.last_name}
             onChange={onFormChange}
-            className="rounded-none border-[rgba(0,0,0,0.5)]"
+            className="w-full mt-1 border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
           />
         </div>
       </div>
@@ -109,46 +109,47 @@ export const ProponentManageAccountForm: React.FC<
 
       {/* Change Password Section */}
       <div className="mt-6 pt-6 border-t">
-        <h2 className="text-xl font-serif tracking-wider text-gray-700 mb-4">
+        <h2 className="text-gray-700 mb-4">
           Change Password
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-          <div>
-            <Label htmlFor="password">New Password</Label>
+          <div className="flex flex-col">
+            <Label htmlFor="password" className="mb-2">New Password</Label>
             <Input
               id="password"
               type="password"
               value={formData.password || ""}
               onChange={onFormChange}
-              className="w-full mt-1 border-gray-300 rounded-md"
+              className="w-full border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
             />
           </div>
-          <div>
-            <Label htmlFor="password_confirmation">Confirm New Password</Label>
+          <div className="flex flex-col">
+            <Label htmlFor="password_confirmation" className="mb-2">Confirm New Password</Label>
             <Input
               id="password_confirmation"
               type="password"
               value={formData.password_confirmation || ""}
               onChange={onFormChange}
-              className="w-full mt-1 border-gray-300 rounded-md"
+              className="w-full border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
             />
           </div>
         </div>
       </div>
-      <div className="flex justify-center gap-4 mt-6">
+
+      <div className="flex justify-end gap-4 mt-6">
         {hasChanged && (
           <>
             <Button
               type="button"
               onClick={onClear}
-              className="bg-gray-200 text-gray font-serif rounded-md shadow-md hover:bg-[#6b211d] hover:text-white"
+              className="bg-gray-200 text-gray-800 rounded-md shadow-md hover:bg-gray-400 hover:text-white"
             >
               Clear Changes
             </Button>
             <Button
               type="submit"
               disabled={isLoading}
-              className="bg-blue-600 text-white font-serif rounded-md shadow-md hover:bg-blue-700"
+              className="bg-[#660000] text-white rounded-md shadow-md hover:bg-[#4d0000]"
             >
               {isLoading ? "Updating..." : "Update"}
             </Button>

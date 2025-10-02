@@ -273,7 +273,7 @@ export function RegisterForm() {
 
               <Button
                 type="submit"
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                className="w-full bg-red-800 hover:bg-red-700 text-white"
                 disabled={isLoading}
               >
                 {isLoading ? "Creating Account..." : "Sign Up"}

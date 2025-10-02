@@ -134,17 +134,16 @@ const ManageAccountPage = () => {
           </div>
 
           <div className="flex flex-col items-center mt-4">
-            <h1 className="text-red-700 text-3xl font-bold">
+            <h1 className="text-[#800000] text-3xl font-bold">
               {user
-                ? `${user.first_name} ${user.middle_name || ""} ${
-                    user.last_name
-                  }`
+                ? `${user.first_name} ${user.middle_name || ""} ${user.last_name}`
                 : "Proponent"}
             </h1>
             <h1 className="text-gray-700">{user?.email}</h1>
           </div>
 
-          <div className="pt-1 p-6">
+
+          <div className="pt-8 p-6">
             <ProponentManageAccountForm
               formData={formData}
               onFormChange={handleFormChange}
