@@ -129,7 +129,11 @@ const AdvisoryLoadView = () => {
             </>
           )}
 
-          <Button variant="outline" onClick={handleModeToggle}>
+          <Button
+            variant="outline"
+            onClick={handleModeToggle}
+            className="border border-gray-300 shadow-md rounded-md hover:bg-[#660000] hover:text-white hover:border-[#660000]"
+          >
             {pickerMode === "single" ? "Select Range" : "Select Single Year"}
           </Button>
         </div>

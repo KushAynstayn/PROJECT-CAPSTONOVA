@@ -46,7 +46,7 @@ export function GuestDistributionChart({
   }));
 
   return (
-    <Card>
+    <Card className="border border-gray-300 shadow-md rounded-md">
       <CardHeader>
         <CardTitle>Viewers</CardTitle>
         <CardDescription>Total: {viewersData.total} Viewers</CardDescription>

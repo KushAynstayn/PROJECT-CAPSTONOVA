@@ -53,7 +53,7 @@ export function ProponentDistributionChart({
   const totalProponents = proponentsData.total;
 
   return (
-    <Card className="flex flex-col w-[300px]">
+    <Card className="border border-gray-300 shadow-md rounded-md">
       <CardHeader className="items-center pb-0">
         <CardTitle>Proponents</CardTitle>
         <CardDescription>Total: {totalProponents} Proponents</CardDescription>

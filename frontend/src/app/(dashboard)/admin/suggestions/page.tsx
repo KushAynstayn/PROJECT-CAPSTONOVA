@@ -144,7 +144,7 @@ const AdminSuggestionsPage = () => {
                       variant={"outline"}
                       style={{ paddingRight: "2.5rem" }}
                       className={cn(
-                        "w-[240px] justify-start text-left font-normal",
+                        "w-[240px] justify-start text-left font-normal border border-gray-300 shadow-md rounded-md",
                         !date && "text-muted-foreground"
                       )}
                     >
@@ -195,7 +195,7 @@ const AdminSuggestionsPage = () => {
                     suggestions.map((s) => (
                       <Card
                         key={s.suggestion_id}
-                        className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0"
+                          className="flex flex-col transition-shadow duration-300 ease-in-out pt-0 border border-gray-100 shadow-md rounded-md"
                       >
                         <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl">
                           <CardTitle className="text-xl font-extrabold tracking-wide">
