@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class LogoutController extends Controller
 {
@@ -15,6 +17,15 @@ class LogoutController extends Controller
      */
     public function __invoke(Request $request)
     {
+        $user = $request->user();
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'logout']);
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => 'User logged out successfully.'
+        ]);
+
         // Revoke the token that was used to authenticate the current request.
         $request->user()->currentAccessToken()->delete();
 

@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Gate;
 use App\Models\User; // Add this import
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class DocumentRequestController extends Controller
 {
@@ -146,6 +149,14 @@ class DocumentRequestController extends Controller
         $message = "Your request to access the document for the project '{$projectTitle}' has been approved.";
         SendNotification::dispatch($documentRequest->viewer_id, $message);
 
+        $actionType = ActionType::firstOrCreate(['action_name' => 'approve_request']);
+        $user = Auth::user();
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => "Approved document request #{$id} for project '{$projectTitle}'."
+        ]);
+
         // Refetch the updated request to return it with decrypted email
         $updatedRequest = DB::table('document_requests')
             ->join('users as viewer', 'document_requests.viewer_id', '=', 'viewer.id')
@@ -188,6 +199,14 @@ class DocumentRequestController extends Controller
         $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
         $message = "Your request to access the document for the project '{$projectTitle}' has been rejected.";
         SendNotification::dispatch($documentRequest->viewer_id, $message);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'reject_request']);
+        $user = Auth::user();
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => "Rejected document request #{$id} for project '{$projectTitle}'."
+        ]);
 
         // Refetch the updated request to return it with decrypted email
         $updatedRequest = DB::table('document_requests')

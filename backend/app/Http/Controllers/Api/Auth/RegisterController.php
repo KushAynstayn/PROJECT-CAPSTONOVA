@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class RegisterController extends Controller
 {
@@ -97,6 +99,13 @@ class RegisterController extends Controller
                     "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement."
                 );
             }
+
+            $actionType = ActionType::firstOrCreate(['action_name' => 'register']);
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => "User registered as {$user->role}."
+            ]);
 
             $token = $user->createToken('auth-token')->plainTextToken;
 

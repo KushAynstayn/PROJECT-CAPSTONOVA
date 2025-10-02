@@ -10,6 +10,8 @@ use App\Models\CapstoneProject;
 use App\Models\DocumentRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class RequestProjectController extends Controller
 {
@@ -106,6 +108,13 @@ class RequestProjectController extends Controller
         $userName = $request->user()->first_name . ' ' . $request->user()->last_name;
         $notificationMessage = "User {$userName} has requested access to the project: '{$project->title}'.";
         SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'request_project_access']);
+        UserLog::create([
+            'user_id' => $request->user()->id,
+            'action_type_id' => $actionType->id,
+            'details' => "User requested access to project '{$project->title}' (ID: {$project->id})."
+        ]);
 
         return response()->json($documentRequest, 201);
     }

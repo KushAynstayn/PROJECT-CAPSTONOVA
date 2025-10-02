@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class LoginController extends Controller
 {
@@ -45,6 +47,14 @@ class LoginController extends Controller
         // If 2FA is disabled in the .env, log the user in directly.
         if (config('auth.two_factor_enabled') === false) {
             $token = $user->createToken('auth-token')->plainTextToken;
+
+            $actionType = ActionType::firstOrCreate(['action_name' => 'login']);
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => 'User logged in successfully without 2FA.'
+            ]);
+
             return response()->json([
                 'message' => 'Login successful.',
                 'user' => $user,

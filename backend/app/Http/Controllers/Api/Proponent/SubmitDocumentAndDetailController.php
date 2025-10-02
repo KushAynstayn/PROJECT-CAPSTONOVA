@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use App\Jobs\ProcessCapstoneManuscripts;
 use Illuminate\Support\Facades\Validator;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class SubmitDocumentAndDetailController extends Controller
 {
@@ -88,6 +90,13 @@ class SubmitDocumentAndDetailController extends Controller
             DB::commit();
 
             ProcessCapstoneManuscripts::dispatch($user, $project, $tempPaths);
+
+            $actionType = ActionType::firstOrCreate(['action_name' => 'upload_project']);
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => "Submitted project documents for '{$project->title}'."
+            ]);
 
             return response()->json(['status' => 'queued'], 202);
         } catch (\Exception $e) {

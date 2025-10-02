@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\Admin\ImportWhitelistRequest;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class MWhitelistController extends Controller
 {
@@ -91,6 +94,14 @@ class MWhitelistController extends Controller
                 return $result;
             });
 
+            $actionType = ActionType::firstOrCreate(['action_name' => 'add_whitelist_entries']);
+            $user = Auth::user();
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => 'Added ' . count($createdEntries) . ' new entries to the whitelist.'
+            ]);
+
             return response()->json([
                 'success' => true,
                 'data' => $createdEntries,
@@ -133,6 +144,14 @@ class MWhitelistController extends Controller
                     ],
                 ], 422);
             }
+
+            $actionType = ActionType::firstOrCreate(['action_name' => 'upload_whitelist_excel']);
+            $user = Auth::user();
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => 'Uploaded whitelist from Excel file. ' . $import->getProcessedCount() . ' rows processed.'
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -239,6 +258,14 @@ class MWhitelistController extends Controller
         }
 
         try {
+            $actionType = ActionType::firstOrCreate(['action_name' => 'delete_whitelist_entry']);
+            $user = Auth::user();
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => "Deleted whitelist entry for student ID {$whitelist->student_id}."
+            ]);
+
             $whitelist->delete();
             return response()->json([
                 'success' => true,
@@ -277,13 +304,11 @@ class MWhitelistController extends Controller
                 'student_id' => [
                     'required',
                     'integer',
-                    // Ensures the student ID is unique, ignoring the current entry being updated. [cite: 236]
                     Rule::unique('whitelist', 'student_id')->ignore($whitelist->whitelist_id, 'whitelist_id'),
                 ],
                 'adviser_id' => [
                     'required',
                     'integer',
-                    // Ensures the adviser exists in the 'users' table and has the 'Adviser' role. [cite: 23, 239]
                     Rule::exists('users', 'id')->where('role', 'Adviser'),
                 ],
             ]);
@@ -305,14 +330,22 @@ class MWhitelistController extends Controller
             $updateData = [
                 'student_id' => $validatedData['student_id'],
                 'adviser_id' => $validatedData['adviser_id'],
-                'encrypted_email' => Crypt::encryptString($validatedData['student_email']), // [cite: 237]
-                'hashed_email' => $hashedEmail, // [cite: 238]
+                'encrypted_email' => Crypt::encryptString($validatedData['student_email']),
+                'hashed_email' => $hashedEmail,
             ];
 
             // Step 4: Perform the update within a database transaction for safety.
             DB::transaction(function () use ($whitelist, $updateData) {
                 $whitelist->update($updateData);
             });
+
+            $actionType = ActionType::firstOrCreate(['action_name' => 'update_whitelist_entry']);
+            $user = Auth::user();
+            UserLog::create([
+                'user_id' => $user->id,
+                'action_type_id' => $actionType->id,
+                'details' => "Updated whitelist entry for student ID {$whitelist->student_id}."
+            ]);
 
             // Step 5: Re-fetch the data to return the updated record.
             // We fetch the encrypted_email which will be decrypted before sending the response.

@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class MViewerController extends Controller
 {
@@ -124,6 +127,13 @@ class MViewerController extends Controller
         $notificationMessage = "A new Viewer account has been created for {$newViewerName}.";
         SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
+        $actionType = ActionType::firstOrCreate(['action_name' => 'create_viewer']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Created a new Viewer account for {$newViewerName}."
+        ]);
+
         // CHANGE: To ensure backward compatibility, modify the user object for the response.
         // We add the plain-text 'email' back and hide the new internal fields.
         $user->email = $validatedData['email'];
@@ -146,7 +156,7 @@ class MViewerController extends Controller
         }
 
         // CHANGE: To ensure backward compatibility, transform the user object before sending the response.
-        // The accessor on the User model automatically decrypts the email for us. [cite: 584-591]
+        // The accessor on the User model automatically decrypts the email for us.
         $viewer->email = $viewer->encrypted_email;
 
         // Hide the new database columns from the JSON output.
@@ -249,6 +259,13 @@ class MViewerController extends Controller
                 }
             });
 
+            $actionType = ActionType::firstOrCreate(['action_name' => 'update_viewer']);
+            UserLog::create([
+                'user_id' => Auth::id(),
+                'action_type_id' => $actionType->id,
+                'details' => "Updated details for Viewer (ID: {$id})."
+            ]);
+
             $updatedViewer = User::with('userDetail')->find($id);
 
             $updatedViewer->email = $updatedViewer->encrypted_email;
@@ -290,6 +307,13 @@ class MViewerController extends Controller
 
         $viewer->status = 'restricted';
         $viewer->save();
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_viewer']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Restricted Viewer account for {$viewer->first_name} {$viewer->last_name} (ID: {$id})."
+        ]);
 
         return response()->json(['message' => 'Viewer has been restricted successfully.']);
     }
