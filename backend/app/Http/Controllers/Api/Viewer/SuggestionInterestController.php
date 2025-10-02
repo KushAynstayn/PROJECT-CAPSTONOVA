@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\Viewer;
 
-use App\Http\Controllers\Controller;
 use App\Models\Suggestion;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class SuggestionInterestController extends Controller
 {
@@ -29,6 +32,17 @@ class SuggestionInterestController extends Controller
 
         $suggestion->interested_student_id = $request->user()->id;
         $suggestion->save();
+
+        $studentName = $request->user()->first_name . ' ' . $request->user()->last_name;
+        $notificationMessage = "A student, {$studentName}, has expressed interest in your suggestion: '{$suggestion->title}'.";
+        SendNotification::dispatch($suggestion->adviser_id, $notificationMessage);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'express_interest']);
+        UserLog::create([
+            'user_id' => $request->user()->id,
+            'action_type_id' => $actionType->id,
+            'details' => "User expressed interest in suggestion '{$suggestion->title}' (ID: {$suggestion->suggestion_id})."
+        ]);
 
         return response()->json($suggestion);
     }
@@ -57,6 +71,13 @@ class SuggestionInterestController extends Controller
         // Remove the viewer's ID from the suggestion.
         $suggestion->interested_student_id = null;
         $suggestion->save();
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'remove_interest']);
+        UserLog::create([
+            'user_id' => $request->user()->id,
+            'action_type_id' => $actionType->id,
+            'details' => "User removed interest from suggestion '{$suggestion->title}' (ID: {$suggestion->suggestion_id})."
+        ]);
 
         return response()->json($suggestion);
     }

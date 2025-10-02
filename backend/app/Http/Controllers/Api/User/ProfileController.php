@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class ProfileController extends Controller
 {
@@ -125,6 +127,13 @@ class ProfileController extends Controller
         if ($user->userDetail && ($request->has('department') || $request->has('program'))) {
             $user->userDetail->update($request->only(['department', 'program']));
         }
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'update_profile']);
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => 'User profile updated.'
+        ]);
 
         // Transform the updated user data to include decrypted email
         $userData = $this->transformUserData($user->fresh('userDetail'));

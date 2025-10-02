@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use App\Jobs\ProcessGithubSourceCode;
 use Illuminate\Support\Facades\Validator;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class SubmitSourceCodeController extends Controller
 {
@@ -71,6 +73,13 @@ class SubmitSourceCodeController extends Controller
                 $tempTarPath
             );
         }
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'upload_source_code']);
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => "Source code submitted for project ID {$projectId} via {$validated['upload_type']}."
+        ]);
 
         return response()->json(['status' => 'queued'], 202);
     }

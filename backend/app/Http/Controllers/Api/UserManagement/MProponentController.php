@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\UserManagement;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -11,6 +13,9 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Exceptions\Renderer\Exception;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class MProponentController extends Controller
 {
@@ -163,6 +168,18 @@ class MProponentController extends Controller
             ]);
         });
 
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $newProponentName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Proponent account has been created for {$newProponentName}.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'create_proponent']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Created a new Proponent account for {$newProponentName}."
+        ]);
+
         return $this->show($newUserId);
     }
 
@@ -276,6 +293,13 @@ class MProponentController extends Controller
             }
         });
 
+        $actionType = ActionType::firstOrCreate(['action_name' => 'update_proponent']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Updated details for Proponent (ID: {$id})."
+        ]);
+
         return $this->show($id);
     }
 
@@ -284,10 +308,23 @@ class MProponentController extends Controller
      */
     public function destroy($id)
     {
+        $proponent = User::where('id', $id)->where('role', 'Proponent')->first();
+        if (!$proponent) {
+            return response()->json(['message' => 'Proponent not found.'], 404);
+        }
+
         $affected = DB::update("UPDATE users SET status = 'restricted' WHERE id = ? AND role = 'Proponent'", [$id]);
         if ($affected === 0) {
             return response()->json(['message' => 'Proponent not found.'], 404);
         }
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_proponent']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Restricted Proponent account for {$proponent->first_name} {$proponent->last_name} (ID: {$id})."
+        ]);
+
         return response()->json(['message' => 'Proponent has been restricted successfully.']);
     }
 }

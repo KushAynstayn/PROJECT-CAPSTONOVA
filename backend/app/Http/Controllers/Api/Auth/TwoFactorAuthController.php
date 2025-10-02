@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\ValidationException;
+use App\Models\ActionType;
+use App\Models\UserLog;
 
 class TwoFactorAuthController extends Controller
 {
@@ -54,6 +56,13 @@ class TwoFactorAuthController extends Controller
         $twoFactorRecord->delete();
 
         $token = $user->createToken('auth-token')->plainTextToken;
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'login']);
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => 'User logged in successfully via 2FA.'
+        ]);
 
         return response()->json([
             'message' => 'Login successful.',

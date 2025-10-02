@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\Adviser;
 
+use App\Models\User;
 use App\Models\Suggestion;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -85,6 +87,11 @@ class SuggestionController extends Controller
             'submission_date' => now(),
             'is_archived' => false, // Default value
         ]);
+
+        $adminIds = User::whereIn('role', ['Admin', 'Super Admin'])->pluck('id')->toArray();
+        $adviserName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+        $notificationMessage = "A new suggestion titled '{$suggestion->title}' has been posted by {$adviserName}.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         // 3. Return a success response with the new suggestion data.
         return response()->json([

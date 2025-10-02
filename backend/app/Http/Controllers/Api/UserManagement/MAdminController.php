@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Api\UserManagement;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules\Password;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class MAdminController extends Controller
 {
@@ -56,6 +60,18 @@ class MAdminController extends Controller
             'password' => Hash::make($validatedData['password']),
             'role' => 'Admin',
             'status' => 'active',
+        ]);
+
+        $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
+        $newAdminName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Admin account has been created for {$newAdminName}.";
+        SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'create_admin']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Created a new Admin account for {$newAdminName}."
         ]);
 
         // Add email attribute for the response
@@ -106,6 +122,13 @@ class MAdminController extends Controller
 
         $admin->update($validatedData);
 
+        $actionType = ActionType::firstOrCreate(['action_name' => 'update_admin']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Updated details for Admin (ID: {$admin->id})."
+        ]);
+
         // Refresh the model and add email attribute for response
         $admin->refresh();
         $admin->email = $admin->encrypted_email; // This will use the accessor to decrypt
@@ -121,6 +144,13 @@ class MAdminController extends Controller
 
         $admin->status = 'restricted';
         $admin->save();
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_admin']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Restricted Admin account for {$admin->first_name} {$admin->last_name} (ID: {$admin->id})."
+        ]);
 
         // Add email attribute for the response
         $admin->email = $admin->encrypted_email; // This will use the accessor to decrypt

@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Api\SuperAdmin;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class SACapstoneProjectController extends Controller
 {
@@ -31,6 +36,19 @@ class SACapstoneProjectController extends Controller
             return response()->json(['message' => 'Project not found or already archived.'], 404);
         }
 
+        $project = DB::table('capstone_projects')->where('id', $projectId)->first();
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $notificationMessage = "The capstone project titled '{$project->title}' has been archived.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'archive_project']);
+        $user = Auth::user();
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => "Project '{$project->title}' archived."
+        ]);
+
         return response()->json(['message' => 'Capstone project has been successfully archived.']);
     }
 
@@ -43,6 +61,19 @@ class SACapstoneProjectController extends Controller
         if ($affected === 0) {
             return response()->json(['message' => 'Project not found or already un-archived.'], 404);
         }
+
+        $project = DB::table('capstone_projects')->where('id', $projectId)->first();
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $notificationMessage = "The capstone project titled '{$project->title}' has been un-archived.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'unarchive_project']);
+        $user = Auth::user();
+        UserLog::create([
+            'user_id' => $user->id,
+            'action_type_id' => $actionType->id,
+            'details' => "Project '{$project->title}' un-archived."
+        ]);
 
         return response()->json(['message' => 'Capstone project has been successfully un-archived.']);
     }

@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Api\UserManagement;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Foundation\Exceptions\Renderer\Exception;
+use App\Models\ActionType;
+use App\Models\UserLog;
+use Illuminate\Support\Facades\Auth;
 
 class MAdviserController extends Controller
 {
@@ -91,6 +95,18 @@ class MAdviserController extends Controller
 
         $adviser = User::create($userData);
 
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $newAdviserName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Adviser account has been created for {$newAdviserName}.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'create_adviser']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Created a new Adviser account for {$newAdviserName}."
+        ]);
+
         // Prepare response with decrypted email
         $responseData = [
             'id' => $adviser->id,
@@ -152,6 +168,13 @@ class MAdviserController extends Controller
 
         $updatedAdviser = DB::table('users')->find($id);
 
+        $actionType = ActionType::firstOrCreate(['action_name' => 'update_adviser']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Updated details for Adviser (ID: {$id})."
+        ]);
+
         return response()->json($updatedAdviser);
     }
 
@@ -160,6 +183,11 @@ class MAdviserController extends Controller
      */
     public function destroy($id)
     {
+        $adviser = User::where('id', $id)->where('role', 'Adviser')->first();
+        if (!$adviser) {
+            return response()->json(['message' => 'Adviser not found.'], 404);
+        }
+
         $affectedRows = DB::table('users')
             ->where('id', $id)
             ->where('role', 'Adviser')
@@ -171,6 +199,13 @@ class MAdviserController extends Controller
         if ($affectedRows === 0) {
             return response()->json(['message' => 'Adviser not found.'], 404);
         }
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_adviser']);
+        UserLog::create([
+            'user_id' => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details' => "Restricted Adviser account for {$adviser->first_name} {$adviser->last_name} (ID: {$id})."
+        ]);
 
         return response()->json(['message' => 'Adviser status has been set to restricted.']);
     }
