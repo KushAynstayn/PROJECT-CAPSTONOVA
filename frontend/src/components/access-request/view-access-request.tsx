@@ -173,14 +173,14 @@ const AccessRequestView = ({
         }
       `}</style>
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-500 bg-background overflow-hidden">
+        <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-300 shadow-md bg-background overflow-hidden">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
           <InputWithClear
             type="search"
             className={cn(
-              "ml-10 w-full border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              "ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
             )}
             placeholder={placeholder}
             value={searchQuery}
@@ -194,7 +194,7 @@ const AccessRequestView = ({
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full justify-start text-left font-normal md:w-48",
+                  "w-full justify-start text-left font-normal md:w-48 shadow-md rounded-md border-gray-300",
                   !startDate && "text-muted-foreground"
                 )}
               >
@@ -220,7 +220,7 @@ const AccessRequestView = ({
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full justify-start text-left font-normal md:w-48",
+                  "w-full justify-start text-left font-normal md:w-48 shadow-md rounded-md border-gray-300",
                   !endDate && "text-muted-foreground"
                 )}
               >
@@ -301,7 +301,7 @@ const AccessRequestView = ({
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   onClick={handleApproveClick}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-green-500 text-white shadow-md hover:bg-green-600"
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-green-500 text-white shadow-md hover:bg-g-600"
                 >
                   <img
                     src="/images/check.png"

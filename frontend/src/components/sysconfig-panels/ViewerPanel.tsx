@@ -71,8 +71,8 @@ const ViewerPanel = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           PROFILE MANAGEMENT
         </h2>
@@ -87,7 +87,7 @@ const ViewerPanel = () => {
           onToggle={() => handleToggle("changePassword")}
         />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           REGISTER MANAGEMENT
         </h2>
@@ -97,7 +97,7 @@ const ViewerPanel = () => {
           onToggle={() => handleToggle("registerAccount")}
         />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           PROJECT MANAGEMENT
         </h2>
@@ -112,7 +112,7 @@ const ViewerPanel = () => {
           onToggle={() => handleToggle("requestFullAccess")}
         />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           SUGGESTIONS
         </h2>
@@ -122,7 +122,7 @@ const ViewerPanel = () => {
           onToggle={() => handleToggle("viewSuggestions")}
         />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           DATA ANALYTICS
         </h2>
@@ -132,7 +132,7 @@ const ViewerPanel = () => {
           onToggle={() => handleToggle("dataAnalyticsView")}
         />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           NOTIFICATION
         </h2>

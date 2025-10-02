@@ -6,10 +6,20 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// The Dialog component has been updated to accept a className prop.
+// It wraps the Radix provider in a div, allowing you to apply layout styles
+// like width or margins to the Dialog's container.
 function Dialog({
+  className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+}: React.ComponentProps<typeof DialogPrimitive.Root> & {
+  className?: string
+}) {
+  return (
+    <div className={className}>
+      <DialogPrimitive.Root data-slot="dialog" {...props} />
+    </div>
+  )
 }
 
 function DialogTrigger({
@@ -69,9 +79,9 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
           >
-          
+            <XIcon className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

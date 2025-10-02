@@ -129,12 +129,12 @@ const ProjectsPage = () => {
         >
           <img src="/images/arrow.png" className="h-5 w-5" />
         </Button>
-        <div className="bg-white p-6 rounded-lg shadow-md border">
+        <div className="bg-white p-6 rounded-md shadow-md border-1 border-gray-300">
           <h1 className="text-3xl font-bold mb-4 text-gray-800">
             {selectedProject.title}
           </h1>
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-700 border-b pb-2 mb-2">
+            <h2 className="text-xl font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-2">
               Abstract
             </h2>
             <p className="text-gray-600 leading-relaxed">

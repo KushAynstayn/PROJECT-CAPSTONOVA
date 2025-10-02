@@ -16,7 +16,7 @@ const ProjectItem = ({ project, onClick }: ProjectItemProps) => {
   return (
     <div
       onClick={onClick}
-      className="flex items-stretch mb-2 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-[1.01] hover:shadow-xl border"
+      className="flex items-stretch mb-2 bg-white rounded-md shadow-md overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-[1.01] hover:shadow-xl border-1 border-gray-300"
     >
       {/* Left side: Proponents Info */}
       <div className="flex items-center gap-4 p-4 w-1/3">

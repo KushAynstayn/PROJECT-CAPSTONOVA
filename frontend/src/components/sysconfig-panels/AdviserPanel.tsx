@@ -77,22 +77,22 @@ const AdviserPanel = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">PROFILE MANAGEMENT</h2>
         <ToggleSwitch label="Update profile" isToggled={adviserToggles.updateProfile} onToggle={() => handleToggle('updateProfile')} />
         <ToggleSwitch label="Change password" isToggled={adviserToggles.changePassword} onToggle={() => handleToggle('changePassword')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">ADVISEE MANAGEMENT</h2>
         <ToggleSwitch label="View Advisee" isToggled={adviserToggles.viewAdvisee} onToggle={() => handleToggle('viewAdvisee')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">PROJECTS</h2>
         <ToggleSwitch label="View Projects" isToggled={adviserToggles.viewProjects} onToggle={() => handleToggle('viewProjects')} />
         <ToggleSwitch label="Search Projects" isToggled={adviserToggles.searchProjects} onToggle={() => handleToggle('searchProjects')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">SUGGESTIONS</h2>
         <ToggleSwitch label="Create suggestion" isToggled={adviserToggles.createSuggestion} onToggle={() => handleToggle('createSuggestion')} />
         <ToggleSwitch label="View own suggestion" isToggled={adviserToggles.viewOwnSuggestion} onToggle={() => handleToggle('viewOwnSuggestion')} />
@@ -101,11 +101,11 @@ const AdviserPanel = () => {
         <ToggleSwitch label="Archive own suggestion" isToggled={adviserToggles.archiveOwnSuggestion} onToggle={() => handleToggle('archiveOwnSuggestion')} />
         <ToggleSwitch label="Return archived suggestion" isToggled={adviserToggles.returnArchivedSuggestion} onToggle={() => handleToggle('returnArchivedSuggestion')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">DATA ANALYTICS</h2>
         <ToggleSwitch label="View" isToggled={adviserToggles.dataAnalyticsView} onToggle={() => handleToggle('dataAnalyticsView')} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-md w-full">
+       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">NOTIFICATION</h2>
         <ToggleSwitch label="Get Notifications" isToggled={adviserToggles.getNotifications} onToggle={() => handleToggle('getNotifications')} />
       </div>

@@ -51,7 +51,7 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
   return (
     <>
       <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
-        <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-96 text-center border border-gray-300 ml-65">
+        <div className="bg-white rounded-md shadow-md p-6 w-96 text-center border border-gray-300 ml-65">
           <h3 className="text-lg font-bold mb-4 text-gray-800">
             Approve Access Request
           </h3>
@@ -68,7 +68,7 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal shadow-md rounded-md border-gray-300",
                       !grantDate && "text-muted-foreground"
                     )}
                   >
@@ -80,7 +80,7 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 rounded-md shadow-md border-gray-300">
                   <Calendar
                     mode="single"
                     selected={grantDate}
@@ -99,11 +99,11 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal shadow-md rounded-md border-gray-300",
                       !expiryDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4 " />
                     {expiryDate ? (
                       format(expiryDate, "PPP")
                     ) : (
@@ -111,13 +111,14 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 rounded-md shadow-md border-gray-300">
                   <Calendar
                     mode="single"
                     selected={expiryDate}
                     onSelect={setExpiryDate}
                     disabled={{ before: grantDate || new Date() }}
                     initialFocus
+                    className="rounded-md shadow-md border-gray-300"
                   />
                 </PopoverContent>
               </Popover>
@@ -128,19 +129,19 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
 
           <div className="flex justify-center space-x-4">
             <Button
-              onClick={onCancel}
-              variant="outline"
-              className="flex-1"
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
               onClick={handleConfirm}
-              className="flex-1 bg-green-500 text-white hover:bg-green-600"
+              className="flex-1 bg-[#660000] hover:bg-[#660000] hover:text-white transition-transform duration-200 ease-in-out hover:scale-105 text-white"
               disabled={isLoading}
             >
               {isLoading ? "Approving..." : "Confirm"}
+            </Button>
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              className="flex-1 bg-gray-300 border-gray-300 hover:bg-[#660000] hover:text-white text-gray-700 transition-transform duration-200 ease-in-out hover:scale-105"
+              disabled={isLoading}
+            >
+              Cancel
             </Button>
           </div>
         </div>
@@ -149,7 +150,7 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
       {/* Success Dialog */}
       {showSuccessDialog && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
-          <div className="bg-white rounded-xl shadow-lg shadow-gray-700/70 p-6 w-80 text-center border border-gray-300 ml-65">
+          <div className="bg-white rounded-md shadow-md p-6 w-80 text-center border border-gray-300 ml-65">
             <h3 className="text-lg font-bold mb-4 text-gray-800">
               Approval Status
             </h3>
@@ -158,7 +159,7 @@ const ActionApprovedRequest: React.FC<ActionApprovedRequestProps> = ({
             </p>
             <Button
               onClick={handleSuccessDialogClose}
-              className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-xl hover:bg-blue-600 transition-colors"
+              className="w-full bg-[#660000] text-white font-bold py-2 px-4 rounded-md"
             >
               OK
             </Button>

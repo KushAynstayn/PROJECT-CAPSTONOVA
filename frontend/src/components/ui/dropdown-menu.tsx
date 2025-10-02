@@ -6,10 +6,20 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// The DropdownMenu component has been updated to accept a className prop.
+// It wraps the Radix provider in a div, allowing you to apply layout styles
+// like width or margins to the DropdownMenu's container.
 function DropdownMenu({
+  className,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root> & {
+  className?: string
+}) {
+  return (
+    <div className={className}>
+      <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+    </div>
+  )
 }
 
 function DropdownMenuPortal({
@@ -43,7 +53,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         className={cn(
           "z-50 min-w-[8rem] overflow-hidden rounded-md border border-white/20 bg-[#833604] p-1 text-white shadow-md",
-        className
+          className
         )}
         {...props}
       />

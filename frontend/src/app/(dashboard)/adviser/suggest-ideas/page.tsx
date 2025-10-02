@@ -12,7 +12,7 @@ import {
   ArrowLeft,
   ChevronDown,
   Settings,
-  X
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -119,7 +119,7 @@ const EditSuggestionModal: React.FC<EditSuggestionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl rounded-md shadow-md border-1 border-gray-300">
         <DialogHeader>
           <DialogTitle>Edit Suggestion</DialogTitle>
           <DialogDescription>
@@ -137,17 +137,17 @@ const EditSuggestionModal: React.FC<EditSuggestionModalProps> = ({
               id="suggestion_text"
               value={suggestionText}
               onChange={(e) => setSuggestionText(e.target.value)}
-              className="min-h-[150px]"
+              className="min-h-[150px] rounded-md shadow-md border-gray-300"
             />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
+          <Button onClick={handleSave} disabled={isLoading} className="bg-[#660000] hover:shadow-lg hover:bg-[#660000] hover:text-white text-white transition-transform duration-200 ease-in-out hover:scale-105">
             {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+          <Button variant="outline" onClick={onClose} className="bg-gray-300 border-gray-300 hover:shadow-lg hover:bg-[#660000] hover:text-white text-gray-700 transition-transform duration-200 ease-in-out hover:scale-105">
+            Cancel
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -207,14 +207,14 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl rounded-md shadow-md border-1 border-gray-300">
           <DialogHeader>
             <DialogTitle>Manage Your Suggestions</DialogTitle>
             <DialogDescription>
               Here you can edit or archive your submitted ideas.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[400px] border rounded-md p-4">
+          <ScrollArea className="h-[400px] p-4">
             {isLoading && <p>Loading...</p>}
             {error && <p className="text-red-500">{error}</p>}
             {!isLoading && mySuggestions.length === 0 && (
@@ -250,6 +250,7 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
                       size="sm"
                       onClick={() => setEditingSuggestion(suggestion)}
                       disabled={suggestion.is_archived}
+                      className="rounded-md shadow-md bg-[#660000] hover:bg-[#660000] hover:shadow-lg hover:text-white text-white border-1 border-gray-300 transition-transform hover:scale-110 "
                     >
                       Update
                     </Button>
@@ -258,6 +259,7 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
                       size="sm"
                       onClick={() => handleArchive(suggestion.suggestion_id)}
                       disabled={suggestion.is_archived}
+                      className="rounded-md shadow-md hover:bg-gray-700 hover:text-white hover:shadow-lg bg-gray-300 text-gray-700 border-1 border-gray-300 transition-transform hover:scale-110 "
                     >
                       Archive
                     </Button>
@@ -266,11 +268,6 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
               ))}
             </div>
           </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -341,7 +338,7 @@ const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
         </h1>
       </div>
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white p-10 rounded-lg shadow-lg">
+        <div className="bg-white p-10 rounded-md shadow-md border-1 border-gray-300">
           <div className="relative flex justify-center items-center mb-4">
             <h2 className="text-2xl font-semibold text-gray-700">
               Have amazing capstone ideas?
@@ -349,7 +346,7 @@ const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
           </div>
           <Input
             placeholder="Title"
-            className="w-full mb-4 p-4 border-gray-300 rounded-md focus:ring-2 focus:ring-[#6b0000]"
+            className="w-full mb-4 p-4 border-gray-300 shadow-md rounded-md"
             value={title}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setTitle(e.target.value)
@@ -357,7 +354,7 @@ const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
           />
           <Textarea
             placeholder="Suggest here"
-            className="w-full h-56 p-4 border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-[#6b0000]"
+            className="w-full h-56 p-4 border-gray-300 rounded-md resize-none shadow-md"
             value={suggestionText}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               setSuggestionText(e.target.value)
@@ -366,18 +363,18 @@ const AddSuggestionPage: React.FC<AddSuggestionPageProps> = ({
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           <div className="flex justify-end gap-3 mt-6">
             <Button
-              variant="outline"
-              className="bg-gray-200 hover:bg-gray-300"
-              onClick={onGoBack}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-semibold"
+              className="bg-[#660000] hover:bg-[#660000] hover:text-white transition-transform duration-200 ease-in-out hover:scale-105 text-white"
               onClick={handleSubmit}
               disabled={isLoading}
             >
               {isLoading ? "Submitting..." : "Suggest"}
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-gray-300 border-gray-300 hover:bg-[#660000] hover:text-white text-gray-700 transition-transform duration-200 ease-in-out hover:scale-105"
+              onClick={onGoBack}
+            >
+              Cancel
             </Button>
           </div>
         </div>
@@ -572,21 +569,33 @@ const AdviserSuggestionsPage = () => {
           </div>
 
           <div className="flex-shrink-0">
-            <DropdownMenu>
+            <DropdownMenu className="rounded-md shadow-md ">
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full md:w-auto">
+                <Button
+                  variant="outline"
+                  className="w-full md:w-auto border-gray-300 border-1"
+                >
                   {getFilterButtonText()}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => setFilterMode("all")}>
+              <DropdownMenuContent className="bg-white border-gray-300 rounded-md shadow-md">
+                <DropdownMenuItem
+                  onSelect={() => setFilterMode("all")}
+                  className="text-gray-700"
+                >
                   All Suggestions
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setFilterMode("mine")}>
+                <DropdownMenuItem
+                  onSelect={() => setFilterMode("mine")}
+                  className="text-gray-700"
+                >
                   My Suggestions
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setFilterMode("archived")}>
+                <DropdownMenuItem
+                  onSelect={() => setFilterMode("archived")}
+                  className="text-gray-700"
+                >
                   My Archive
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -597,7 +606,7 @@ const AdviserSuggestionsPage = () => {
             <Button
               onClick={() => setIsManageModalOpen(true)}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-md shadow-md border-gray-300 border-1"
             >
               <Settings size={18} />
               Manage
