@@ -40,17 +40,18 @@ export const Combobox: React.FC<ComboboxProps> = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between rounded-none border-[rgba(0,0,0,0.5)]"
-          onFocus={onFocus}
-        >
-          {value
-            ? items.find((item) => item.value === value)?.label
-            : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+  variant="outline"
+  role="combobox"
+  aria-expanded={open}
+  className="w-full mt-1 border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none justify-start"
+  onFocus={onFocus}
+>
+  {value
+    ? items.find((item) => item.value === value)?.label
+    : placeholder}
+  <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+</Button>
+
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>

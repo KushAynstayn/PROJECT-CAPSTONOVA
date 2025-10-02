@@ -131,7 +131,8 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
               }
               className="mb-1"
             >
-              <Label>Upload Type</Label>
+              {/* MODIFIED: Added font-normal class */}
+              <Label className="font-normal">Upload Type</Label>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="github" id="github" />
@@ -149,7 +150,8 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           {uploadType === "github" && (
             <div className="space-y-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="github_url" className="text-right">
+                {/* MODIFIED: Added font-normal class */}
+                <Label htmlFor="github_url" className="text-right font-normal">
                   GitHub URL
                 </Label>
                 <div className="col-span-3">
@@ -164,7 +166,11 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="github_token" className="text-right">
+                {/* MODIFIED: Added font-normal class */}
+                <Label
+                  htmlFor="github_token"
+                  className="text-right font-normal"
+                >
                   Token (Optional)
                 </Label>
                 <div className="col-span-3">
@@ -198,7 +204,11 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           )}
 
           <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="programming_languages" className="text-right pt-2">
+            {/* MODIFIED: Added font-normal class */}
+            <Label
+              htmlFor="programming_languages"
+              className="text-right pt-2 font-normal"
+            >
               Languages
             </Label>
             <div className="col-span-3">
