@@ -6,6 +6,7 @@ use Throwable;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -117,6 +118,11 @@ class MViewerController extends Controller
 
             return $newUser;
         });
+
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $newViewerName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Viewer account has been created for {$newViewerName}.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         // CHANGE: To ensure backward compatibility, modify the user object for the response.
         // We add the plain-text 'email' back and hide the new internal fields.

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\SuperAdmin;
 
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -141,6 +142,10 @@ class DocumentRequestController extends Controller
             ]);
         });
 
+        $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
+        $message = "Your request to access the document for the project '{$projectTitle}' has been approved.";
+        SendNotification::dispatch($documentRequest->viewer_id, $message);
+
         // Refetch the updated request to return it with decrypted email
         $updatedRequest = DB::table('document_requests')
             ->join('users as viewer', 'document_requests.viewer_id', '=', 'viewer.id')
@@ -179,6 +184,10 @@ class DocumentRequestController extends Controller
         DB::table('document_requests')
             ->where('request_id', $id)
             ->update(['status' => 'rejected']);
+
+        $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
+        $message = "Your request to access the document for the project '{$projectTitle}' has been rejected.";
+        SendNotification::dispatch($documentRequest->viewer_id, $message);
 
         // Refetch the updated request to return it with decrypted email
         $updatedRequest = DB::table('document_requests')

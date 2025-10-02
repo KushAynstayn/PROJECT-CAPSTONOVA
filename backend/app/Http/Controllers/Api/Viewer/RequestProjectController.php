@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\Viewer;
 
+use App\Models\User;
 use App\Models\ViewerAccess;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use App\Models\CapstoneProject;
 use App\Models\DocumentRequest;
 use App\Http\Controllers\Controller;
@@ -99,6 +101,11 @@ class RequestProjectController extends Controller
             'request_date' => now(),
             'status' => 'pending',
         ]);
+
+        $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
+        $userName = $request->user()->first_name . ' ' . $request->user()->last_name;
+        $notificationMessage = "User {$userName} has requested access to the project: '{$project->title}'.";
+        SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
 
         return response()->json($documentRequest, 201);
     }

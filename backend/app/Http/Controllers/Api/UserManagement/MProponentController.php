@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\UserManagement;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -162,6 +164,11 @@ class MProponentController extends Controller
                 $now
             ]);
         });
+
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $newProponentName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Proponent account has been created for {$newProponentName}.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         return $this->show($newUserId);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\UserManagement;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -90,6 +91,11 @@ class MAdviserController extends Controller
         ];
 
         $adviser = User::create($userData);
+
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $newAdviserName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Adviser account has been created for {$newAdviserName}.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         // Prepare response with decrypted email
         $responseData = [

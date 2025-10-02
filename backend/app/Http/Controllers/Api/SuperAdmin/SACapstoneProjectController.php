@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\SuperAdmin;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -31,6 +33,11 @@ class SACapstoneProjectController extends Controller
             return response()->json(['message' => 'Project not found or already archived.'], 404);
         }
 
+        $project = DB::table('capstone_projects')->where('id', $projectId)->first();
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $notificationMessage = "The capstone project titled '{$project->title}' has been archived.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
         return response()->json(['message' => 'Capstone project has been successfully archived.']);
     }
 
@@ -43,6 +50,11 @@ class SACapstoneProjectController extends Controller
         if ($affected === 0) {
             return response()->json(['message' => 'Project not found or already un-archived.'], 404);
         }
+
+        $project = DB::table('capstone_projects')->where('id', $projectId)->first();
+        $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
+        $notificationMessage = "The capstone project titled '{$project->title}' has been un-archived.";
+        SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         return response()->json(['message' => 'Capstone project has been successfully un-archived.']);
     }

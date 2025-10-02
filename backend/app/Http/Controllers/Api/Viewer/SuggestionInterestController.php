@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api\Viewer;
 
-use App\Http\Controllers\Controller;
 use App\Models\Suggestion;
 use Illuminate\Http\Request;
+use App\Jobs\SendNotification;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SuggestionInterestController extends Controller
@@ -29,6 +30,10 @@ class SuggestionInterestController extends Controller
 
         $suggestion->interested_student_id = $request->user()->id;
         $suggestion->save();
+
+        $studentName = $request->user()->first_name . ' ' . $request->user()->last_name;
+        $notificationMessage = "A student, {$studentName}, has expressed interest in your suggestion: '{$suggestion->title}'.";
+        SendNotification::dispatch($suggestion->adviser_id, $notificationMessage);
 
         return response()->json($suggestion);
     }

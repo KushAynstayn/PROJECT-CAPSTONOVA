@@ -151,6 +151,11 @@ class ProcessCapstoneManuscripts implements ShouldQueue
 
             SendNotification::dispatch(null, $adminMessage, $adminIds);
 
+            if ($this->user->userDetail && $this->user->userDetail->adviser_id) {
+                $adviserMessage = "Your advisee, {$this->user->first_name} {$this->user->last_name}, has uploaded documents for the project: '{$this->project->title}'.";
+                SendNotification::dispatch($this->user->userDetail->adviser_id, $adviserMessage);
+            }
+
             SendNotification::dispatch(
                 $this->user->id,
                 "Your project '{$this->project->title}' files have been processed successfully."

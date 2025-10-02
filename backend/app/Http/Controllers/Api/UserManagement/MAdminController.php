@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api\UserManagement;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
+use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules\Password;
 
 class MAdminController extends Controller
@@ -57,6 +58,11 @@ class MAdminController extends Controller
             'role' => 'Admin',
             'status' => 'active',
         ]);
+
+        $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
+        $newAdminName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        $notificationMessage = "A new Admin account has been created for {$newAdminName}.";
+        SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
 
         // Add email attribute for the response
         $admin->email = $email;
