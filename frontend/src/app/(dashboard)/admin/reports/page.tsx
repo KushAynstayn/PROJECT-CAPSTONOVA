@@ -179,10 +179,18 @@ const AdminReportsPage = () => {
                 />
               </>
             )}
-            <Button variant="outline" onClick={handleModeToggle}>
+            <Button
+              variant="outline"
+              onClick={handleModeToggle}
+              className="border border-gray-300 shadow-md rounded-md hover:bg-[#660000] hover:text-white hover:border-[#660000]"
+            >
               {pickerMode === "single" ? "Select Range" : "Select Single Year"}
             </Button>
-            <Button variant="outline" onClick={() => fetchReportData()}>
+            <Button
+              variant="outline"
+              onClick={() => fetchReportData()}
+              className="border border-gray-300 shadow-md rounded-md hover:bg-[#660000] hover:text-white hover:border-[#660000]"
+            >
               Apply Filter
             </Button>
           </div>
@@ -220,24 +228,24 @@ const AdminReportsPage = () => {
                   </div>
                 </div>
               </div>
-              <Card className="w-60 text-center flex flex-col justify-center h-full">
-                <CardHeader className="pt-6 pb-2">
-                  <CardTitle className="text-lg font-semibold text-gray-700">
-                    Total Submission
-                  </CardTitle>
-                </CardHeader>
+              <Card className="w-60 text-center flex flex-col justify-center h-full border border-gray-200 shadow-md rounded-md">
+              <CardHeader className="pt-6 pb-2">
+                <CardTitle className="text-lg font-semibold text-gray-700">
+                  Total Submission
+                </CardTitle>
+              </CardHeader>
                 <CardContent className="pb-6">
                   <p className="text-5xl font-bold text-gray-900">
                     {reportData.total_submissions}
                   </p>
                 </CardContent>
               </Card>
-              <Card className="w-60 text-center flex flex-col justify-center h-full">
-                <CardHeader className="pt-6 pb-2">
-                  <CardTitle className="text-lg font-semibold text-gray-700">
-                    Total Archived
-                  </CardTitle>
-                </CardHeader>
+              <Card className="w-60 text-center flex flex-col justify-center h-full border border-gray-200 shadow-md rounded-md">
+              <CardHeader className="pt-6 pb-2">
+                <CardTitle className="text-lg font-semibold text-gray-700">
+                  Total Archived
+                </CardTitle>
+              </CardHeader>
                 <CardContent className="pb-6">
                   <p className="text-5xl font-bold text-gray-900">
                     {reportData.total_archived}

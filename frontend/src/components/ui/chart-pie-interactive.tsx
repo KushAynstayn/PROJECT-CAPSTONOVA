@@ -34,7 +34,7 @@ export function AdviserDistributionChart({
   ];
 
   return (
-    <Card className="flex flex-col">
+    <Card className="border border-gray-300 shadow-md rounded-md">
       <CardHeader className="items-center pb-0">
         <CardTitle>Advisers</CardTitle>
         <CardDescription>Total: {adviserCount} Advisers</CardDescription>

@@ -29,7 +29,7 @@ const chartConfig = {
 export function AdminDistributionChart({ adminCount }: { adminCount: number }) {
   const chartData = [{ course: "Admins", count: adminCount, fill: "#8B0000" }]; // Changed from dark blue to maroon
   return (
-    <Card className="flex flex-col ">
+    <Card className="border border-gray-300 shadow-md rounded-md">
       <CardHeader className="items-center pb-0">
         <CardTitle>Admins</CardTitle>
         <CardDescription>Total: {adminCount} Admins</CardDescription>

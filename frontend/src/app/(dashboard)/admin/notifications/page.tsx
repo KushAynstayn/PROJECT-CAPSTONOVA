@@ -15,15 +15,15 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({
   notification,
 }) => (
   <div
-    className={`flex items-start gap-3 p-4 border rounded-lg shadow-sm mb-3 ${
-      notification.is_read ? "bg-gray-100" : "bg-white"
-    }`}
+    className={`group flex items-start gap-3 p-4 border border-gray-300 rounded-md shadow-md mb-3 hover:bg-[#660000] transition-colors duration-200 ${
+      notification.is_read ? "bg-gray-100" : "bg-white"
+    }`}
   >
     <div className="flex-shrink-0">
       <svg
-        className={`w-6 h-6 ${
-          notification.is_read ? "text-gray-400" : "text-blue-500"
-        }`}
+        className={`w-6 h-6 group-hover:text-white ${
+          notification.is_read ? "text-gray-400" : "text-blue-500"
+        }`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -38,8 +38,10 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({
       </svg>
     </div>
     <div className="flex-grow">
-      <p className="text-gray-800 font-medium">{notification.message}</p>
-      <p className="text-sm text-gray-500 mt-1">
+      <p className="text-gray-800 font-medium group-hover:text-white">
+        {notification.message}
+      </p>
+      <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-200">
         {new Date(notification.notification_date).toLocaleString()}
       </p>
     </div>

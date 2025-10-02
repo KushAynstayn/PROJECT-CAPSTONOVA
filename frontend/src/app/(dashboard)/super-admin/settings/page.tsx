@@ -181,17 +181,16 @@ const SuperAdminSettingsPage = () => {
               />
             </div>
             {isMenuOpen && (
-              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-                <div className="py-1">
+                <div className="origin-top-right absolute right-0 mt-2 w-48 bg-white border border-gray-300 shadow-md rounded-md">                <div className="py-1">
                   <button
                     onClick={handleEditClick}
-                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-[#660000] hover:text-white rounded-md"
                   >
                     Edit Profile
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-[#660000] hover:text-white rounded-md"
                   >
                     Logout
                   </button>
