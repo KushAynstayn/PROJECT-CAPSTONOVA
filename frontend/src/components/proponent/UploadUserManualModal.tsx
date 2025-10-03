@@ -1,4 +1,3 @@
-// [NEW FILE]
 "use client";
 
 import React, { useState } from "react";
@@ -11,9 +10,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiCall, ApiError } from "../../lib/api";
+import { FileUploaderWithProgress } from "./file-uploader-with-progress";
 
 interface UploadUserManualModalProps {
   isOpen: boolean;
@@ -30,7 +28,8 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
   onOpenChange,
   onSuccess,
 }) => {
-  const [userManual, setUserManual] = useState<File | null>(null);
+  const [userManualPath, setUserManualPath] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -39,37 +38,20 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
     return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setErrors((prev) => ({ ...prev, user_manual: undefined }));
-
-    if (file) {
-      if (file.type !== "application/pdf") {
-        setErrors((prev) => ({
-          ...prev,
-          user_manual: ["File must be a PDF."],
-        }));
-        setUserManual(null);
-        e.target.value = "";
-        return;
-      }
-    }
-    setUserManual(file);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
-
-    if (!userManual) {
-      setErrors({ user_manual: ["Please select a file to upload."] });
-      setIsLoading(false);
+    if (!userManualPath) {
+      setErrors({
+        user_manual_path: ["Please upload a file first."],
+      });
       return;
     }
 
+    setIsLoading(true);
+    setErrors({});
+
     const data = new FormData();
-    data.append("user_manual", userManual);
+    data.append("user_manual_path", userManualPath);
 
     try {
       await apiCall("/proponent/submit-user-manual", "POST", data, true);
@@ -89,12 +71,18 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
     }
   };
 
+  const isSubmitDisabled = isLoading || isUploading || !userManualPath;
+
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
-        if (!open) setErrors({});
+        if (!open) {
+          setErrors({});
+          setUserManualPath(null);
+          setIsUploading(false);
+        }
       }}
     >
       <DialogContent className="sm:max-w-[425px]">
@@ -104,24 +92,42 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
             Upload the user manual for your project.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="user_manual">User Manual (PDF)</Label>
-            <Input
-              id="user_manual"
-              type="file"
-              onChange={handleFileChange}
-              accept=".pdf"
-            />
-            <ErrorMessage field="user_manual" />
-            {errors.general && (
-              <p className="text-sm text-red-500 mt-1">{errors.general[0]}</p>
-            )}
-          </div>
-        </form>
+        <div className="py-4">
+          <FileUploaderWithProgress
+            id="user_manual"
+            label="User Manual (PDF)"
+            maxSizeMB={20} // Example size
+            accept=".pdf"
+            onUploadStart={() => {
+              setIsUploading(true);
+              setUserManualPath(null);
+              setErrors((prev) => ({ ...prev, user_manual_path: undefined }));
+            }}
+            onUploadComplete={(path) => {
+              setUserManualPath(path);
+              setIsUploading(false);
+            }}
+            onUploadError={(error) => {
+              setErrors((prev) => ({ ...prev, user_manual_path: [error] }));
+              setIsUploading(false);
+            }}
+          />
+          <ErrorMessage field="user_manual_path" />
+          {errors.general && (
+            <p className="text-sm text-red-500 mt-1">{errors.general[0]}</p>
+          )}
+        </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Submit"}
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitDisabled}
+          >
+            {isLoading
+              ? "Submitting..."
+              : isUploading
+              ? "Uploading..."
+              : "Submit"}
           </Button>
         </DialogFooter>
       </DialogContent>

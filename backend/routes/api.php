@@ -43,9 +43,10 @@ use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\MlService\MLSuggestionController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
+use App\Http\Controllers\Api\Proponent\ChunkedUploadController;
+
+
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
-
-
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
 use App\Http\Controllers\Api\SuperAdmin\SystemSettingController;
@@ -132,6 +133,20 @@ Route::prefix('proponent')->middleware('auth:sanctum')->group(function () {
 
     Route::post('/submit-user-manual', [ProjectAttachmentController::class, 'submitUserManual']);
     Route::post('/submit-usage-guide', [ProjectAttachmentController::class, 'submitUsageGuide']);
+
+
+    Route::post(
+        '/chunk/start',
+        [ChunkedUploadController::class, 'start']
+    )->name('chunk.start');
+    Route::post(
+        '/chunk/upload/{uuid}',
+        [ChunkedUploadController::class, 'upload']
+    )->name('chunk.upload');
+    Route::post(
+        '/chunk/finish/{uuid}',
+        [ChunkedUploadController::class, 'finish']
+    )->name('chunk.finish');
 });
 
 

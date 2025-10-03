@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import KeywordInput from "../ui/keyword-input";
 import { apiCall, ApiError } from "../../lib/api";
+import { FileUploaderWithProgress } from "./file-uploader-with-progress";
 
 interface SourceCodeUploadModalProps {
   isOpen: boolean;
@@ -34,35 +35,19 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
   const [uploadType, setUploadType] = useState<"github" | "tar">("github");
   const [githubUrl, setGithubUrl] = useState("");
   const [githubToken, setGithubToken] = useState("");
-  const [sourceCodeTar, setSourceCodeTar] = useState<File | null>(null);
+  const [sourceCodeTarPath, setSourceCodeTarPath] = useState<string | null>(
+    null
+  );
+  const [isTarUploading, setIsTarUploading] = useState(false);
   const [programmingLanguages, setProgrammingLanguages] = useState<string[]>(
     []
   );
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Helper component to display errors
   const ErrorMessage = ({ field }: { field: string }) => {
     if (!errors[field]) return null;
     return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setErrors((prev) => ({ ...prev, source_code_tar: undefined }));
-
-    if (file) {
-      if (!file.name.endsWith(".tar")) {
-        setErrors((prev) => ({
-          ...prev,
-          source_code_tar: ["File must be a .tar archive."],
-        }));
-        setSourceCodeTar(null);
-        e.target.value = "";
-        return;
-      }
-    }
-    setSourceCodeTar(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,14 +57,16 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
 
     const data = new FormData();
     data.append("upload_type", uploadType);
+
     if (uploadType === "github") {
       data.append("github_url", githubUrl);
       if (githubToken) {
         data.append("github_token", githubToken);
       }
-    } else if (sourceCodeTar) {
-      data.append("source_code_tar", sourceCodeTar);
+    } else if (sourceCodeTarPath) {
+      data.append("source_code_tar_path", sourceCodeTarPath);
     }
+
     programmingLanguages.forEach((lang) =>
       data.append("programming_languages[]", lang)
     );
@@ -104,12 +91,22 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
     }
   };
 
+  const isSubmitDisabled =
+    isLoading || isTarUploading || (uploadType === "tar" && !sourceCodeTarPath);
+
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
-        if (!open) setErrors({});
+        if (!open) {
+          setErrors({});
+          setGithubUrl("");
+          setGithubToken("");
+          setSourceCodeTarPath(null);
+          setIsTarUploading(false);
+          setProgrammingLanguages([]);
+        }
       }}
     >
       <DialogContent className="sm:max-w-[600px]">
@@ -124,15 +121,14 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
         >
           <div>
+            <Label className="font-normal">Upload Type</Label>
             <RadioGroup
               value={uploadType}
               onValueChange={(value) =>
                 setUploadType(value as "github" | "tar")
               }
-              className="mb-1"
+              className="mt-1"
             >
-              {/* MODIFIED: Added font-normal class */}
-              <Label className="font-normal">Upload Type</Label>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="github" id="github" />
@@ -150,7 +146,6 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           {uploadType === "github" && (
             <div className="space-y-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                {/* MODIFIED: Added font-normal class */}
                 <Label htmlFor="github_url" className="text-right font-normal">
                   GitHub URL
                 </Label>
@@ -166,7 +161,6 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                {/* MODIFIED: Added font-normal class */}
                 <Label
                   htmlFor="github_token"
                   className="text-right font-normal"
@@ -187,24 +181,37 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           )}
 
           {uploadType === "tar" && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="source_code_tar" className="text-right">
-                .tar file
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="source_code_tar"
-                  type="file"
-                  onChange={handleFileChange}
-                  accept=".tar"
-                />
-                <ErrorMessage field="source_code_tar" />
-              </div>
+            <div className="space-y-4">
+              <FileUploaderWithProgress
+                id="source_code_tar"
+                label=".tar file"
+                maxSizeMB={2048} // Example size, adjust as needed
+                accept=".tar"
+                onUploadStart={() => {
+                  setIsTarUploading(true);
+                  setSourceCodeTarPath(null);
+                  setErrors((prev) => ({
+                    ...prev,
+                    source_code_tar_path: undefined,
+                  }));
+                }}
+                onUploadComplete={(path) => {
+                  setSourceCodeTarPath(path);
+                  setIsTarUploading(false);
+                }}
+                onUploadError={(error) => {
+                  setErrors((prev) => ({
+                    ...prev,
+                    source_code_tar_path: [error],
+                  }));
+                  setIsTarUploading(false);
+                }}
+              />
+              <ErrorMessage field="source_code_tar_path" />
             </div>
           )}
 
           <div className="grid grid-cols-4 items-start gap-4">
-            {/* MODIFIED: Added font-normal class */}
             <Label
               htmlFor="programming_languages"
               className="text-right pt-2 font-normal"
@@ -226,8 +233,16 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           {errors.general && (
             <p className="text-sm text-red-500 mr-auto">{errors.general[0]}</p>
           )}
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Submit"}
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitDisabled}
+          >
+            {isLoading
+              ? "Submitting..."
+              : isTarUploading
+              ? "Uploading File..."
+              : "Submit"}
           </Button>
         </DialogFooter>
       </DialogContent>

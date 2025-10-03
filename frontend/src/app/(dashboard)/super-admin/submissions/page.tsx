@@ -9,9 +9,43 @@ import { DownloadModal } from "@/components/ui/AllModal";
 import { YearPicker } from "@/components/ui/year-picker";
 import { Button } from "@/components/ui/button";
 import { apiCall, ApiError } from "@/lib/api";
+import { authStore } from "@/lib/auth";
 import PdfViewer from "@/components/ui/pdf-viewer";
 import { ArrowLeft, Search, X } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
+
+// This is a temporary solution for the API_BASE URL.
+// Ideally, this should be exported from your `api.ts` or a central config file.
+const API_BASE = "http://127.0.0.1:8000/api";
+
+// Helper function to handle file downloads since apiCall is for JSON
+const downloadFile = async (path: string, filename: string) => {
+  try {
+    const token = authStore.getToken();
+    const response = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert(`Failed to download ${filename}.`);
+  }
+};
 
 // New component for the details page
 const ProjectDetailsPage = ({
@@ -23,9 +57,13 @@ const ProjectDetailsPage = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewPdf, setViewPdf] = useState(false);
+  const [downloadType, setDownloadType] = useState<
+    "sourceCode" | "userGuide" | "systemManual" | null
+  >(null);
 
-  const handleSourceCodeClick = () => { 
+  const handleSourceCodeClick = () => {
     if (project.source_code_id) {
+      setDownloadType("sourceCode");
       setIsModalOpen(true);
     } else {
       alert("No source code available for this project.");
@@ -40,52 +78,56 @@ const ProjectDetailsPage = ({
     }
   };
 
-   const handleUserGuideClick = () => {
-    if (project.source_code_id) {
+  const handleUserGuideClick = () => {
+    if (project.id) {
+      setDownloadType("userGuide");
       setIsModalOpen(true);
     } else {
-      alert("No source code available for this project.");
+      alert("No user guide available for this project.");
     }
   };
 
   const handleSystemManualClick = () => {
-    if (project.source_code_id) {
+    if (project.id) {
+      setDownloadType("systemManual");
       setIsModalOpen(true);
     } else {
-      alert("No source code available for this project.");
+      alert("No system manual available for this project.");
     }
   };
 
   const handleModalConfirm = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/user/download/source-code/${project.source_code_id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${project.title.replace(/\s+/g, "_")}_source_code.tar`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch (error) {
-      console.error("Download failed:", error);
-      alert("Failed to download source code.");
+    const title = project.title.replace(/\s+/g, "_");
+    switch (downloadType) {
+      case "sourceCode":
+        await downloadFile(
+          `/user/download/source-code/${project.source_code_id}`,
+          `${title}_source_code.tar`
+        );
+        break;
+      case "userGuide":
+        await downloadFile(
+          `/user/projects/${project.id}/user-manual`,
+          `${title}_user_manual.pdf`
+        );
+        break;
+      case "systemManual":
+        await downloadFile(
+          `/user/projects/${project.id}/usage-guide`,
+          `${title}_system_manual.pdf`
+        );
+        break;
+      default:
+        console.error("No download type specified");
     }
     setIsModalOpen(false);
+    setDownloadType(null);
   };
 
-  const handleModalCancel = () => setIsModalOpen(false);
+  const handleModalCancel = () => {
+    setIsModalOpen(false);
+    setDownloadType(null);
+  };
 
   if (viewPdf) {
     return (

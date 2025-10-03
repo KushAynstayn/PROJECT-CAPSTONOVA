@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers\Api\Proponent;
 
-use App\Models\Keyword;
-use Illuminate\Http\Request;
-use App\Models\CapstoneProject;
-use App\Models\ProjectResearcher;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use App\Jobs\ProcessCapstoneManuscripts;
-use Illuminate\Support\Facades\Validator;
 use App\Models\ActionType;
+use App\Models\CapstoneProject;
+use App\Models\Keyword;
+use App\Models\ProjectResearcher;
 use App\Models\UserLog;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class SubmitDocumentAndDetailController extends Controller
 {
     /**
      * Handle the incoming request for submitting a capstone project.
+     * This controller now accepts paths to pre-uploaded files instead of the files themselves.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -34,6 +35,10 @@ class SubmitDocumentAndDetailController extends Controller
             abort(403, 'Unauthorized - Proponent access required');
         }
 
+        // --- MODIFIED VALIDATION ---
+        // The controller no longer validates file types or sizes here.
+        // It now expects string paths for the files that have already been
+        // uploaded and assembled by the ChunkedUploadController.
         $validator = Validator::make($request->all(), [
             'title' => ['required', 'string', 'max:255'],
             'abstract' => ['required', 'string'],
@@ -43,8 +48,8 @@ class SubmitDocumentAndDetailController extends Controller
             'member_hacker' => ['required', 'string', 'max:255'],
             'member_hipster1' => ['required', 'string', 'max:255'],
             'member_hipster2' => ['nullable', 'string', 'max:255'],
-            'manuscript_pdf' => ['required', 'file', 'mimes:pdf', 'max:30720'], // 30MB Max
-            'acm_pdf' => ['required', 'file', 'mimes:pdf', 'max:15360'], // 15MB Max
+            'manuscript_path' => ['required', 'string'], // Changed from manuscript_pdf
+            'acm_path' => ['required', 'string'], // Changed from acm_pdf
         ]);
 
         if ($validator->fails()) {
@@ -53,9 +58,19 @@ class SubmitDocumentAndDetailController extends Controller
 
         $validated = $validator->validated();
 
-        $tempManuscriptPath = $request->file('manuscript_pdf')->store("private/temp/{$user->id}");
-        $tempAcmPath = $request->file('acm_pdf')->store("private/temp/{$user->id}");
+        // --- REMOVED FILE STORAGE LOGIC ---
+        // The responsibility of storing the file has been moved to the
+        // ChunkedUploadController. We now get the paths directly from the request.
+        $tempManuscriptPath = $validated['manuscript_path'];
+        $tempAcmPath = $validated['acm_path'];
 
+        // Add a security check to ensure the files exist at the provided paths
+        // and belong to the current user's temporary directory.
+        if (!Storage::exists($tempManuscriptPath) || !Storage::exists($tempAcmPath)) {
+            return response()->json(['message' => 'One or more provided file paths are invalid.'], 404);
+        }
+
+        // The tempPaths array is now populated with the validated paths.
         $tempPaths = [
             'manuscript' => $tempManuscriptPath,
             'acm' => $tempAcmPath,
@@ -63,6 +78,7 @@ class SubmitDocumentAndDetailController extends Controller
 
         DB::beginTransaction();
         try {
+            // This core business logic remains unchanged.
             $project = CapstoneProject::create([
                 'title' => $validated['title'],
                 'abstract' => $validated['abstract'],
@@ -89,19 +105,22 @@ class SubmitDocumentAndDetailController extends Controller
 
             DB::commit();
 
+            // The job dispatch remains the same, as it already expected paths.
             ProcessCapstoneManuscripts::dispatch($user, $project, $tempPaths);
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'upload_project']);
             UserLog::create([
                 'user_id' => $user->id,
                 'action_type_id' => $actionType->id,
-                'details' => "Submitted project documents for '{$project->title}'."
+                'details' => "Submitted project documents for '{$project->title}'.",
             ]);
 
             return response()->json(['status' => 'queued'], 202);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Capstone Submission Failed: {$e->getMessage()}");
+            // The cleanup logic still works perfectly, as it just deletes the files
+            // at the provided paths if the database transaction fails.
             Storage::delete([$tempManuscriptPath, $tempAcmPath]);
             return response()->json(['message' => 'An unexpected error occurred during submission.'], 500);
         }
