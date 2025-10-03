@@ -4,11 +4,12 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
 import { InputWithClear } from "@/components/ui/inputWithClear";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { SaveConfirm } from "@/components/ui/save-new-proponent";
 import { apiCall } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 interface Adviser {
   id: number;
@@ -35,6 +36,9 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
   const [advisers, setAdvisers] = useState<Adviser[]>([]);
   const [error, setError] = useState("");
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  // --- CORRECT PLACEMENT for State ---
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchAdvisers = async () => {
@@ -61,15 +65,8 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
 
   const handleClearAll = () => {
     setFormData({
-      first_name: "",
-      last_name: "",
-      email: "",
-      password: "",
-      password_confirmation: "",
-      student_id: "",
-      department: "",
-      program: "",
-      adviser_id: "",
+      first_name: "", last_name: "", email: "", password: "", password_confirmation: "",
+      student_id: "", department: "", program: "", adviser_id: "",
     });
     setError("");
   };
@@ -93,7 +90,6 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
   };
 
   const handleConfirmSave = () => {
-    // FIX: Send the full formData, including password_confirmation
     onAdd(formData);
   };
 
@@ -149,26 +145,55 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
                 className="rounded-md border-gray-300 shadow-md"
                 required
               />
-              <InputWithClear
-                id="password"
-                type="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                onClear={() => handleClear("password")}
-                className="rounded-md border-gray-300 shadow-md"
-                required
-              />
-              <InputWithClear
-                id="password_confirmation"
-                type="password"
-                placeholder="Confirm Password"
-                value={formData.password_confirmation}
-                onChange={handleChange}
-                onClear={() => handleClear("password_confirmation")}
-                className="rounded-md border-gray-300 shadow-md"
-                required
-              />
+              
+              {/* --- CORRECT PLACEMENT for Password field --- */}
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="rounded-md border-gray-300 shadow-md pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOffIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+
+              {/* --- CORRECT PLACEMENT for Confirm Password field --- */}
+              <div className="relative">
+                <Input
+                  id="password_confirmation"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  value={formData.password_confirmation}
+                  onChange={handleChange}
+                  className="rounded-md border-gray-300 shadow-md pr-10"
+                  required
+                />
+                 <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOffIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+
               <InputWithClear
                 id="department"
                 placeholder="Department (e.g., BSIS)"
@@ -240,3 +265,4 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
 };
 
 export default AddProponent;
+

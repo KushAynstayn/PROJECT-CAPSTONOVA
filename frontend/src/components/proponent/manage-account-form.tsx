@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
+import { EyeIcon, EyeOffIcon } from "lucide-react"; // <-- ADD THIS LINE
 
 // Define the structure of the form data
 interface ProponentFormData {
@@ -34,6 +35,8 @@ interface ProponentManageAccountFormProps {
 export const ProponentManageAccountForm: React.FC<
   ProponentManageAccountFormProps
 > = ({ formData, onFormChange, onSubmit, onClear, hasChanged, isLoading }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
@@ -115,23 +118,49 @@ export const ProponentManageAccountForm: React.FC<
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <div className="flex flex-col">
             <Label htmlFor="password" className="mb-2">New Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password || ""}
-              onChange={onFormChange}
-              className="w-full border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
-            />
+            <div className="relative w-full">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password || ""}
+                onChange={onFormChange}
+                className="w-full border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
           <div className="flex flex-col">
             <Label htmlFor="password_confirmation" className="mb-2">Confirm New Password</Label>
-            <Input
-              id="password_confirmation"
-              type="password"
-              value={formData.password_confirmation || ""}
-              onChange={onFormChange}
-              className="w-full border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none"
-            />
+            <div className="relative w-full">
+              <Input
+                id="password_confirmation"
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.password_confirmation || ""}
+                onChange={onFormChange}
+                className="w-full border border-gray-300 rounded-md focus:border-gray-400 focus:ring-1 focus:ring-gray-300 outline-none pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showConfirmPassword ? (
+                  <EyeOffIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

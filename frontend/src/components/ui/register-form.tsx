@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiCall, ApiError } from "@/lib/api";
+import { EyeIcon, EyeOffIcon } from "lucide-react"; // --- ADD THIS LINE ---
 
 export function RegisterForm() {
   const router = useRouter();
@@ -37,6 +38,8 @@ export function RegisterForm() {
   const [errors, setErrors] = useState<Record<string, string[] | string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -161,29 +164,63 @@ export function RegisterForm() {
                 {renderErrors("email")}
               </div>
 
+              {/* --- MODIFIED PASSWORD FIELD --- */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
                 {renderErrors("password")}
               </div>
 
+              {/* --- MODIFIED CONFIRM PASSWORD FIELD --- */}
               <div className="space-y-2">
-                <Label htmlFor="password_confirmation">Confirm Password</Label>
-                <Input
-                  id="password_confirmation"
-                  name="password_confirmation"
-                  type="password"
-                  value={formData.password_confirmation}
-                  onChange={handleChange}
-                  required
-                />
+                <Label htmlFor="password_confirmation">
+                  Confirm Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.password_confirmation}
+                    onChange={handleChange}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOffIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
                 {renderErrors("password_confirmation")}
               </div>
 

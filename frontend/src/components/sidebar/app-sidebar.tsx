@@ -3,16 +3,15 @@
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
 import Link from "next/link";
-// 1. Import the useSidebar hook
-import { useSidebar } from "@/components/ui/sidebar"; 
+// Make sure this import path is correct for your project structure
+import { useSidebar } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
 } from "@/components/ui/sidebar";
 
 // --- DATA FOR ALL USER ROLES ---
@@ -72,39 +71,64 @@ const sidebarData = {
 export type UserRole = keyof typeof sidebarData;
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  userRole?: UserRole;
+  userRole?: UserRole;
 }
 
+// --- MODIFIED COMPONENT ---
 export function AppSidebar({ userRole = 'adviser', ...props }: AppSidebarProps) {
-  const { isOpen, setIsOpen } = useSidebar();
+  // 1. Get ALL values from the updated context, including isPinned
+  const { isOpen, setIsOpen, isPinned, setIsPinned } = useSidebar();
   const data = sidebarData[userRole];
   const mainLinkHref = userRole === 'proponent' ? data.navMain[0].href : `/${userRole}/dashboard`;
 
+  // 2. Create mouse handlers that only trigger if the sidebar is NOT pinned
+  const handleMouseEnter = () => {
+    if (!isPinned) {
+      setIsOpen(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isPinned) {
+      setIsOpen(false);
+    }
+  };
+
+  // 3. Create a handler for the button to toggle the pinned state
+  const handlePinToggle = () => {
+    setIsPinned(!isPinned);
+  };
+
+  // 4. This new variable determines the visual state. The sidebar should
+  //    appear open if it's either hovered over OR pinned.
+  const isSidebarOpen = isOpen || isPinned;
+
   return (
-    <Sidebar {...props}>
-      <SidebarHeader className="h-auto p-4">
+    // 5. Add the hover event handlers to the main Sidebar component (this part to sidebar header)
+    <Sidebar {...props} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <SidebarHeader className="h-auto px-4 pt-3 pb-2"> 
         <div className="flex w-full items-center justify-between">
-          {/* This Link container will now shrink and fade */}
-          <Link 
-            href={mainLinkHref} 
+          <Link
+            href={mainLinkHref}
             className={cn(
               "flex items-center overflow-hidden transition-all duration-300 ease-in-out",
-              isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
+              // 6. Use the new 'isSidebarOpen' variable for visibility
+              isSidebarOpen ? "w-auto opacity-100" : "w-0 opacity-0"
             )}
           >
             <Image
-              src="/images/capstonova_logo.png"
-              alt="Capstonova Logo"
-              width={32}
-              height={40} 
+              src="/images/logo_capstonova1.png"
+              alt="Project Capstonova Logo"
+              width={30}
+              height={10}
             />
-            <span className="whitespace-nowrap bg-gradient-to-b from-red-500 to-yellow-200 bg-clip-text text-lg text-transparent ml-5 font-semibold">
-              CAPSTONOVA
+            <span className="whitespace-nowrap font-cinzel bg-gradient-to-b from-amber-400 to-yellow-600 bg-clip-text text-[14px] text-transparent ml-2">
+              PROJECT CAPSTONOVA
             </span>
           </Link>
           
-          {/* Collapse/Expand Button */}
-          <button onClick={() => setIsOpen(!isOpen)} className="p-1.5">
+          {/* 7. Update the button to use the new pin toggle handler */}
+          <button onClick={handlePinToggle} className="p-1.5">
             <Image
               src="/images/collapse_sidebar.png"
               alt="Toggle sidebar"
@@ -116,7 +140,7 @@ export function AppSidebar({ userRole = 'adviser', ...props }: AppSidebarProps) 
         </div>
       </SidebarHeader>
 
-      <div className="my-2 h-px w-full bg-white/20" /> 
+      <div className="my-2 h-px w-full bg-white/20" />
 
       <SidebarContent>
         <NavMain items={data.navMain} />
@@ -126,5 +150,5 @@ export function AppSidebar({ userRole = 'adviser', ...props }: AppSidebarProps) 
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

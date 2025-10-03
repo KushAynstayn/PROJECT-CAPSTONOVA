@@ -8,15 +8,15 @@ export default function LoginPage() {
       <div className="flex flex-col items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-xs">
           <div className="mb-8 flex justify-center">
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center"> {/* Removed gap-2 */}
               <Image
-                src="/images/capstonova_logo.png"
+                src="/images/logo_capstonova.png"
                 alt="Project Capstonova Logo"
-                width={40}
-                height={40}
+                width={150}  
+                height={90} 
               />
-              {/* --- MODIFIED LINE: Changed to-orange-500 to to-orange-300 --- */}
-              <span className="font-cinzel bg-gradient-to-b from-red-600 to-orange-300 bg-clip-text text-[17px] font-bold text-transparent">
+              {/* Pulled text up and changed gradient to golden yellow */}
+              <span className="-mt-10 font-cinzel bg-gradient-to-b from-amber-400 to-yellow-600 bg-clip-text text-[15px] font-bold text-transparent">
                 PROJECT CAPSTONOVA
               </span>
             </div>
