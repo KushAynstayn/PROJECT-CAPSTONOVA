@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Api\Proponent;
 
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Http\JsonResponse;
-use App\Jobs\ProcessTarSourceCode;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use App\Jobs\ProcessGithubSourceCode;
-use Illuminate\Support\Facades\Validator;
+use App\Jobs\ProcessTarSourceCode;
 use App\Models\ActionType;
 use App\Models\UserLog;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class SubmitSourceCodeController extends Controller
 {
@@ -30,11 +31,14 @@ class SubmitSourceCodeController extends Controller
             abort(403, 'Unauthorized - Proponent access required');
         }
 
+        // --- MODIFIED VALIDATION ---
+        // The 'source_code_tar' rule is changed to 'source_code_tar_path'
+        // and now expects a string path instead of a file.
         $validator = Validator::make($request->all(), [
             'upload_type' => ['required', 'string', Rule::in(['github', 'tar'])],
             'github_url' => ['required_if:upload_type,github', 'nullable', 'url'],
             'github_token' => ['nullable', 'string'],
-            'source_code_tar' => ['required_if:upload_type,tar', 'nullable', 'file', 'mimes:tar'],
+            'source_code_tar_path' => ['required_if:upload_type,tar', 'nullable', 'string'],
             'programming_languages' => ['required', 'array'],
             'programming_languages.*' => ['required', 'string', 'max:50'],
         ]);
@@ -65,7 +69,15 @@ class SubmitSourceCodeController extends Controller
                 $validated['github_token'] ?? null
             );
         } else {
-            $tempTarPath = $request->file('source_code_tar')->store("private/temp/{$user->id}");
+            // --- MODIFIED FILE HANDLING ---
+            // Removed direct file storage. We now get the path from the request
+            // and verify that the file exists before dispatching the job.
+            $tempTarPath = $validated['source_code_tar_path'];
+
+            if (!Storage::exists($tempTarPath)) {
+                return response()->json(['message' => 'The provided TAR file path is invalid.'], 404);
+            }
+
             ProcessTarSourceCode::dispatch(
                 $user,
                 $projectId,
@@ -78,7 +90,7 @@ class SubmitSourceCodeController extends Controller
         UserLog::create([
             'user_id' => $user->id,
             'action_type_id' => $actionType->id,
-            'details' => "Source code submitted for project ID {$projectId} via {$validated['upload_type']}."
+            'details' => "Source code submitted for project ID {$projectId} via {$validated['upload_type']}.",
         ]);
 
         return response()->json(['status' => 'queued'], 202);

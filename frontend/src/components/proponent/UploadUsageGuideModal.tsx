@@ -1,4 +1,3 @@
-// [NEW FILE]
 "use client";
 
 import React, { useState } from "react";
@@ -11,9 +10,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiCall, ApiError } from "../../lib/api";
+import { FileUploaderWithProgress } from "./file-uploader-with-progress";
 
 interface UploadUsageGuideModalProps {
   isOpen: boolean;
@@ -30,7 +28,8 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
   onOpenChange,
   onSuccess,
 }) => {
-  const [usageGuide, setUsageGuide] = useState<File | null>(null);
+  const [usageGuidePath, setUsageGuidePath] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -39,37 +38,20 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
     return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setErrors((prev) => ({ ...prev, usage_guide: undefined }));
-
-    if (file) {
-      if (file.type !== "application/pdf") {
-        setErrors((prev) => ({
-          ...prev,
-          usage_guide: ["File must be a PDF."],
-        }));
-        setUsageGuide(null);
-        e.target.value = "";
-        return;
-      }
-    }
-    setUsageGuide(file);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
-
-    if (!usageGuide) {
-      setErrors({ usage_guide: ["Please select a file to upload."] });
-      setIsLoading(false);
+    if (!usageGuidePath) {
+      setErrors({
+        usage_guide_path: ["Please upload a file first."],
+      });
       return;
     }
 
+    setIsLoading(true);
+    setErrors({});
+
     const data = new FormData();
-    data.append("usage_guide", usageGuide);
+    data.append("usage_guide_path", usageGuidePath);
 
     try {
       await apiCall("/proponent/submit-usage-guide", "POST", data, true);
@@ -89,12 +71,18 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
     }
   };
 
+  const isSubmitDisabled = isLoading || isUploading || !usageGuidePath;
+
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
-        if (!open) setErrors({});
+        if (!open) {
+          setErrors({});
+          setUsageGuidePath(null);
+          setIsUploading(false);
+        }
       }}
     >
       <DialogContent className="sm:max-w-[425px]">
@@ -104,24 +92,42 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
             Upload the usage guide for your project.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="usage_guide">Usage Guide (PDF)</Label>
-            <Input
-              id="usage_guide"
-              type="file"
-              onChange={handleFileChange}
-              accept=".pdf"
-            />
-            <ErrorMessage field="usage_guide" />
-            {errors.general && (
-              <p className="text-sm text-red-500 mt-1">{errors.general[0]}</p>
-            )}
-          </div>
-        </form>
+        <div className="py-4">
+          <FileUploaderWithProgress
+            id="usage_guide"
+            label="Usage Guide (PDF)"
+            maxSizeMB={20} // Example size
+            accept=".pdf"
+            onUploadStart={() => {
+              setIsUploading(true);
+              setUsageGuidePath(null);
+              setErrors((prev) => ({ ...prev, usage_guide_path: undefined }));
+            }}
+            onUploadComplete={(path) => {
+              setUsageGuidePath(path);
+              setIsUploading(false);
+            }}
+            onUploadError={(error) => {
+              setErrors((prev) => ({ ...prev, usage_guide_path: [error] }));
+              setIsUploading(false);
+            }}
+          />
+          <ErrorMessage field="usage_guide_path" />
+          {errors.general && (
+            <p className="text-sm text-red-500 mt-1">{errors.general[0]}</p>
+          )}
+        </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Submit"}
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitDisabled}
+          >
+            {isLoading
+              ? "Submitting..."
+              : isUploading
+              ? "Uploading..."
+              : "Submit"}
           </Button>
         </DialogFooter>
       </DialogContent>

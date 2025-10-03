@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessUsageGuide;
 use App\Jobs\ProcessUserManual;
 use App\Models\CapstoneProject;
-use App\Models\ProjectAttachment; // Import ProjectAttachment
+use App\Models\ProjectAttachment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,15 +26,17 @@ class ProjectAttachmentController extends Controller
     {
         $user = Auth::user();
 
-
-
+        // --- MODIFIED VALIDATION ---
+        // Expects 'user_manual_path' (a string) instead of a file upload.
         $validator = Validator::make($request->all(), [
-            'user_manual' => ['required', 'file', 'mimes:pdf,docx,txt', 'max:10240'], // Max 10MB
+            'user_manual_path' => ['required', 'string'],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+
+        $validated = $validator->validated();
 
         $projectId = DB::table('project_researchers')
             ->where('user_id', $user->id)
@@ -44,7 +46,12 @@ class ProjectAttachmentController extends Controller
             return response()->json(['message' => 'You do not have a capstone project associated with your account.'], 404);
         }
 
-        $tempPath = $request->file('user_manual')->store("private/temp/{$user->id}");
+        // --- MODIFIED FILE HANDLING ---
+        // Get the path from the request and verify the file's existence.
+        $tempPath = $validated['user_manual_path'];
+        if (!Storage::exists($tempPath)) {
+            return response()->json(['message' => 'The provided user manual file path is invalid.'], 404);
+        }
 
         ProcessUserManual::dispatch($user, $projectId, $tempPath);
 
@@ -58,15 +65,17 @@ class ProjectAttachmentController extends Controller
     {
         $user = Auth::user();
 
-
-
+        // --- MODIFIED VALIDATION ---
+        // Expects 'usage_guide_path' (a string) instead of a file upload.
         $validator = Validator::make($request->all(), [
-            'usage_guide' => ['required', 'file', 'mimes:pdf,docx,txt', 'max:10240'], // Max 10MB
+            'usage_guide_path' => ['required', 'string'],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+
+        $validated = $validator->validated();
 
         $projectId = DB::table('project_researchers')
             ->where('user_id', $user->id)
@@ -76,7 +85,12 @@ class ProjectAttachmentController extends Controller
             return response()->json(['message' => 'You do not have a capstone project associated with your account.'], 404);
         }
 
-        $tempPath = $request->file('usage_guide')->store("private/temp/{$user->id}");
+        // --- MODIFIED FILE HANDLING ---
+        // Get the path from the request and verify the file's existence.
+        $tempPath = $validated['usage_guide_path'];
+        if (!Storage::exists($tempPath)) {
+            return response()->json(['message' => 'The provided usage guide file path is invalid.'], 404);
+        }
 
         ProcessUsageGuide::dispatch($user, $projectId, $tempPath);
 
@@ -85,12 +99,12 @@ class ProjectAttachmentController extends Controller
 
     /**
      * Download the user manual for a specific project.
+     * --- NO CHANGES NEEDED ---
      */
     public function downloadUserManual(CapstoneProject $project): StreamedResponse|JsonResponse
     {
         $this->authorizeDownload($project);
 
-        // Find the attachment model directly using the foreign key
         $attachment = ProjectAttachment::where('project_id', $project->id)->first();
 
         if (!$attachment || !$attachment->user_manual_path || !Storage::exists($attachment->user_manual_path)) {
@@ -102,12 +116,12 @@ class ProjectAttachmentController extends Controller
 
     /**
      * Download the usage guide for a specific project.
+     * --- NO CHANGES NEEDED ---
      */
     public function downloadUsageGuide(CapstoneProject $project): StreamedResponse|JsonResponse
     {
         $this->authorizeDownload($project);
 
-        // Find the attachment model directly using the foreign key
         $attachment = ProjectAttachment::where('project_id', $project->id)->first();
 
         if (!$attachment || !$attachment->usage_guide_path || !Storage::exists($attachment->usage_guide_path)) {
@@ -119,6 +133,7 @@ class ProjectAttachmentController extends Controller
 
     /**
      * Authorize if the current user can download attachments for the project.
+     * --- NO CHANGES NEEDED ---
      */
     private function authorizeDownload(CapstoneProject $project): void
     {
@@ -134,6 +149,7 @@ class ProjectAttachmentController extends Controller
 
     /**
      * Streams a decrypted file to the browser.
+     * --- NO CHANGES NEEDED ---
      */
     private function streamDecryptedFile(string $path): StreamedResponse
     {
