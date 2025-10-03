@@ -143,10 +143,18 @@ const EditSuggestionModal: React.FC<EditSuggestionModalProps> = ({
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
         <DialogFooter>
-          <Button onClick={handleSave} disabled={isLoading} className="bg-[#660000] hover:shadow-lg hover:bg-[#660000] hover:text-white text-white transition-transform duration-200 ease-in-out hover:scale-105">
+          <Button
+            onClick={handleSave}
+            disabled={isLoading}
+            className="bg-[#660000] hover:shadow-lg hover:bg-[#660000] hover:text-white text-white transition-transform duration-200 ease-in-out hover:scale-105"
+          >
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
-          <Button variant="outline" onClick={onClose} className="bg-gray-300 border-gray-300 hover:shadow-lg hover:bg-[#660000] hover:text-white text-gray-700 transition-transform duration-200 ease-in-out hover:scale-105">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-md shadow-md hover:bg-gray-200 hover:text-black hover:shadow-lg bg-gray-300 text-gray-700 border-1 border-gray-300 hover:scale-105 "
+          >
             Cancel
           </Button>
         </DialogFooter>
@@ -206,7 +214,7 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen && !editingSuggestion} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl rounded-md shadow-md border-1 border-gray-300">
           <DialogHeader>
             <DialogTitle>Manage Your Suggestions</DialogTitle>
@@ -250,7 +258,7 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
                       size="sm"
                       onClick={() => setEditingSuggestion(suggestion)}
                       disabled={suggestion.is_archived}
-                      className="rounded-md shadow-md bg-[#660000] hover:bg-[#660000] hover:shadow-lg hover:text-white text-white border-1 border-gray-300 transition-transform hover:scale-110 "
+                      className="rounded-md shadow-md bg-[#660000] hover:bg-[#660000] hover:shadow-lg hover:text-white text-white border-1 border-gray-300 hover:scale-105 "
                     >
                       Update
                     </Button>
@@ -259,7 +267,7 @@ const ManageSuggestionsModal: React.FC<ManageSuggestionsModalProps> = ({
                       size="sm"
                       onClick={() => handleArchive(suggestion.suggestion_id)}
                       disabled={suggestion.is_archived}
-                      className="rounded-md shadow-md hover:bg-gray-700 hover:text-white hover:shadow-lg bg-gray-300 text-gray-700 border-1 border-gray-300 transition-transform hover:scale-110 "
+                      className="rounded-md shadow-md hover:bg-gray-200 hover:text-black hover:shadow-lg bg-gray-300 text-gray-700 border-1 border-gray-300 hover:scale-105 "
                     >
                       Archive
                     </Button>
@@ -540,15 +548,15 @@ const AdviserSuggestionsPage = () => {
                   variant={"outline"}
                   style={{ paddingRight: "2.5rem" }}
                   className={cn(
-                    "w-full md:w-auto justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
+                    "w-full md:w-auto justify-start text-left font-normal bg-white border-gray-300 rounded-md shadow-md",
+                    !date && "text-black"
                   )}
                 >
                   <CalendarIcon className="mr-0 h-4 w-4" />
                   {date ? format(date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0 bg-white border-gray-300 rounded-md shadow-md">
                 <Calendar
                   mode="single"
                   selected={date}
@@ -561,7 +569,7 @@ const AdviserSuggestionsPage = () => {
               <Button
                 variant="ghost"
                 onClick={() => setDate(undefined)}
-                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-full hover:bg-gray-200 flex items-center justify-center "
+                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-md hover:bg-gray-200 flex items-center justify-center "
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -582,19 +590,19 @@ const AdviserSuggestionsPage = () => {
               <DropdownMenuContent className="bg-white border-gray-300 rounded-md shadow-md">
                 <DropdownMenuItem
                   onSelect={() => setFilterMode("all")}
-                  className="text-gray-700"
+                  className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
                 >
                   All Suggestions
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setFilterMode("mine")}
-                  className="text-gray-700"
+                  className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
                 >
                   My Suggestions
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setFilterMode("archived")}
-                  className="text-gray-700"
+                  className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
                 >
                   My Archive
                 </DropdownMenuItem>
@@ -613,7 +621,7 @@ const AdviserSuggestionsPage = () => {
             </Button>
             <Button
               onClick={handleAddClick}
-              className="bg-[#6b0000] hover:bg-[#5a0000] text-white font-bold flex items-center gap-2"
+              className="bg-[#660000] hover:bg-[#6b0000] hover:shadow-md hover:scale-105 hover:text-white text-white font-bold flex items-center gap-2"
             >
               <PlusCircle size={18} />
               Add Suggestion
@@ -635,9 +643,9 @@ const AdviserSuggestionsPage = () => {
                 suggestions.map((s) => (
                   <Card
                     key={s.suggestion_id}
-                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0"
+                    className="flex flex-col shadow-md rounded-md border-gray-300 hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0 overflow-hidden"
                   >
-                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl">
+                    <CardHeader className="bg-gradient-to-r from-[#660000] to-[#8c0000] text-white p-4">
                       <CardTitle className="text-xl font-extrabold tracking-wide">
                         {s.adviser?.first_name} {s.adviser?.last_name}
                       </CardTitle>
