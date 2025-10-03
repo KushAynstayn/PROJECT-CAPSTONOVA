@@ -190,17 +190,17 @@ const AdviserSettingsPage = () => {
               />
             </div>
             {isMenuOpen && (
-              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+               <div className="origin-top-right absolute right-0 mt-2 w-48 bg-white border border-gray-300 shadow-md rounded-md">
                 <div className="py-1">
                   <button
                     onClick={handleEditClick}
-                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-[#660000] hover:text-white rounded-md"
                   >
                     Edit Profile
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                   className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-[#660000] hover:text-white rounded-md"
                   >
                     Logout
                   </button>
@@ -244,19 +244,15 @@ const ViewProfile = ({ userData }: { userData: any }) => {
       <h1 className="text-center text-3xl font-serif tracking-wider text-gray-800 mb-1">
         {fullName}
       </h1>
-      <p className="text-center text-lg text-gray-500">Adviser</p>
+
+      {/* 1. Email is now here */}
+      <p className="text-center text-sm text-gray-500 mb-2">{userData.email}</p>
+
+      <p className="text-center text-lg text-gray-500">{userData.userType}</p>
+
       <div className="border-t my-8"></div>
-      {/* MODIFIED: Simplified to show only the email field. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-        <div>
-          <Label className="text-sm font-medium text-gray-600">CTU Email</Label>
-          <Input
-            value={userData.email}
-            readOnly
-            className="w-full mt-2 border-gray-300 rounded-md bg-gray-50 cursor-default"
-          />
-        </div>
-      </div>
+
+      {/* 2. The old email section has been removed from the bottom */}
     </>
   );
 };
