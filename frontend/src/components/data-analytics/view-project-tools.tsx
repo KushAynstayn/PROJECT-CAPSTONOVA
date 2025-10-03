@@ -146,9 +146,9 @@ const ProjectToolsView = () => {
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Select Project Type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border border-gray-300 shadow-md rounded-md">
               {/* These values now exactly match your database enums */}
-              <SelectItem value="Web">Web</SelectItem>
+              <SelectItem value="Web" >Web</SelectItem>
               <SelectItem value="Mobile">Mobile</SelectItem>
               <SelectItem value="Desktop">Desktop</SelectItem>
               <SelectItem value="IoT">IoT</SelectItem>
