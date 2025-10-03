@@ -114,7 +114,7 @@ const ManageAccountPage = () => {
   return (
     <main>
       <div className="flex justify-center items-center">
-        <div className="w-full max-w-5xl center rounded-lg border-black shadow-lg shadow-gray-800/50 overflow-hidden border bg-white text-gray-900">
+        <div className="w-full max-w-5xl center rounded-md border border-gray-300 shadow-md overflow-hidden bg-white text-gray-900">
           <div className="h-35 w-full relative p-0">
             <img
               src="/images/hands.jpg"

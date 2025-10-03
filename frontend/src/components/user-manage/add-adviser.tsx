@@ -6,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { InputWithClear } from "@/components/ui/inputWithClear";
-import { SaveConfirm } from "@/components/ui/save-new-adviser"; // This can be generalized later
+import { SaveConfirm } from "@/components/ui/save-new-adviser";
+import { Input } from "@/components/ui/input";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 interface AddAdviserProps {
   onClose: () => void;
@@ -25,6 +27,8 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
 
   const [error, setError] = useState("");
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -88,7 +92,7 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
                   value={formData.first_name}
                   onChange={handleChange}
                   onClear={() => handleClear("first_name")}
-                   className="rounded-md border-gray-300 shadow-md"
+                  className="rounded-md border-gray-300 shadow-md"
                   required
                 />
               </div>
@@ -99,7 +103,7 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
                   value={formData.middle_name}
                   onChange={handleChange}
                   onClear={() => handleClear("middle_name")}
-                   className="rounded-md border-gray-300 shadow-md"
+                  className="rounded-md border-gray-300 shadow-md"
                 />
               </div>
               <div className="grid w-full items-center gap-1.5">
@@ -109,14 +113,15 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
                   value={formData.last_name}
                   onChange={handleChange}
                   onClear={() => handleClear("last_name")}
-                   className="rounded-md border-gray-300 shadow-md"
+                  className="rounded-md border-gray-300 shadow-md"
                   required
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="grid w-full items-center gap-1.5">
+              {/* --- MODIFIED: Email field now spans two columns --- */}
+              <div className="grid w-full items-center gap-1.5 md:col-span-2">
                 <Label htmlFor="email">Email</Label>
                 <InputWithClear
                   id="email"
@@ -124,33 +129,61 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
                   value={formData.email}
                   onChange={handleChange}
                   onClear={() => handleClear("email")}
-                   className="rounded-md border-gray-300 shadow-md"
-                  required
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="password">Password</Label>
-                <InputWithClear
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onClear={() => handleClear("password")}
-                   className="rounded-md border-gray-300 shadow-md"
-                  required
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5 md:col-span-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <InputWithClear
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  onClear={() => handleClear("confirmPassword")}
                   className="rounded-md border-gray-300 shadow-md"
                   required
                 />
+              </div>
+
+              {/* Password Field */}
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="rounded-md border-gray-300 shadow-md pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* --- MODIFIED: Confirm Password field no longer spans two columns --- */}
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="rounded-md border-gray-300 shadow-md pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOffIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -176,7 +209,10 @@ const AddAdviser: React.FC<AddAdviserProps> = ({ onClose, onAdd }) => {
           </form>
         </CardContent>
 
-        <button onClick={onClose} className="absolute opacity-70 right-3 top-3">
+        <button
+          onClick={onClose}
+          className="absolute opacity-70 right-3 top-3"
+        >
           <img src="/images/close.png" alt="Close" className="h-6 w-6" />
         </button>
       </Card>
