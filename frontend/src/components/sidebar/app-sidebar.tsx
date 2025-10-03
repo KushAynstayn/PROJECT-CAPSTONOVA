@@ -95,10 +95,17 @@ export function AppSidebar({ userRole = 'adviser', ...props }: AppSidebarProps) 
   };
 
   // 3. Create a handler for the button to toggle the pinned state
+  // --- MODIFICATION STARTS HERE ---
   const handlePinToggle = () => {
-    setIsPinned(!isPinned);
+    // When unpinning the sidebar (isPinned is currently true),
+    // we set isPinned to false AND set isOpen to false to collapse it.
+    if (isPinned) {
+      setIsPinned(false);
+      setIsOpen(false); 
+    } else {
+      setIsPinned(true);
+    }
   };
-
   // 4. This new variable determines the visual state. The sidebar should
   //    appear open if it's either hovered over OR pinned.
   const isSidebarOpen = isOpen || isPinned;
