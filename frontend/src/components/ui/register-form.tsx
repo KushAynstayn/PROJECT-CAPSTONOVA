@@ -108,7 +108,7 @@ export function RegisterForm() {
   };
 
   return (
-    <Card>
+    <Card className="border border-gray-300 shadow-md">
       <CardHeader>
         <CardTitle>Create an Account</CardTitle>
         <CardDescription>
@@ -234,8 +234,8 @@ export function RegisterForm() {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Viewer">Viewer</SelectItem>
+                 <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
+                    <SelectItem value="Viewer" >Viewer</SelectItem>
                     <SelectItem value="Proponent">Proponent</SelectItem>
                   </SelectContent>
                 </Select>
@@ -270,7 +270,7 @@ export function RegisterForm() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select a department" />
                   </SelectTrigger>
-                  <SelectContent>
+                 <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
                     <SelectItem value="BSIS">BSIS</SelectItem>
                     <SelectItem value="BSIT">BSIT</SelectItem>
                     <SelectItem value="BIT-CT">BIT-CT</SelectItem>
@@ -292,7 +292,7 @@ export function RegisterForm() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select a program" />
                   </SelectTrigger>
-                  <SelectContent>
+                   <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
                     <SelectItem value="Day Program">Day Program</SelectItem>
                     <SelectItem value="Evening Program">
                       Evening Program
@@ -308,13 +308,15 @@ export function RegisterForm() {
                 </p>
               )}
 
-              <Button
+              <div className="justify-center flex">
+                <Button
                 type="submit"
-                className="w-full bg-red-800 hover:bg-red-700 text-white"
+                className="w-1/2 bg-[#660000] hover:bg-[#660000] hover:text-white hover:scale-105 text-white"
                 disabled={isLoading}
               >
                 {isLoading ? "Creating Account..." : "Sign Up"}
               </Button>
+              </div>
             </>
           )}
         </form>
