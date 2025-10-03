@@ -220,11 +220,11 @@ const SuperAdminDashboardPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-stretch gap-2 md:flex-row">
-          <div className="grow">
+          <div className="w-full md:w-1/2">
             <ChartBarLabel />
           </div>
 
-          <div className=" md:w-1/4">
+          <div className="w-full md:w-1/2">
             <ChartPieLabelList />
           </div>
         </div>
