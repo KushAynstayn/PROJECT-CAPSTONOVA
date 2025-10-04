@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TwoFactorAuthForm } from "./two-factor-auth-form"; // Import the new component
-import { EyeIcon, EyeOffIcon } from "lucide-react"; 
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -24,7 +24,6 @@ export function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [showPassword, setShowPassword] = useState(false); // <-- ADD STATE FOR VISIBILITY
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +103,9 @@ export function LoginForm({
           <div className="flex items-center">
             <Label htmlFor="password">Password</Label>
           </div>
-          <div className="relative"> {/* Container for both input and button */}
+          <div className="relative">
+            {" "}
+            {/* Container for both input and button */}
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -137,7 +138,10 @@ export function LoginForm({
               Remember me
             </Label>
           </div>
-          <Link href="#" className="font-medium underline underline-offset-4">
+          <Link
+            href="/forgot-password"
+            className="font-medium underline underline-offset-4"
+          >
             Forgot your password?
           </Link>
         </div>
