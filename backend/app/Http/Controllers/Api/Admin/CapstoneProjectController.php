@@ -3,21 +3,39 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\User;
+use App\Models\UserLog;
+use App\Models\ActionType;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\SystemSetting;
 use App\Jobs\SendNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Pagination\LengthAwarePaginator;
-use App\Models\ActionType;
-use App\Models\UserLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CapstoneProjectController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $settingRoleKey = strtolower($user->role);
+
+        // Guard Clause: Check if the 'viewSubmissions' feature is enabled for the Admin role.
+        $settingName = $settingRoleKey . '_viewSubmissions';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        if (!$isFeatureEnabled) {
+            return response()->json([
+                'message' => 'You do not have permission to view project submissions.'
+            ], 403);
+        }
+
         return $this->getProjects($request, false);
     }
 
@@ -28,6 +46,24 @@ class CapstoneProjectController extends Controller
 
     public function archive(int $projectId): JsonResponse
     {
+        $user = Auth::user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'archiveProjects' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_archiveProjects';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check now applies to all roles based on the setting
+        if (!$isFeatureEnabled) {
+            return response()->json([
+                'message' => 'You do not have permission to archive projects.'
+            ], 403);
+        }
+
         $affected = DB::table('capstone_projects')
             ->where('id', $projectId)
             ->update(['is_archived' => true, 'updated_at' => now()]);
@@ -42,7 +78,6 @@ class CapstoneProjectController extends Controller
         SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'archive_project']);
-        $user = Auth::user();
         UserLog::create([
             'user_id' => $user->id,
             'action_type_id' => $actionType->id,
@@ -54,28 +89,45 @@ class CapstoneProjectController extends Controller
 
     public function unarchive(int $projectId): JsonResponse
     {
+        $user = Auth::user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'restoreProjects' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_restoreProjects';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check now applies to all roles based on the setting
+        if (!$isFeatureEnabled) {
+            return response()->json([
+                'message' => 'You do not have permission to restore projects.'
+            ], 403);
+        }
+
         $affected = DB::table('capstone_projects')
             ->where('id', $projectId)
             ->update(['is_archived' => false, 'updated_at' => now()]);
 
         if ($affected === 0) {
-            return response()->json(['message' => 'Project not found or already un-archived.'], 404);
+            return response()->json(['message' => 'Project not found or is already restored.'], 404);
         }
 
         $project = DB::table('capstone_projects')->where('id', $projectId)->first();
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
-        $notificationMessage = "The capstone project titled '{$project->title}' has been un-archived.";
+        $notificationMessage = "The capstone project titled '{$project->title}' has been restored.";
         SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'unarchive_project']);
-        $user = Auth::user();
         UserLog::create([
             'user_id' => $user->id,
             'action_type_id' => $actionType->id,
-            'details' => "Project '{$project->title}' un-archived."
+            'details' => "Project '{$project->title}' restored."
         ]);
 
-        return response()->json(['message' => 'Capstone project has been successfully un-archived.']);
+        return response()->json(['message' => 'Capstone project has been successfully restored.']);
     }
 
     private function getProjects(Request $request, bool $isArchived): JsonResponse

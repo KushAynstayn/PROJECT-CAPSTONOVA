@@ -4,18 +4,21 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendNotification;
+use App\Models\ActionType;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\UserDetail;
+use App\Models\UserLog;
 use App\Models\Whitelist;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use App\Models\ActionType;
-use App\Models\UserLog;
 
 class RegisterController extends Controller
 {
@@ -46,6 +49,22 @@ class RegisterController extends Controller
         $email = $validated['email'];
         $hashedEmail = hash('sha256', $email);
         $adviserId = null;
+
+        // Check if the selected role is 'Viewer' and if registration for that role is enabled.
+        if ($validated['role'] === 'Viewer') {
+            $settingName = 'viewer_registerAccount';
+            $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+                $setting = SystemSetting::where('setting_name', $settingName)->first();
+                return $setting ? $setting->is_enabled : false; // Default to false
+            });
+
+            if (!$isFeatureEnabled) {
+                return response()->json(
+                    ['error' => 'Viewer registration is currently disabled by an administrator.'],
+                    403
+                );
+            }
+        }
 
         if (User::where('hashed_email', $hashedEmail)->exists()) {
             return response()->json(

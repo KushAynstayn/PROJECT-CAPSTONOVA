@@ -129,6 +129,8 @@ Route::prefix('public')->group(function () {
 
     Route::get('search', [SearchController::class, 'search'])
         ->name('search');
+
+    Route::get('system-settings/check', [SystemSettingController::class, 'check']);
 });
 
 
@@ -224,7 +226,7 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('document-requests/approval-history', [DocumentRequestController::class, 'approvalHistory']);
 
-    Route::apiResource('system-settings', SystemSettingController::class);
+    Route::post('system-settings/toggle', [SystemSettingController::class, 'toggle']);
 });
 
 

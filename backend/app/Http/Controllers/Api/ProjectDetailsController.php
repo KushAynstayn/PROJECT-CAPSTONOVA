@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\CapstoneProject;
+use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Handles the display of detailed project information.
@@ -28,14 +31,34 @@ class ProjectDetailsController extends Controller
             'sourceCode.programmingLanguages'
         ])->findOrFail($id);
 
+        $user = Auth::user();
+        $isAbstractVisible = true;
+
+        // 2. Check permissions only if the user is a guest or a 'Viewer'.
+        // All other authenticated roles (Admin, Proponent, etc.) will bypass this.
+        if (!$user || $user->role === 'Viewer') {
+            $settingName = 'viewer_viewAbstract';
+            $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+                $setting = SystemSetting::where('setting_name', $settingName)->first();
+                return $setting ? $setting->is_enabled : false; // Default to false
+            });
+
+            if (!$isFeatureEnabled) {
+                $isAbstractVisible = false;
+            }
+        }
+
         $researcher = $project->projectResearcher;
         $leader = $researcher ? $researcher->user : null;
 
-        // 2. Construct the detailed JSON response.
+        // 3. Construct the detailed JSON response with a conditional abstract.
         return response()->json([
             'id' => $project->id,
             'title' => $project->title,
-            'abstract' => $project->abstract,
+            // Conditionally show the abstract or a disabled message.
+            'abstract' => $isAbstractVisible
+                ? $project->abstract
+                : 'Viewing project abstracts is currently disabled by an administrator.',
             'submission_date' => $project->submission_date,
             'submission_year' => $project->submission_year,
             'platform_type' => $project->platform_type,

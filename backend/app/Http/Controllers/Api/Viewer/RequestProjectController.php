@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Api\Viewer;
 
 use App\Models\User;
+use App\Models\UserLog;
+use App\Models\ActionType;
 use App\Models\ViewerAccess;
 use Illuminate\Http\Request;
+use App\Models\SystemSetting;
 use App\Jobs\SendNotification;
 use App\Models\CapstoneProject;
 use App\Models\DocumentRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Models\ActionType;
-use App\Models\UserLog;
+use Illuminate\Support\Facades\Cache;
 
 class RequestProjectController extends Controller
 {
@@ -85,11 +87,28 @@ class RequestProjectController extends Controller
      */
     public function store(Request $request, $project_id)
     {
+        $user = $request->user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'requestFullAccess' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_requestFullAccess';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'The ability to request project access is currently disabled.'
+            ], 403);
+        }
 
         $project = CapstoneProject::findOrFail($project_id);
 
 
-        $existingRequest = DocumentRequest::where('viewer_id', $request->user()->id)
+        $existingRequest = DocumentRequest::where('viewer_id', $user->id)
             ->where('project_id', $project->id)
             ->first();
 
@@ -98,20 +117,20 @@ class RequestProjectController extends Controller
         }
 
         $documentRequest = DocumentRequest::create([
-            'viewer_id' => $request->user()->id,
+            'viewer_id' => $user->id,
             'project_id' => $project->id,
             'request_date' => now(),
             'status' => 'pending',
         ]);
 
         $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
-        $userName = $request->user()->first_name . ' ' . $request->user()->last_name;
+        $userName = $user->first_name . ' ' . $user->last_name;
         $notificationMessage = "User {$userName} has requested access to the project: '{$project->title}'.";
         SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'request_project_access']);
         UserLog::create([
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'action_type_id' => $actionType->id,
             'details' => "User requested access to project '{$project->title}' (ID: {$project->id})."
         ]);

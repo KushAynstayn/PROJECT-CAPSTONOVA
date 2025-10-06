@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Api\User;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
-use App\Models\ActionType;
 use App\Models\UserLog;
+use App\Models\ActionType;
+use Illuminate\Http\Request;
+use App\Models\SystemSetting;
+use Illuminate\Validation\Rule;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -63,6 +65,22 @@ class ProfileController extends Controller
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'updateProfile' feature is enabled for the user's role
+        $updateProfileSettingName = $settingRoleKey . '_updateProfile';
+        $isUpdateProfileEnabled = Cache::remember($updateProfileSettingName, 60, function () use ($updateProfileSettingName) {
+            $setting = SystemSetting::where('setting_name', $updateProfileSettingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isUpdateProfileEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'The ability to update profiles has been disabled by an administrator.'
+            ], 403);
+        }
 
         $validator = Validator::make($request->all(), [
             // User model fields
@@ -118,6 +136,19 @@ class ProfileController extends Controller
 
         // Hash and update the password only if it was provided.
         if ($request->filled('password')) {
+            // Guard Clause: Check if the 'changePassword' feature is enabled
+            $changePasswordSettingName = $settingRoleKey . '_changePassword';
+            $isChangePasswordEnabled = Cache::remember($changePasswordSettingName, 60, function () use ($changePasswordSettingName) {
+                $setting = SystemSetting::where('setting_name', $changePasswordSettingName)->first();
+                return $setting ? $setting->is_enabled : false; // Default to false
+            });
+
+            // This check is bypassed if the user is a Super Admin
+            if (!$isChangePasswordEnabled && $user->role !== 'Super Admin') {
+                return response()->json([
+                    'message' => 'The ability to change passwords has been disabled by an administrator.'
+                ], 403);
+            }
             $user->password = Hash::make($validated['password']);
         }
 

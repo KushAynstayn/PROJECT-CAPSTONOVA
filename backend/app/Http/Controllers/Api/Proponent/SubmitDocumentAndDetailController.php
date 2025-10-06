@@ -8,10 +8,12 @@ use App\Models\ActionType;
 use App\Models\CapstoneProject;
 use App\Models\Keyword;
 use App\Models\ProjectResearcher;
+use App\Models\SystemSetting;
 use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -30,9 +32,20 @@ class SubmitDocumentAndDetailController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $user = Auth::user();
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
 
-        if (!Gate::allows('isProponent')) {
-            abort(403, 'Unauthorized - Proponent access required');
+        // Guard Clause: Check if the 'uploadProjects' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_uploadProjects';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'The ability to upload projects is currently disabled.'
+            ], 403);
         }
 
         // --- MODIFIED VALIDATION ---
