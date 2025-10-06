@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+// No longer importing axios directly
 import { ModifiedPieChart } from "@/components/ui/chart-pie-donut-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminDistributionChart } from "@/components/ui/chart-pie-label";
@@ -9,7 +10,7 @@ import { GuestDistributionChart } from "@/components/ui/chart-bar-interactive";
 import { ProponentDistributionChart } from "@/components/ui/chart-pie-stacked";
 import { YearPicker } from "@/components/ui/year-picker";
 import { Button } from "@/components/ui/button";
-import { apiCall } from "@/lib/api";
+import { apiCall } from "@/lib/api"; // Using the existing apiCall wrapper
 
 // --- INTERFACES ---
 interface SubmissionByCourse {
@@ -37,6 +38,33 @@ interface UserCounts {
 }
 
 const AdminReportsPage = () => {
+  // --- START: SYSTEM SETTING CHECK ---
+  const [isFeatureEnabled, setIsFeatureEnabled] = useState<boolean>(false);
+  const [isSettingLoading, setIsSettingLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const settingName = "admin_reportsView";
+
+    const checkSetting = async () => {
+      setIsSettingLoading(true);
+      try {
+        // Corrected to use the apiCall wrapper
+        const response = await apiCall(
+          `/public/system-settings/check?setting_name=${settingName}`
+        );
+        setIsFeatureEnabled(response.is_enabled);
+      } catch (error) {
+        console.error(`Error checking system setting ${settingName}:`, error);
+        setIsFeatureEnabled(false); // Default to disabled on error
+      } finally {
+        setIsSettingLoading(false);
+      }
+    };
+
+    checkSetting();
+  }, []);
+  // --- END: SYSTEM SETTING CHECK ---
+
   const [activeTab, setActiveTab] = useState("project");
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [userCountData, setUserCountData] = useState<UserCounts | null>(null);
@@ -96,12 +124,15 @@ const AdminReportsPage = () => {
   }, []);
 
   useEffect(() => {
+    // Only fetch data if the feature is enabled
+    if (!isFeatureEnabled) return;
+
     if (activeTab === "project") {
       fetchReportData();
     } else if (activeTab === "user") {
       fetchUserCountData();
     }
-  }, [activeTab, fetchReportData, fetchUserCountData]);
+  }, [activeTab, fetchReportData, fetchUserCountData, isFeatureEnabled]);
 
   // Handlers for the YearPicker
   const handleModeToggle = () => {
@@ -116,32 +147,53 @@ const AdminReportsPage = () => {
     }
   };
 
+  // --- START: RENDER BASED ON SETTING CHECK ---
+  if (isSettingLoading) {
+    return <p>Loading page...</p>;
+  }
+
+  if (!isFeatureEnabled) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-red-600">
+            Functionality Disabled
+          </h2>
+          <p className="text-gray-600">
+            The administrator has disabled access to this feature.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // --- END: RENDER BASED ON SETTING CHECK ---
+
   return (
     <div>
       <div className="flex justify-start space-x-8">
         <button
           onClick={() => setActiveTab("project")}
           className={`
-                                text-lg font-semibold pb-2 transition-colors duration-200
-                                ${
-                                  activeTab === "project"
-                                    ? "text-[#511b10] border-b-2 border-[#511b10]"
-                                    : "text-gray-400"
-                                }
-                            `}
+                                        text-lg font-semibold pb-2 transition-colors duration-200
+                                        ${
+                                          activeTab === "project"
+                                            ? "text-[#511b10] border-b-2 border-[#511b10]"
+                                            : "text-gray-400"
+                                        }
+                                    `}
         >
           Project Reports
         </button>
         <button
           onClick={() => setActiveTab("user")}
           className={`
-                                text-lg font-semibold pb-2 transition-colors duration-200
-                                ${
-                                  activeTab === "user"
-                                    ? "text-[#511b10] border-b-2 border-[#511b10]"
-                                    : "text-gray-400"
-                                }
-                            `}
+                                        text-lg font-semibold pb-2 transition-colors duration-200
+                                        ${
+                                          activeTab === "user"
+                                            ? "text-[#511b10] border-b-2 border-[#511b10]"
+                                            : "text-gray-400"
+                                        }
+                                    `}
         >
           User Account Report
         </button>
@@ -229,11 +281,11 @@ const AdminReportsPage = () => {
                 </div>
               </div>
               <Card className="w-60 text-center flex flex-col justify-center h-full border border-gray-200 shadow-md rounded-md">
-              <CardHeader className="pt-6 pb-2">
-                <CardTitle className="text-lg font-semibold text-gray-700">
-                  Total Submission
-                </CardTitle>
-              </CardHeader>
+                <CardHeader className="pt-6 pb-2">
+                  <CardTitle className="text-lg font-semibold text-gray-700">
+                    Total Submission
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="pb-6">
                   <p className="text-5xl font-bold text-gray-900">
                     {reportData.total_submissions}
@@ -241,11 +293,11 @@ const AdminReportsPage = () => {
                 </CardContent>
               </Card>
               <Card className="w-60 text-center flex flex-col justify-center h-full border border-gray-200 shadow-md rounded-md">
-              <CardHeader className="pt-6 pb-2">
-                <CardTitle className="text-lg font-semibold text-gray-700">
-                  Total Archived
-                </CardTitle>
-              </CardHeader>
+                <CardHeader className="pt-6 pb-2">
+                  <CardTitle className="text-lg font-semibold text-gray-700">
+                    Total Archived
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="pb-6">
                   <p className="text-5xl font-bold text-gray-900">
                     {reportData.total_archived}
