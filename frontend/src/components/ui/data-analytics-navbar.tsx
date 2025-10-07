@@ -5,7 +5,8 @@ export type AnalyticsRole =
   | "Advisory Load"
   | "Project Type"
   | "Environment Trend"
-  | "Project Tools Trend";
+  | "Project Tools Trend"
+  | "ML Service";
 
 // 2. Define the props interface for this specific component
 interface DataAnalyticsNavbarProps {
@@ -26,6 +27,7 @@ const DataAnalyticsNavbar: React.FC<DataAnalyticsNavbarProps> = ({
     "Project Type",
     "Environment Trend",
     "Project Tools Trend",
+    "ML Service",
   ];
 
   // --- Styling remains the same ---
