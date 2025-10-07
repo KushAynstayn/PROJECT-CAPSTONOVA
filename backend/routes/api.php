@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
 use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
+use App\Http\Controllers\Api\MlService\ProjectSizeRegressionController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
 
@@ -438,4 +439,8 @@ Route::prefix('ml-service')->group(function () {
 
     Route::get('/train-association', [AssociationController::class, 'train'])->name('ml.association.train');
     Route::get('/predict-association', [AssociationController::class, 'predict'])->name('ml.association.predict');
+
+    Route::post('/project-size/train', [ProjectSizeRegressionController::class, 'train'])->name('project-size.train');
+    Route::post('/project-size/predict', [ProjectSizeRegressionController::class, 'predict'])->name('project-size.predict');
+    Route::get('/project-size/plot', [ProjectSizeRegressionController::class, 'getPlot'])->name('project-size.plot');
 });
