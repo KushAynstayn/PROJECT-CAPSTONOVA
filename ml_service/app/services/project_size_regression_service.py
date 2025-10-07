@@ -2,6 +2,7 @@
 # Service layer containing the specific business logic for the project size regression model.
 
 import pandas as pd
+import os
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from app.schemas.project_size_regression import TrainingRequest, PredictionRequest
@@ -102,3 +103,29 @@ class ProjectSizeRegressionService:
         predictions = model.predict(X_pred)
 
         return {"predictions": predictions.tolist()}
+
+    def get_plot_image(self, plot_type: str) -> str:
+            # This correctly points to the 'static' directory configured in the Plotter
+            search_directory = self.plotter.output_dir
+            
+            # Correctly match the double underscore in the filename
+            base_name_prefix = f"{self.model_name}__"
+            
+            target_suffix = ""
+            if plot_type == "residuals":
+                target_suffix = "-residuals.png"
+            elif plot_type == "feature_importance":
+                target_suffix = "-feature_importance.png"
+            else:
+                raise ValueError(f"Unknown plot type: {plot_type}.")
+
+            candidate_files = []
+            for f in os.listdir(search_directory):
+                if f.startswith(base_name_prefix) and f.endswith(target_suffix):
+                    candidate_files.append(os.path.join(search_directory, f))
+            
+            if candidate_files:
+                # Return the path to the most recently created plot
+                return max(candidate_files, key=os.path.getmtime)
+            else:
+                raise FileNotFoundError(f"No '{plot_type}' plot found in '{search_directory}'.")

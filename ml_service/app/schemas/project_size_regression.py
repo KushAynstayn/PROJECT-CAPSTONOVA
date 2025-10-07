@@ -1,6 +1,7 @@
 # app/schemas/project_size_regression.py
 # Pydantic models for request and response validation.
 
+from enum import Enum
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -40,3 +41,8 @@ class TrainingResponse(BaseModel):
 class PredictionResponse(BaseModel):
     """The response for a prediction request."""
     predictions: List[float]
+
+
+class PlotType(str, Enum):
+    residuals = "residuals"
+    feature_importance = "feature_importance"

@@ -16,6 +16,7 @@ class Plotter:
     def __init__(self):
         """Initializes the Plotter with a standard theme."""
         sns.set_theme(style="whitegrid")
+        self.output_dir = STATIC_DIR
 
     def _get_filepath(self, model_name: str, chart_type: str) -> str:
         """

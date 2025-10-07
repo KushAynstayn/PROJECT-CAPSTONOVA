@@ -11,6 +11,9 @@ from app.schemas.project_size_regression import (
 # Import the specific service class
 from app.services.project_size_regression_service import ProjectSizeRegressionService
 import os
+from fastapi.responses import FileResponse
+from fastapi import Query
+from app.schemas.project_size_regression import PlotType
 
 router = APIRouter()
 
@@ -83,3 +86,19 @@ async def predict(
     except Exception as e:
         # Catch-all for any other unexpected errors
         raise HTTPException(status_code=500, detail=f"An error occurred during prediction: {str(e)}")
+
+@router.get("/{model_name}/plot", response_class=FileResponse)
+async def get_plot(
+    model_name: str,
+    plot_type: PlotType = Query(..., description="The type of plot to retrieve."),
+    service: ProjectSizeRegressionService = Depends(get_service)
+):
+    try:
+        image_path = service.get_plot_image(plot_type.value)
+        return FileResponse(image_path)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
