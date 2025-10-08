@@ -32,9 +32,9 @@ class TechStackAssociationService:
         df = pd.DataFrame(te_ary, columns=te.columns_)
 
         # 3. Apriori Algorithm and Association Rules
-        frequent_itemsets = apriori(df, min_support=0.05, use_colnames=True)
-        rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.40)
-        strong_rules = rules[rules['lift'] > 1.2].copy()
+        frequent_itemsets = apriori(df, min_support=0.02, use_colnames=True)
+        rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.20)
+        strong_rules = rules[rules['lift'] > 1.0].copy()
         strong_rules.sort_values(by=['lift', 'confidence'], ascending=[False, False], inplace=True)
 
         # 4. Format Output
@@ -72,7 +72,7 @@ class TechStackAssociationService:
             platform_output = {"core_stack": [], "popular_combinations": []}
 
             if not platform_rules.empty:
-                core_tech_rules = platform_rules[(platform_rules['antecedents'].apply(len) == 1) & (platform_rules['confidence'] > 0.95)]
+                core_tech_rules = platform_rules[(platform_rules['antecedents'].apply(len) == 1) & (platform_rules['confidence'] > 0.70)]
                 core_techs = []
                 if not core_tech_rules.empty:
                     all_core_techs = core_tech_rules['consequents_str'].str.split(', ').explode()
