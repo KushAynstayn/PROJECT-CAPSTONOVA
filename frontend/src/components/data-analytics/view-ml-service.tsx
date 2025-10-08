@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
+import { CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 // Import the new function and remove unused imports
 import { apiCall, ApiError, apiCallForBlob } from "@/lib/api";
 
@@ -19,7 +20,8 @@ const TrainSuggestionsCard = () => {
         "POST",
         {}
       );
-      setResult(JSON.stringify(response, null, 2));
+      // Extract only the message from the response
+      setResult(response.message || "Operation completed successfully.");
     } catch (err: any) {
       if (err instanceof ApiError) {
         setError(`Error ${err.status}: ${err.message}`);
@@ -34,25 +36,38 @@ const TrainSuggestionsCard = () => {
   return (
     <div className="mb-4 border-b pb-4">
       <div className="flex justify-between items-center">
-        <p className="font-semibold text-lg">Train Suggestions Model</p>
-        <Button onClick={handleTrain} variant="outline" disabled={isLoading}>
-          {isLoading ? "Training..." : "Train"}
+        <div>
+          <p className="font-semibold text-lg">Train Suggestions Model</p>
+          <p className="text-sm text-muted-foreground">
+            Vectorizes data from the suggestions table to query AI for project
+            suggestions based on existing data.
+          </p>
+        </div>
+        <Button
+          onClick={handleTrain}
+          variant="outline"
+          disabled={isLoading}
+          className="w-28"
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Train"}
         </Button>
       </div>
       {result && (
-        <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-md">
-          <h3 className="font-semibold mb-2">Success Response:</h3>
-          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-            {result}
-          </pre>
+        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <p className="text-sm text-green-800 dark:text-green-300">
+              {result}
+            </p>
+          </div>
         </div>
       )}
       {error && (
-        <div className="mt-4 p-4 bg-red-100 dark:bg-red-900 rounded-md">
-          <h3 className="font-semibold mb-2 text-red-800 dark:text-red-200">
-            Error:
-          </h3>
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          </div>
         </div>
       )}
     </div>
@@ -70,7 +85,8 @@ const TrainAssociationCard = () => {
     setError(null);
     try {
       const response = await apiCall("/ml-service/train-association", "GET");
-      setResult(JSON.stringify(response, null, 2));
+      // Extract only the message from the response
+      setResult(response.message || "Operation completed successfully.");
     } catch (err: any) {
       if (err instanceof ApiError) {
         setError(`Error ${err.status}: ${err.message}`);
@@ -85,25 +101,38 @@ const TrainAssociationCard = () => {
   return (
     <div className="mb-4 border-b pb-4">
       <div className="flex justify-between items-center">
-        <p className="font-semibold text-lg">Train Association Model</p>
-        <Button onClick={handleTrain} variant="outline" disabled={isLoading}>
-          {isLoading ? "Training..." : "Train"}
+        <div>
+          <p className="font-semibold text-lg">Train Association Model</p>
+          <p className="text-sm text-muted-foreground">
+            Generates association rules for programming language combinations in
+            projects.
+          </p>
+        </div>
+        <Button
+          onClick={handleTrain}
+          variant="outline"
+          disabled={isLoading}
+          className="w-28"
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Train"}
         </Button>
       </div>
       {result && (
-        <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-md">
-          <h3 className="font-semibold mb-2">Success Response:</h3>
-          <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-            {result}
-          </pre>
+        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <p className="text-sm text-green-800 dark:text-green-300">
+              {result}
+            </p>
+          </div>
         </div>
       )}
       {error && (
-        <div className="mt-4 p-4 bg-red-100 dark:bg-red-900 rounded-md">
-          <h3 className="font-semibold mb-2 text-red-800 dark:text-red-200">
-            Error:
-          </h3>
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          </div>
         </div>
       )}
     </div>
@@ -148,11 +177,22 @@ const TrainProjectSizeRegressionCard = () => {
   return (
     <div className="mb-4 border-b pb-4">
       <div className="flex justify-between items-center">
-        <p className="font-semibold text-lg">
-          Train Project Size Regression Model
-        </p>
-        <Button onClick={handleTrain} variant="outline" disabled={isLoading}>
-          {isLoading ? "Training..." : "Train"}
+        <div>
+          <p className="font-semibold text-lg">
+            Train Project Size Regression Model
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Analyzes the variables that most significantly impact the final
+            project size.
+          </p>
+        </div>
+        <Button
+          onClick={handleTrain}
+          variant="outline"
+          disabled={isLoading}
+          className="w-28"
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Train"}
         </Button>
       </div>
       {plotUrl && (
@@ -168,11 +208,11 @@ const TrainProjectSizeRegressionCard = () => {
         </div>
       )}
       {error && (
-        <div className="mt-4 p-4 bg-red-100 dark:bg-red-900 rounded-md">
-          <h3 className="font-semibold mb-2 text-red-800 dark:text-red-200">
-            Error:
-          </h3>
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          </div>
         </div>
       )}
     </div>

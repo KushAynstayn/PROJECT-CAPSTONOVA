@@ -9,7 +9,8 @@ import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TwoFactorAuthForm } from "./two-factor-auth-form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TwoFactorAuthForm } from "./two-factor-auth-form"; // Import the new component
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 export function LoginForm({
@@ -22,7 +23,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showTwoFactor, setShowTwoFactor] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // <-- ADD STATE FOR VISIBILITY
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +104,8 @@ export function LoginForm({
             <Label htmlFor="password">Password</Label>
           </div>
           <div className="relative">
+            {" "}
+            {/* Container for both input and button */}
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -128,7 +131,13 @@ export function LoginForm({
 
         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
-        <div className="flex justify-center text-sm">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <Checkbox id="remember-me" />
+            <Label htmlFor="remember-me" className="font-normal text-gray-600">
+              Remember me
+            </Label>
+          </div>
           <Link
             href="/forgot-password"
             className="font-medium underline underline-offset-4"
