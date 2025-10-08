@@ -12,20 +12,21 @@ use App\Http\Controllers\Api\User\ProfileController;
 
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Util\ResourceController;
+use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\ProjectDetailsController;
+
+
+
 use App\Http\Controllers\Api\User\StreamAcmController;
-
-
 
 use App\Http\Controllers\Api\Util\CheckManualController;
 
 use App\Http\Controllers\Api\Util\ProjectTypeController;
-
 use App\Http\Controllers\Api\Util\ViewerTrendController;
 use App\Http\Controllers\Api\Adviser\ProponentController;
 use App\Http\Controllers\API\User\NotificationController;
-use App\Http\Controllers\Api\Util\FetchAdviserController;
 
+use App\Http\Controllers\Api\Util\FetchAdviserController;
 use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Auth\TwoFactorAuthController;
@@ -35,17 +36,17 @@ use App\Http\Controllers\Api\Util\CheckManuscriptController;
 use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\MlService\AssociationController;
-use App\Http\Controllers\Api\User\StreamManuscriptController;
 
+use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
 use App\Http\Controllers\Api\MlService\MLSuggestionController;
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
+
+
 use App\Http\Controllers\Api\Proponent\ChunkedUploadController;
-
-
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
 use App\Http\Controllers\Api\UserManagement\MAdviserController;
 use App\Http\Controllers\Api\Util\AdminDashboardUtilController;
@@ -58,6 +59,7 @@ use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
 use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
+use App\Http\Controllers\Api\MlService\ProjectSizeRegressionController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
 
@@ -72,6 +74,15 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', LogoutController::class)
         ->middleware('auth:sanctum')
         ->name('auth.logout');
+
+    Route::post(
+        '/forgot-password',
+        [ForgotPasswordController::class, 'sendResetLinkEmail']
+    )->name('password.email');
+    Route::post(
+        '/reset-password',
+        [ForgotPasswordController::class, 'resetPassword']
+    )->name('password.update');
 });
 
 
@@ -119,6 +130,8 @@ Route::prefix('public')->group(function () {
 
     Route::get('search', [SearchController::class, 'search'])
         ->name('search');
+
+    Route::get('system-settings/check', [SystemSettingController::class, 'check']);
 });
 
 
@@ -214,7 +227,7 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('document-requests/approval-history', [DocumentRequestController::class, 'approvalHistory']);
 
-    Route::apiResource('system-settings', SystemSettingController::class);
+    Route::post('system-settings/toggle', [SystemSettingController::class, 'toggle']);
 });
 
 
@@ -426,4 +439,8 @@ Route::prefix('ml-service')->group(function () {
 
     Route::get('/train-association', [AssociationController::class, 'train'])->name('ml.association.train');
     Route::get('/predict-association', [AssociationController::class, 'predict'])->name('ml.association.predict');
+
+    Route::post('/project-size/train', [ProjectSizeRegressionController::class, 'train'])->name('project-size.train');
+    Route::post('/project-size/predict', [ProjectSizeRegressionController::class, 'predict'])->name('project-size.predict');
+    Route::get('/project-size/plot', [ProjectSizeRegressionController::class, 'getPlot'])->name('project-size.plot');
 });

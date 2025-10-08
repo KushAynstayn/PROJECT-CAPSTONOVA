@@ -7,10 +7,21 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ */
 class UserFactory extends Factory
 {
+    /**
+     * The current password being used by the factory.
+     */
     protected static ?string $password;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         $email = fake()->unique()->safeEmail();
@@ -23,7 +34,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => fake()->randomElement(['Super Admin', 'Admin', 'Adviser', 'Proponent', 'Viewer']),
-            'status' => fake()->randomElement(['active', 'inactive', 'restricted']),
+            'status' => 'active', // Set all users to active by default
             'remember_token' => Str::random(10),
         ];
     }

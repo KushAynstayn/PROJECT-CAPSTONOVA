@@ -8,7 +8,7 @@ import AdvisoryLoadView from "../../../../components/admin-data-analytics/view-a
 import ProjectTypeView from "../../../../components/data-analytics/view-project-type";
 import EnvironmentTrendView from "../../../../components/data-analytics/view-environment-trend";
 import ProjectToolsView from "../../../../components/data-analytics/view-project-tools";
-
+import ViewMlService from "../../../../components/data-analytics/view-ml-service";
 const SuperAdminAnalyticsPage = () => {
   const [currentRole, setCurrentRole] =
     useState<AnalyticsRole>("Advisory Load");
@@ -19,6 +19,7 @@ const SuperAdminAnalyticsPage = () => {
     "Project Type": <ProjectTypeView />, // Placeholder
     "Environment Trend": <EnvironmentTrendView />, // Placeholder
     "Project Tools Trend": <ProjectToolsView />, // Placeholder
+    "ML Service": <ViewMlService />, // New component for ML Service
   };
 
   return (

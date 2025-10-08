@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Models\CapstoneProject;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Models\SystemSetting;
+use App\Models\CapstoneProject;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Handles searching for capstone projects.
@@ -24,6 +26,26 @@ class SearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        // This permission check ONLY applies if the user is an Admin or an Adviser.
+        // All other roles (Super Admin, Proponent, Viewer, etc.) are exempt.
+        if (in_array($user->role, ['Admin', 'Adviser'])) {
+            $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+            $settingName = $settingRoleKey . '_searchProjects';
+
+            $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+                $setting = SystemSetting::where('setting_name', $settingName)->first();
+                return $setting ? $setting->is_enabled : false; // Default to false if not found
+            });
+
+            if (!$isFeatureEnabled) {
+                return response()->json([
+                    'message' => 'The project search feature is currently disabled for your role.'
+                ], 403);
+            }
+        }
+
         // 1. Validate all incoming request data.
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],

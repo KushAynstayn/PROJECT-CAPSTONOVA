@@ -4,24 +4,26 @@ namespace App\Http\Controllers\Api\UserManagement;
 
 use Exception;
 use Throwable;
+use App\Models\UserLog;
 use App\Models\Whitelist;
+use App\Models\ActionType;
 use Illuminate\Http\Request;
+use App\Models\SystemSetting;
 use Illuminate\Validation\Rule;
 use App\Imports\WhitelistImport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\Admin\ImportWhitelistRequest;
-use App\Models\ActionType;
-use App\Models\UserLog;
-use Illuminate\Support\Facades\Auth;
 
 class MWhitelistController extends Controller
 {
@@ -33,8 +35,22 @@ class MWhitelistController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        if (!Gate::allows('isAdmin')) {
-            abort(403, 'Unauthorized - Admin access required');
+        $user = $request->user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'uploadWhitelist' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_uploadWhitelist';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'You do not have permission to upload whitelist entries.'
+            ], 403);
         }
 
         $rules = [
@@ -95,7 +111,6 @@ class MWhitelistController extends Controller
             });
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'add_whitelist_entries']);
-            $user = Auth::user();
             UserLog::create([
                 'user_id' => $user->id,
                 'action_type_id' => $actionType->id,
@@ -186,8 +201,22 @@ class MWhitelistController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        if (!Gate::allows('isAdmin')) {
-            abort(403, 'Unauthorized - Admin access required');
+        $user = $request->user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'viewWhitelist' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_viewWhitelist';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'You do not have permission to view the whitelist.'
+            ], 403);
         }
 
         $query = DB::table('whitelist')
@@ -201,7 +230,7 @@ class MWhitelistController extends Controller
 
         if ($request->has('search')) {
             $searchTerm = '%' . $request->input('search') . '%';
-            $query->where('whitelist.encrypted_email', 'like', $searchTerm);
+            $query->where('whitelist.encrypted_email', 'like', 'searchTerm');
         }
 
         $whitelistEntries = $query->latest('whitelist.created_at')->paginate(50);

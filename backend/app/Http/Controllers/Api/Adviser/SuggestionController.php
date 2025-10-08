@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\Adviser;
 use App\Models\User;
 use App\Models\Suggestion;
 use Illuminate\Http\Request;
+use App\Models\SystemSetting;
 use App\Jobs\SendNotification;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 /**
@@ -26,11 +28,23 @@ class SuggestionController extends Controller
      */
     public function index(): JsonResponse
     {
-        if (!Gate::allows('isAdviser')) {
-            abort(403, 'Unauthorized - Adviser access required');
+        $user = Auth::user();
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'viewOwnSuggestion' feature is enabled
+        $settingName = $settingRoleKey . '_viewOwnSuggestion';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false;
+        });
+
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'The ability to view your suggestions is currently disabled.'
+            ], 403);
         }
 
-        $suggestions = Suggestion::where('adviser_id', Auth::id())
+        $suggestions = Suggestion::where('adviser_id', $user->id)
             ->with('interestedStudent.userDetail') // Eager-load the student and their details
             ->orderBy('submission_date', 'desc')
             ->get();
@@ -69,8 +83,22 @@ class SuggestionController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        if (!Gate::allows('isAdviser')) {
-            abort(403, 'Unauthorized - Adviser access required');
+        $user = Auth::user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'createSuggestion' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_createSuggestion';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'The ability to create suggestions is currently disabled.'
+            ], 403);
         }
 
         // 1. Validate the incoming request data.
@@ -81,7 +109,7 @@ class SuggestionController extends Controller
 
         // 2. Create and persist the new suggestion.
         $suggestion = Suggestion::create([
-            'adviser_id' => Auth::id(),
+            'adviser_id' => $user->id,
             'title' => $validatedData['title'],
             'suggestion_text' => $validatedData['suggestion_text'],
             'submission_date' => now(),
@@ -89,7 +117,7 @@ class SuggestionController extends Controller
         ]);
 
         $adminIds = User::whereIn('role', ['Admin', 'Super Admin'])->pluck('id')->toArray();
-        $adviserName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+        $adviserName = $user->first_name . ' ' . $user->last_name;
         $notificationMessage = "A new suggestion titled '{$suggestion->title}' has been posted by {$adviserName}.";
         SendNotification::dispatch(null, $notificationMessage, $adminIds);
 
@@ -141,6 +169,22 @@ class SuggestionController extends Controller
     {
         // Authorize this action via SuggestionPolicy
         $this->authorize('archive', $suggestion);
+
+        $user = Auth::user();
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'archiveOwnSuggestion' feature is enabled
+        $settingName = $settingRoleKey . '_archiveOwnSuggestion';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false;
+        });
+
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'The ability to archive your suggestions is currently disabled.'
+            ], 403);
+        }
 
         // 2. Update the suggestion to be archived.
         $suggestion->update(['is_archived' => true]);

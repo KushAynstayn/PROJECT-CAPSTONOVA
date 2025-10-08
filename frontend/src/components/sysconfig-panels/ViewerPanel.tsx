@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { ViewerToggles } from "@/types/system-settings";
 
-// Define the props interface for the ToggleSwitch component
 interface ToggleSwitchProps {
   label: string;
   isToggled: boolean;
   onToggle: () => void;
 }
 
-// Reusable Toggle component
 const ToggleSwitch = ({ label, isToggled, onToggle }: ToggleSwitchProps) => {
   return (
     <div className="flex justify-between items-center py-2">
@@ -23,20 +22,14 @@ const ToggleSwitch = ({ label, isToggled, onToggle }: ToggleSwitchProps) => {
             onChange={onToggle}
           />
           <div
-            className={`
-              block w-10 h-6 rounded-full transition-colors duration-300
-              ${isToggled ? "bg-green-500" : "bg-gray-300"}
-            `}
+            className={`block w-10 h-6 rounded-full transition-colors duration-300 ${
+              isToggled ? "bg-green-500" : "bg-gray-300"
+            }`}
           ></div>
           <div
-            className={`
-              absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300
-              ${
-                isToggled
-                  ? "transform translate-x-4"
-                  : "transform translate-x-0"
-              }
-            `}
+            className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${
+              isToggled ? "transform translate-x-4" : "transform translate-x-0"
+            }`}
           ></div>
         </div>
       </label>
@@ -44,47 +37,27 @@ const ToggleSwitch = ({ label, isToggled, onToggle }: ToggleSwitchProps) => {
   );
 };
 
-// Viewer Panel Component
-const ViewerPanel = () => {
-  interface ViewerToggles {
-    updateProfile: boolean;
-    changePassword: boolean;
-    registerAccount: boolean;
-    viewAbstract: boolean;
-    requestFullAccess: boolean;
-    viewSuggestions: boolean;
-    dataAnalyticsView: boolean;
-    getNotifications: boolean;
-  }
-  const [viewerToggles, setViewerToggles] = useState<ViewerToggles>({
-    updateProfile: true,
-    changePassword: false,
-    registerAccount: true,
-    viewAbstract: true,
-    requestFullAccess: true,
-    viewSuggestions: true,
-    dataAnalyticsView: true,
-    getNotifications: true,
-  });
-  const handleToggle = (key: keyof ViewerToggles) => {
-    setViewerToggles((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+interface ViewerPanelProps {
+  settings: ViewerToggles;
+  onToggle: (key: keyof ViewerToggles) => void;
+}
 
+const ViewerPanel = ({ settings, onToggle }: ViewerPanelProps) => {
   return (
-   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           PROFILE MANAGEMENT
         </h2>
         <ToggleSwitch
           label="Update profile"
-          isToggled={viewerToggles.updateProfile}
-          onToggle={() => handleToggle("updateProfile")}
+          isToggled={settings.updateProfile}
+          onToggle={() => onToggle("updateProfile")}
         />
         <ToggleSwitch
           label="Change password"
-          isToggled={viewerToggles.changePassword}
-          onToggle={() => handleToggle("changePassword")}
+          isToggled={settings.changePassword}
+          onToggle={() => onToggle("changePassword")}
         />
       </div>
       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
@@ -93,33 +66,33 @@ const ViewerPanel = () => {
         </h2>
         <ToggleSwitch
           label="Register account"
-          isToggled={viewerToggles.registerAccount}
-          onToggle={() => handleToggle("registerAccount")}
+          isToggled={settings.registerAccount}
+          onToggle={() => onToggle("registerAccount")}
         />
       </div>
-       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           PROJECT MANAGEMENT
         </h2>
         <ToggleSwitch
           label="View Abstract"
-          isToggled={viewerToggles.viewAbstract}
-          onToggle={() => handleToggle("viewAbstract")}
+          isToggled={settings.viewAbstract}
+          onToggle={() => onToggle("viewAbstract")}
         />
         <ToggleSwitch
           label="Request full Access"
-          isToggled={viewerToggles.requestFullAccess}
-          onToggle={() => handleToggle("requestFullAccess")}
+          isToggled={settings.requestFullAccess}
+          onToggle={() => onToggle("requestFullAccess")}
         />
       </div>
-       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           SUGGESTIONS
         </h2>
         <ToggleSwitch
           label="View Suggestions"
-          isToggled={viewerToggles.viewSuggestions}
-          onToggle={() => handleToggle("viewSuggestions")}
+          isToggled={settings.viewSuggestions}
+          onToggle={() => onToggle("viewSuggestions")}
         />
       </div>
       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
@@ -128,18 +101,18 @@ const ViewerPanel = () => {
         </h2>
         <ToggleSwitch
           label="View"
-          isToggled={viewerToggles.dataAnalyticsView}
-          onToggle={() => handleToggle("dataAnalyticsView")}
+          isToggled={settings.dataAnalyticsView}
+          onToggle={() => onToggle("dataAnalyticsView")}
         />
       </div>
-       <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
+      <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
         <h2 className="font-semibold text-xl mb-4 text-gray-800">
           NOTIFICATION
         </h2>
         <ToggleSwitch
           label="Get Notifications"
-          isToggled={viewerToggles.getNotifications}
-          onToggle={() => handleToggle("getNotifications")}
+          isToggled={settings.getNotifications}
+          onToggle={() => onToggle("getNotifications")}
         />
       </div>
     </div>

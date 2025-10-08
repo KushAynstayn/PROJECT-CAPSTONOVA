@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Api\UserManagement;
 
 use App\Models\User;
+use App\Models\UserLog;
+use App\Models\ActionType;
 use Illuminate\Http\Request;
+use App\Models\SystemSetting;
 use App\Jobs\SendNotification;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Foundation\Exceptions\Renderer\Exception;
-use App\Models\ActionType;
-use App\Models\UserLog;
-use Illuminate\Support\Facades\Auth;
 
 class MAdviserController extends Controller
 {
@@ -74,6 +76,24 @@ class MAdviserController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'createAdviserAccount' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_createAdviserAccount';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'You do not have permission to create Adviser accounts.'
+            ], 403);
+        }
+
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
@@ -241,6 +261,24 @@ class MAdviserController extends Controller
      */
     public function allSuggestions(Request $request)
     {
+        $user = $request->user();
+        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
+        $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
+
+        // Guard Clause: Check if the 'viewSuggestions' feature is enabled for the user's role
+        $settingName = $settingRoleKey . '_viewSuggestions';
+        $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
+            $setting = SystemSetting::where('setting_name', $settingName)->first();
+            return $setting ? $setting->is_enabled : false; // Default to false if not found
+        });
+
+        // This check is bypassed if the user is a Super Admin
+        if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
+            return response()->json([
+                'message' => 'You do not have permission to view suggestions.'
+            ], 403);
+        }
+
         $request->validate([
             'from_year' => 'nullable|integer|digits:4',
             'to_year' => 'nullable|integer|digits:4|gte:from_year',
