@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
-import { apiCall, ApiError } from "@/lib/api";
+// Import the new function and remove unused imports
+import { apiCall, ApiError, apiCallForBlob } from "@/lib/api";
 
 const TrainSuggestionsCard = () => {
   const [result, setResult] = useState<string | null>(null);
@@ -110,40 +111,29 @@ const TrainAssociationCard = () => {
 };
 
 const TrainProjectSizeRegressionCard = () => {
-  const [plots, setPlots] = useState<{
-    residuals?: string;
-    feature_importance?: string;
-  }>({});
+  const [plotUrl, setPlotUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // This function now uses the proper apiCallForBlob from our lib
   const fetchPlot = async (plotType: "residuals" | "feature_importance") => {
-    const API_BASE = "http://127.0.0.1:8000/api";
-    const response = await fetch(
-      `${API_BASE}/ml-service/project-size/plot?plot_type=${plotType}`
+    const imageBlob = await apiCallForBlob(
+      `/ml-service/project-size/plot?plot_type=${plotType}`
     );
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${plotType} plot`);
-    }
-    const imageBlob = await response.blob();
     return URL.createObjectURL(imageBlob);
   };
 
   const handleTrain = async () => {
     setIsLoading(true);
-    setPlots({});
+    setPlotUrl(null);
     setError(null);
     try {
       await apiCall("/ml-service/project-size/train", "POST", {});
 
-      // Once training is successful, fetch the plots
-      const residualsPlotUrl = await fetchPlot("residuals");
+      // Once training is successful, fetch only the feature importance plot
       const featureImportancePlotUrl = await fetchPlot("feature_importance");
 
-      setPlots({
-        residuals: residualsPlotUrl,
-        feature_importance: featureImportancePlotUrl,
-      });
+      setPlotUrl(featureImportancePlotUrl);
     } catch (err: any) {
       if (err instanceof ApiError) {
         setError(`Error ${err.status}: ${err.message}`);
@@ -165,24 +155,15 @@ const TrainProjectSizeRegressionCard = () => {
           {isLoading ? "Training..." : "Train"}
         </Button>
       </div>
-      {(plots.residuals || plots.feature_importance) && (
+      {plotUrl && (
         <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-md">
-          <h3 className="font-semibold mb-2">Generated Plots:</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {plots.residuals && (
-              <img
-                src={plots.residuals}
-                alt="Residuals Plot"
-                className="w-full h-auto rounded-md"
-              />
-            )}
-            {plots.feature_importance && (
-              <img
-                src={plots.feature_importance}
-                alt="Feature Importance Plot"
-                className="w-full h-auto rounded-md"
-              />
-            )}
+          <h3 className="font-semibold mb-2">Generated Plot:</h3>
+          <div className="flex justify-center">
+            <img
+              src={plotUrl}
+              alt="Feature Importance Plot"
+              className="max-w-full h-auto rounded-md"
+            />
           </div>
         </div>
       )}

@@ -80,3 +80,40 @@ export const apiCall = async (
 
   return await response.json();
 };
+
+// [NEW FUNCTION] A new function for fetching blobs (like images)
+export const apiCallForBlob = async (path: string): Promise<Blob> => {
+  const headers: { [key: string]: string } = {};
+
+  const token = authStore.getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const options: RequestInit = {
+    method: "GET",
+    headers,
+  };
+
+  const response = await fetch(`${API_BASE}${path}`, options);
+
+  if (response.status === 401) {
+    authStore.clearAuth();
+    throw new ApiError("Unauthorized", 401, {
+      message: "Please log in again.",
+    });
+  }
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: response.statusText }));
+    throw new ApiError(
+      errorData.message || "An error occurred during the API call.",
+      response.status,
+      errorData.errors || {}
+    );
+  }
+
+  return await response.blob();
+};
