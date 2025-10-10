@@ -2,8 +2,8 @@
 
 import React from "react";
 
-// Define the possible roles for type safety
-export type Role = "Viewer" | "Proponents" | "Advisers";
+// ✅ Extended roles to include "Restricted"
+export type Role = "Viewer" | "Proponents" | "Advisers" | "Restricted";
 
 // Define the component's props
 interface NavigationBarProps {
@@ -17,7 +17,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   activeRole,
   onSelectRole,
 }) => {
-  const roles: Role[] = ["Viewer", "Proponents", "Advisers"];
+  // ✅ Added "Restricted" to the list of visible tabs
+  const roles: Role[] = ["Viewer", "Proponents", "Advisers", "Restricted"];
 
   const navStyles: React.CSSProperties = {
     padding: "12px 20px",
@@ -42,8 +43,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     textAlign: "center",
     color: activeRole === role ? "#3b82f6" : "#6b7280",
     fontWeight: activeRole === role ? "bold" : "normal",
-
-    borderBottom: activeRole === role ? "2px solid #3b82f6" : "none", // Add bottom border when active
+    borderBottom: activeRole === role ? "2px solid #3b82f6" : "none",
     transition: "color 0.2s ease-in-out, border-bottom 0.2s ease-in-out",
   });
 

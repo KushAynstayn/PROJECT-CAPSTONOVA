@@ -18,8 +18,11 @@ import AddAdviser from "../../../../components/user-manage/add-adviser";
 import AddAdmin from "../../../../components/user-manage/add-admin";
 import { apiCall, ApiError } from "@/lib/api";
 
+// ✅ NEW IMPORT — your Restricted Accounts component
+import RestrictedAccounts from "../../../../components/user-manage/restricted-accounts";
+
 // --- Type and Interface definitions ---
-type Role = "Viewer" | "Proponents" | "Advisers" | "Admin";
+type Role = "Viewer" | "Proponents" | "Advisers" | "Admin" | "Restricted";
 
 interface BaseUser {
   id: number;
@@ -65,14 +68,12 @@ interface AdviserEditData {
   last_name: string;
 }
 
-// --- FIX: Added 'name' property to align with data structure ---
 interface Admin extends BaseUser {
   name: string;
   first_name: string;
   last_name: string;
   middle_name: string | null;
 }
-// --- END OF FIX ---
 
 type User =
   | Viewer
@@ -87,6 +88,7 @@ const placeholderText = {
   Proponents: "Search Proponents Here",
   Advisers: "Search Advisers Here",
   Admin: "Search Admins Here",
+  Restricted: "Search Restricted Accounts Here",
 };
 
 const SuperAdminUserManagementPage = () => {
@@ -98,6 +100,7 @@ const SuperAdminUserManagementPage = () => {
     Proponents: [],
     Advisers: [],
     Admin: [],
+    Restricted: [],
   });
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
     useState<Adviser | null>(null);
@@ -179,6 +182,9 @@ const SuperAdminUserManagementPage = () => {
       case "Admin":
         fetchAdmins();
         break;
+      case "Restricted":
+        // 🔸 For now, RestrictedAccounts has static data, so no fetch needed
+        break;
     }
   }, [
     currentRole,
@@ -189,9 +195,7 @@ const SuperAdminUserManagementPage = () => {
     fetchAdmins,
   ]);
 
-  // --- CRUD Handlers ---
-
-  const handleEditUser = async (userId: number) => {
+    const handleEditUser = async (userId: number) => {
     setError(null);
     setIsLoading(true);
     try {
@@ -322,6 +326,8 @@ const SuperAdminUserManagementPage = () => {
     setViewingSuggestionsFor(adviser);
   const handleCloseSuggestions = () => setViewingSuggestionsFor(null);
 
+
+  // --- Component Map ---
   const componentMap = {
     Viewer: (
       <ViewerView
@@ -372,6 +378,10 @@ const SuperAdminUserManagementPage = () => {
         onDeleteUser={handleDeleteUser}
       />
     ),
+    // ✅ NEW TAB: Restricted
+    Restricted: (
+      <RestrictedAccounts />
+    ),
   };
 
   return (
@@ -388,7 +398,6 @@ const SuperAdminUserManagementPage = () => {
         />
         <div className="mt-6 p-1">
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-
           {isAddModalOpen && currentRole === "Proponents" && (
             <AddProponent
               onClose={() => setIsAddModalOpen(false)}

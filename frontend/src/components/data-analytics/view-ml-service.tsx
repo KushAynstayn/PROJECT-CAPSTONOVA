@@ -34,7 +34,7 @@ const TrainSuggestionsCard = () => {
   };
 
   return (
-    <div className="mb-4 border-b pb-4">
+    <div className="mb-4 border-b border-gray-300 pb-4">
       <div className="flex justify-between items-center">
         <div>
           <p className="font-semibold text-lg">Train Suggestions Model</p>
@@ -47,7 +47,7 @@ const TrainSuggestionsCard = () => {
           onClick={handleTrain}
           variant="outline"
           disabled={isLoading}
-          className="w-28"
+          className="w-28 border border-gray-300 text-gray-600"
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Train"}
         </Button>
@@ -99,7 +99,7 @@ const TrainAssociationCard = () => {
   };
 
   return (
-    <div className="mb-4 border-b pb-4">
+    <div className="mb-4 border-b border-gray-300 pb-4">
       <div className="flex justify-between items-center">
         <div>
           <p className="font-semibold text-lg">Train Association Model</p>
@@ -112,7 +112,7 @@ const TrainAssociationCard = () => {
           onClick={handleTrain}
           variant="outline"
           disabled={isLoading}
-          className="w-28"
+          className="w-28 border border-gray-300 text-gray-600"
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Train"}
         </Button>
@@ -175,7 +175,7 @@ const TrainProjectSizeRegressionCard = () => {
   };
 
   return (
-    <div className="mb-4 border-b pb-4">
+    <div className="mb-4 border-b border-gray-300 pb-4">
       <div className="flex justify-between items-center">
         <div>
           <p className="font-semibold text-lg">
@@ -190,7 +190,7 @@ const TrainProjectSizeRegressionCard = () => {
           onClick={handleTrain}
           variant="outline"
           disabled={isLoading}
-          className="w-28"
+          className="w-28 border border-gray-300 text-gray-600"
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Train"}
         </Button>

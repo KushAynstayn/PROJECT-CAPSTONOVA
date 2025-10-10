@@ -14,9 +14,12 @@ import SuggestionView from "../../../../components/user-manage/view-suggestion";
 import { apiCall, ApiError } from "@/lib/api";
 import AddAdviser from "@/components/user-manage/add-adviser";
 
-type Role = "Viewer" | "Proponents" | "Advisers";
+// 🆕 Import your Restricted Accounts component
+import RestrictedAccounts from "@/components/user-manage/restricted-accounts";
 
 // --- INTERFACE DEFINITIONS ---
+type Role = "Viewer" | "Proponents" | "Advisers" | "Restricted";
+
 interface BaseUser {
   id: number;
   email: string;
@@ -74,6 +77,7 @@ const placeholderText = {
   Viewer: "Search Viewers Here",
   Proponents: "Search Proponents Here",
   Advisers: "Search Advisers Here",
+  Restricted: "Search Restricted Accounts Here",
 };
 
 const AdminUserManagementPage = () => {
@@ -84,6 +88,7 @@ const AdminUserManagementPage = () => {
     Viewer: [],
     Proponents: [],
     Advisers: [],
+    Restricted: [], // 🆕 added for state consistency
   });
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
     useState<Adviser | null>(null);
@@ -130,6 +135,15 @@ const AdminUserManagementPage = () => {
     }
   }, [searchQuery]);
 
+  // 🆕 Optional: If you want to fetch restricted accounts from API in the future
+  const fetchRestricted = useCallback(async () => {
+    setIsLoading(false);
+    setError(null);
+    // Example placeholder — you can integrate your real fetch here
+    // const data = await apiCall(`/user-mgt/restricted?search=${searchQuery}`);
+    // setUsers((prev) => ({ ...prev, Restricted: data }));
+  }, [searchQuery]);
+
   useEffect(() => {
     setEditingUser(null);
     setViewingSuggestionsFor(null);
@@ -137,7 +151,15 @@ const AdminUserManagementPage = () => {
     if (currentRole === "Viewer") fetchViewers();
     if (currentRole === "Proponents") fetchProponents();
     if (currentRole === "Advisers") fetchAdvisers();
-  }, [currentRole, searchQuery, fetchViewers, fetchProponents, fetchAdvisers]);
+    if (currentRole === "Restricted") fetchRestricted(); // 🆕 added
+  }, [
+    currentRole,
+    searchQuery,
+    fetchViewers,
+    fetchProponents,
+    fetchAdvisers,
+    fetchRestricted,
+  ]);
 
   const handleEditUser = async (userId: number) => {
     setError(null);
@@ -199,7 +221,7 @@ const AdminUserManagementPage = () => {
     } catch (err: any) {
       const message =
         err instanceof ApiError ? err.message : "An unexpected error occurred.";
-      alert(`Failed to add adviser: ${message}`); // Simple alert for feedback
+      alert(`Failed to add adviser: ${message}`);
     } finally {
       setIsLoading(false);
     }
@@ -218,7 +240,6 @@ const AdminUserManagementPage = () => {
 
     if (currentRole === "Viewer") {
       endpoint = `/user-mgt/viewers/${updatedUser.id}`;
-      // --- FIX: Flatten the nested user_detail object before sending ---
       const viewerData = updatedUser as Viewer;
       payload = {
         first_name: viewerData.first_name,
@@ -226,7 +247,6 @@ const AdminUserManagementPage = () => {
         email: viewerData.email,
         ...viewerData.user_detail,
       };
-      // --- END OF FIX ---
       fetchAction = fetchViewers;
     } else if (currentRole === "Proponents") {
       endpoint = `/user-mgt/proponents/${updatedUser.id}`;
@@ -289,6 +309,9 @@ const AdminUserManagementPage = () => {
         onDeleteUser={handleDeleteUser}
         onAddUser={() => setIsAddModalOpen(true)}
       />
+    ),
+    Restricted: (
+      <RestrictedAccounts />
     ),
   };
 
