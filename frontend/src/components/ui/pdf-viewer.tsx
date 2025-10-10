@@ -1,15 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { authStore } from "@/lib/auth";
+import { apiCallForBlob } from "@/lib/api";
 
 interface PdfViewerProps {
   url: string;
   title?: string;
 }
-
-// Define the API base URL in one place
-const API_BASE = "http://127.0.0.1:8000/api";
 
 const PdfViewer: React.FC<PdfViewerProps> = ({ url, title = "Document" }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -20,24 +17,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url, title = "Document" }) => {
     const fetchPdf = async () => {
       setIsLoading(true);
       setError(null);
-      const token = authStore.getToken();
 
       try {
-        // --- THIS IS THE FIX ---
-        // Prepend the API_BASE to the relative URL passed in props
-        const fullUrl = `${API_BASE}${url}`;
-
-        const response = await fetch(fullUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-        }
-
-        const blob = await response.blob();
+        const blob = await apiCallForBlob(url);
         const objectUrl = URL.createObjectURL(blob);
         setPdfUrl(objectUrl);
       } catch (err: any) {
@@ -47,7 +29,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url, title = "Document" }) => {
       }
     };
 
-    fetchPdf();
+    if (url) {
+      fetchPdf();
+    }
 
     // Cleanup function to revoke the object URL
     return () => {

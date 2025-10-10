@@ -8,31 +8,15 @@ import ArchivedProjectCard, {
 import { DownloadModal } from "@/components/ui/AllModal";
 import { YearPicker } from "@/components/ui/year-picker";
 import { Button } from "@/components/ui/button";
-import { apiCall, ApiError } from "@/lib/api";
-import { authStore } from "@/lib/auth";
+import { apiCall, apiCallForBlob, ApiError } from "@/lib/api";
 import PdfViewer from "@/components/ui/pdf-viewer";
 import { ArrowLeft, Search, X } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
 
-// This is a temporary solution for the API_BASE URL.
-// Ideally, this should be exported from your `api.ts` or a central config file.
-const API_BASE = "http://127.0.0.1:8000/api";
-
-// Helper function to handle file downloads since apiCall is for JSON
+// Helper function to handle file downloads using apiCallForBlob
 const downloadFile = async (path: string, filename: string) => {
   try {
-    const token = authStore.getToken();
-    const response = await fetch(`${API_BASE}${path}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
-    const blob = await response.blob();
+    const blob = await apiCallForBlob(path);
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
