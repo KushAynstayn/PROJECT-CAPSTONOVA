@@ -9,7 +9,7 @@ import { DownloadModal } from "@/components/ui/AllModal";
 import { YearPicker } from "@/components/ui/year-picker";
 import { Button } from "@/components/ui/button";
 import { apiCall, apiCallForBlob, ApiError } from "@/lib/api";
-import PdfViewer from "@/components/ui/pdf-viewer";
+import PdfViewer from "@/components/ui/pdf-viewer-dynamic";
 import { ArrowLeft, Search, X } from "lucide-react";
 import Pagination from "@/components/ui/pagination";
 
