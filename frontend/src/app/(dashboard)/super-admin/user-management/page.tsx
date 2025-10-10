@@ -336,8 +336,8 @@ const SuperAdminUserManagementPage = () => {
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Viewer}
         filteredUsers={users.Viewer as Viewer[]}
-        onEditUser={() => {}}
-        onDeleteUser={() => {}}
+        onEditUser={handleEditUser}
+        onDeleteUser={handleDeleteUser}
         isLoading={isLoading}
       />
     ),
@@ -348,8 +348,8 @@ const SuperAdminUserManagementPage = () => {
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Proponents}
         filteredUsers={users.Proponents as ProponentListItem[]}
-        onEditUser={() => {}}
-        onDeleteUser={() => {}}
+        onEditUser={handleEditUser}
+        onDeleteUser={handleDeleteUser}
         onAddUser={() => setIsAddModalOpen(true)}
       />
     ),
@@ -360,9 +360,9 @@ const SuperAdminUserManagementPage = () => {
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Advisers}
         filteredUsers={users.Advisers as Adviser[]}
-        onEditUser={() => {}}
-        onViewSuggestions={() => {}}
-        onDeleteUser={() => {}}
+        onEditUser={handleEditUser}
+        onViewSuggestions={handleViewSuggestions}
+        onDeleteUser={handleDeleteUser}
         onAddUser={() => setIsAddModalOpen(true)}
       />
     ),
@@ -373,9 +373,9 @@ const SuperAdminUserManagementPage = () => {
         onClear={() => setSearchQuery("")}
         placeholder={placeholderText.Admin}
         filteredUsers={users.Admin as Admin[]}
-        onEditUser={() => {}}
+        onEditUser={handleEditUser}
         onAddUser={() => setIsAddModalOpen(true)}
-        onDeleteUser={() => {}}
+        onDeleteUser={handleDeleteUser}
       />
     ),
     // ✅ NEW TAB: Restricted
