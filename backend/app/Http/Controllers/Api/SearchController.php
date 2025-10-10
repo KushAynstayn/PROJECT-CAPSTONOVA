@@ -10,7 +10,9 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -26,11 +28,29 @@ class SearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $user = $request->user();
+        // Try to authenticate manually via Sanctum if a token is provided
+        $user = null;
+
+        // Check Authorization header for Bearer token
+        $authHeader = $request->header('Authorization');
+        if ($authHeader && Str::startsWith($authHeader, 'Bearer ')) {
+            $token = Str::after($authHeader, 'Bearer ');
+
+            // Lookup Sanctum token
+            $accessToken = PersonalAccessToken::findToken($token);
+
+            if ($accessToken) {
+                $user = $accessToken->tokenable;
+                Auth::setUser($user); // optional, for downstream code that uses Auth::user()
+            }
+        }
+
+        // Now $user is either an authenticated user or null (guest)
+        // ----------------------------------------------------------
 
         // This permission check ONLY applies if the user is an Admin or an Adviser.
-        // All other roles (Super Admin, Proponent, Viewer, etc.) are exempt.
-        if (in_array($user->role, ['Admin', 'Adviser'])) {
+        // Guests and other roles skip this.
+        if ($user && in_array($user->role, ['Admin', 'Adviser'])) {
             $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
             $settingName = $settingRoleKey . '_searchProjects';
 
@@ -46,7 +66,7 @@ class SearchController extends Controller
             }
         }
 
-        // 1. Validate all incoming request data.
+        // Continue with your existing validation and query logic...
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
@@ -65,7 +85,6 @@ class SearchController extends Controller
 
         $query = CapstoneProject::query();
 
-        // 2. Apply general search term if it exists.
         if (!empty($validated['q'])) {
             $searchTerm = $this->escapeLike($validated['q']);
             $query->where(function (Builder $q) use ($searchTerm) {
@@ -74,13 +93,11 @@ class SearchController extends Controller
             });
         }
 
-        // 3. Apply any advanced filters that are present.
         $advancedFilters = collect($validated)->except('q')->filter()->all();
         if (!empty($advancedFilters)) {
             $this->applyAdvancedFilters($query, $advancedFilters);
         }
 
-        // 4. Eager load relationships and paginate the results
         $projects = $query->with([
             'projectResearcher.user',
             'keywords',
@@ -88,8 +105,9 @@ class SearchController extends Controller
             'adviser'
         ])->paginate(10)->withQueryString();
 
-        // 5. Transform the items for the final JSON response
-        $transformedProjects = $projects->through(fn(CapstoneProject $project) => $this->transformProject($project));
+        $transformedProjects = $projects->through(
+            fn(CapstoneProject $project) => $this->transformProject($project)
+        );
 
         return response()->json($transformedProjects);
     }
