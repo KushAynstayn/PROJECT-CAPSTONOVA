@@ -8,6 +8,7 @@ import AdvisoryLoadView from "../../../../components/admin-data-analytics/view-a
 import ProjectTypeView from "../../../../components/data-analytics/view-project-type";
 import EnvironmentTrendView from "../../../../components/data-analytics/view-environment-trend";
 import ProjectToolsView from "../../../../components/data-analytics/view-project-tools";
+import ViewMlService from "../../../../components/data-analytics/view-ml-service";
 import { apiCall } from "@/lib/api"; // Import the apiCall function
 
 const AdminAnalyticsPage = () => {
@@ -45,6 +46,7 @@ const AdminAnalyticsPage = () => {
     "Project Type": <ProjectTypeView />,
     "Environment Trend": <EnvironmentTrendView />,
     "Project Tools Trend": <ProjectToolsView />,
+    "ML Service" : <ViewMlService/>
   };
 
   // --- START: RENDER BASED ON SETTING CHECK ---
