@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
 use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
 use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
+use App\Http\Controllers\Api\UserManagement\RestrictedUsersController;
 use App\Http\Controllers\Api\MlService\ProjectSizeRegressionController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
@@ -427,6 +428,16 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
     // End Admin Management Routes
     // ============================
 
+    //Restrcted users routes
+    Route::get(
+        '/restricted-users',
+        [RestrictedUsersController::class, 'index']
+    )->name('restricted-users.index');
+
+    Route::post(
+        '/restricted-users/restore',
+        [RestrictedUsersController::class, 'restore']
+    )->name('restricted-users.restore');
 });
 
 
