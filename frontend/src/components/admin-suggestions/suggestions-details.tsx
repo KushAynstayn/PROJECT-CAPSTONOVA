@@ -129,7 +129,7 @@ const AdviserSuggestionsDetails = ({
           <Button
             onClick={() => setViewMode("uploaded")}
             className={cn(
-              "bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105",
+              "bg-[#660000] hover:bg-[#630808] text-white font-semibold hover:text-white px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105",
               viewMode === "uploaded"
                 ? "bg-[#660000] hover:bg-[#630808] text-white"
                 : "bg-gray-200 hover:bg-[#630808] text-gray-700"
@@ -165,9 +165,9 @@ const AdviserSuggestionsDetails = ({
                 suggestions.map((s) => (
                   <Card
                     key={s.suggestion_id}
-                    className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0"
+                    className="flex flex-col shadow-md rounded-md border-gray-300 hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0 overflow-hidden"
                   >
-                    <CardHeader className="bg-gradient-to-r from-[#6b0000] to-[#8c0000] text-white p-4 rounded-t-xl">
+                    <CardHeader className="bg-gradient-to-r from-[#660000] to-[#8c0000] text-white p-4">
                       <CardTitle className="text-xl font-extrabold tracking-wide">
                         {adviser.name}
                       </CardTitle>

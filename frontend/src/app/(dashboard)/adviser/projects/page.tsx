@@ -105,7 +105,12 @@ const ProjectsPage = () => {
     return (
       <div className="h-full flex flex-col">
         <div className="flex-shrink-0 p-4 border-b">
-          <Button variant="ghost" onClick={() => setViewState("details")} className="absolute top-23 right-260 z-10" title="Project Details">
+          <Button
+            variant="ghost"
+            onClick={() => setViewState("details")}
+            className="relative top-1 left-1"
+            title="Project Details"
+          >
             <img src="/images/arrow.png" className="h-5 w-5" />
           </Button>
         </div>
@@ -120,16 +125,16 @@ const ProjectsPage = () => {
 
   if (viewState === "details" && selectedProject) {
     return (
-      <div className="p-4 md:p-8 overflow-y-auto">
+      <div className="p-4 md:p-2 overflow-y-auto">
         <Button
           variant="ghost"
           onClick={handleBackToList}
-          className="absolute top-23 right-260 z-10"
+          className="relative top-1 left-1"
           title="Project List"
         >
           <img src="/images/arrow.png" className="h-5 w-5" />
         </Button>
-        <div className="bg-white p-6 rounded-md shadow-md border-1 border-gray-300">
+        <div className="bg-white p-6 mt-5 rounded-md shadow-md border-1 border-gray-300">
           <h1 className="text-3xl font-bold mb-4 text-gray-800">
             {selectedProject.title}
           </h1>
