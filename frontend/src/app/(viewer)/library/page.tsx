@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authStore } from "@/lib/auth";
 import { apiCall, ApiError } from "@/lib/api";
-import PdfViewer from "@/components/ui/pdf-viewer";
+import PdfViewer from "@/components/ui/pdf-viewer-dynamic"; // THIS LINE IS MODIFIED
 
 // Updated Project interface to match backend response
 type Project = {

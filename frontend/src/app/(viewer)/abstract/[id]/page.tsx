@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiCall, ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { User, Tag, Code, Info, Users } from "lucide-react";
+import PdfViewer from "@/components/ui/pdf-viewer-dynamic";
 
 // Define the detailed project structure based on the controller's response
 interface ProjectDetails {
@@ -26,6 +27,7 @@ interface ProjectDetails {
   };
   keyword_tags: string[];
   language_tags: string[];
+  manuscript_id: number | null;
 }
 
 // Loading Skeleton Component
@@ -62,6 +64,7 @@ function ProjectDetailsContent({ id }: { id: string }) {
   const [requestStatus, setRequestStatus] = useState<
     "idle" | "pending" | "success" | "error"
   >("idle");
+  const [showPdf, setShowPdf] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -102,13 +105,24 @@ function ProjectDetailsContent({ id }: { id: string }) {
       await apiCall(`/viewer/request-project/${id}`, "POST");
       setRequestStatus("success");
     } catch (err: any) {
-      if (err.response && err.response.status === 409) {
-        setRequestStatus("error");
+      if (err instanceof ApiError && err.status === 409) {
+        setShowPdf(true);
       } else {
         setRequestStatus("error");
       }
     }
   };
+
+  useEffect(() => {
+    if (showPdf) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [showPdf]);
 
   if (loading) return <ProjectDetailSkeleton />;
   if (error)
@@ -185,7 +199,7 @@ function ProjectDetailsContent({ id }: { id: string }) {
               {requestStatus === "idle" && "VIEW FULL DOCUMENT"}
               {requestStatus === "pending" && "SUBMITTING REQUEST..."}
               {requestStatus === "success" && "REQUEST SUBMITTED!"}
-              {requestStatus === "error" && "ALREADY REQUESTED"}
+              {requestStatus === "error" && "REQUEST FAILED, TRY AGAIN"}
             </button>
 
             <div className="bg-stone-900/50 p-6 rounded-lg">
@@ -224,6 +238,36 @@ function ProjectDetailsContent({ id }: { id: string }) {
           </aside>
         </div>
       </div>
+
+      {/* --- MODIFIED PDF VIEWER MODAL --- */}
+      {showPdf && project.manuscript_id && (
+        <div
+          className="fixed inset-0 flex justify-center items-center z-50 p-4"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.85)" }}
+          onClick={() => setShowPdf(false)}
+        >
+          <div
+            className="bg-neutral-800 w-full max-w-5xl h-[95vh] rounded-lg shadow-xl border border-orange-400/50 flex flex-col"
+            style={{ boxShadow: "0 0 20px rgba(255, 165, 0, 0.5)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b border-neutral-700 flex-shrink-0">
+              <h2 className="text-xl font-bold text-[#E0A800]">
+                Document Viewer
+              </h2>
+              <button
+                onClick={() => setShowPdf(false)}
+                className="text-neutral-400 hover:text-white text-3xl"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="w-full h-full bg-neutral-900 p-2 md:p-4 overflow-y-auto">
+              <PdfViewer url={`/user/stream/acm/${project.manuscript_id}`} />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
