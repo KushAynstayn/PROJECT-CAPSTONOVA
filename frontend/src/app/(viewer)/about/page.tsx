@@ -1,168 +1,265 @@
-import React from "react";
+"use client";
 
-const ViewAbout = () => {
+import React, { useRef } from "react";
+import { motion, Variants } from "framer-motion";
+import { FaGithub, FaLinkedin } from "react-icons/fa";
+import { ScrambleTitle } from "@/components/ui/scramble-title";
+import FeatureCarousel from "@/components/ui/features-carousel-3d";
+
+// --- Data for team members ---
+const teamMembers = [
+  {
+    name: "Arado, Niño John",
+    role: "Hustler",
+    imgSrc: "/images/nino.jpg",
+    socials: {
+      github: "https://github.com/",
+      linkedin: "https://linkedin.com/in/",
+    },
+  },
+  {
+    name: "Canales, Kingston Harddy",
+    role: "Hacker",
+    imgSrc: "/images/harddy.jpg",
+    socials: {
+      github: "https://github.com/",
+      linkedin: "https://linkedin.com/in/",
+    },
+  },
+  {
+    name: "Genson, Leah Faye",
+    role: "Hipster",
+    imgSrc: "/images/leah.jpg",
+    socials: {
+      github: "https://github.com/",
+      linkedin: "https://linkedin.com/in/",
+    },
+  },
+  {
+    name: "Jubahib, Shekinah Mae",
+    role: "Hipster",
+    imgSrc: "/images/shekinah.jpg",
+    socials: {
+      github: "https://github.com/",
+      linkedin: "https://linkedin.com/in/",
+    },
+  },
+];
+
+// --- Features for carousel ---
+const features = [
+  {
+    id: "1",
+    title: "Search & View Capstone Projects",
+    description:
+      "Quickly verify if a project title has already been proposed, reducing the risk of duplication.",
+    videoSrc: "/videos/search.mp4",
+  },
+  {
+    id: "2",
+    title: "Centralized & Secure Local Archiving",
+    description:
+      "Create a secure, centralized local archive for all capstone project files.",
+    videoSrc: "/videos/secure.mp4",
+  },
+  {
+    id: "3",
+    title: "Data Analytics",
+    description:
+      "Gain valuable insights with interactive dashboards that display trends, project distributions, and predictive analysis.",
+    videoSrc: "/videos/trends.mp4",
+  },
+  {
+    id: "4",
+    title: "Secure & Accessible",
+    description:
+      "Store projects safely with encryption, ensuring that files are secure yet easily accessible for approved users.",
+    videoSrc: "/videos/access.mp4",
+  },
+  {
+    id: "5",
+    title: "Role-Based Access Control (RBAC)",
+    description:
+      "Provide secure, role-based access with specific permissions for each user type.",
+    videoSrc: "/videos/rbac.mp4",
+  },
+];
+
+
+// --- Animation Wrappers ---
+interface AnimatedSectionProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const AnimatedSection = ({ children, className = "" }: AnimatedSectionProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: 0.6, ease: "easeOut" }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
+
+interface AnimatedTextWordByWordProps {
+  text: string;
+  className?: string;
+}
+
+const AnimatedTextWordByWord = ({
+  text,
+  className = "",
+}: AnimatedTextWordByWordProps) => {
+  const words = text.split(" ");
+  const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08, delayChildren: 0.04 },
+    },
+  };
+
+  const childVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", damping: 12, stiffness: 100 },
+    },
+  };
+
   return (
-    <div className="w-full">
-      {/* Robot follow cursor Spline scene */}
-      <div className="h-screen w-full">
-        <iframe
-          src="https://my.spline.design/robotfollowcursorforlandingpage-LfOjXWwWH9oxYXxDc7lKWtgm/"
-          frameBorder="0"
-          width="100%"
-          height="900px"
-          className="mt-20 block"
-        ></iframe>
-      </div>
-
-      {/* About Us section */}
-      <div className="mt-68 py-12 text-center bg-white">
-        <h1 className="text-3xl font-bold text-gray-800">About Us</h1>
-        <p className="mt-4 max-w-2xl mx-auto text-gray-600">
-          Welcome to Project CapstoNova, an innovative and secure web-based
-          platform designed to revolutionize how capstone projects are managed,
-          stored, and retrieved at Cebu Technological University (CTU) – College
-          of Computer, Information and Communications Technology (CCICT).
-        </p>
-      </div>
-
-      {/* Our Mission section */}
-      <div className="py-12 text-center bg-black text-white">
-        <h1 className="text-3xl font-bold">Our Mission</h1>
-        <p className="mt-4 max-w-3xl mx-auto text-gray-200">
-          At CapstoNova, we aim to streamline the management of capstone
-          projects by providing a centralized digital repository that is both
-          secure and user-friendly. We eliminate the inefficiencies of
-          traditional paper-based systems and manual tracking by offering a
-          smart, automated solution that ensures academic integrity, promotes
-          originality, and enhances collaboration between students, faculty, and
-          advisers.
-        </p>
-      </div>
-
-      {/* What We Do section with background image */}
-      <div
-        className="relative py-16 text-center text-white bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/aboutus-bg.jpg')" }}
-      >
-        {/* Full dark overlay */}
-        <div className="absolute inset-0 bg-black/70"></div>
-
-        {/* Content stays above overlay */}
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">What We Do</h1>
-          <p className="mb-4">
-            Project CapstoNova is designed to address key challenges faced by
-            both students and faculty, such as project title duplication, slow
-            approval processes, and inefficient project tracking. With
-            CapstoNova, users can:
-          </p>
-          <ul className="text-left list-disc list-inside space-y-2">
-            <li>
-              <strong>Search & Verify Capstone Titles:</strong> Quickly verify
-              if a project title has already been proposed, reducing the risk of
-              duplication.
-            </li>
-            <li>
-              <strong>Intelligent Classification:</strong> Automatically
-              categorize projects into categories like Web, Mobile, Hybrid, or
-              IoT, helping users to manage and track projects efficiently.
-            </li>
-            <li>
-              <strong>Data Analytics:</strong> Gain valuable insights with
-              interactive dashboards that display trends, project distributions,
-              and predictive analysis.
-            </li>
-            <li>
-              <strong>Secure & Accessible:</strong> Store projects safely with
-              encryption, ensuring that files are secure yet easily accessible
-              for approved users.
-            </li>
-            <li>
-              <strong>Collaborate Effectively:</strong> Enable seamless
-              collaboration between students and faculty with integrated
-              feedback and suggestion tools, enhancing the overall quality of
-              capstone projects.
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Why Project CapstoNova section */}
-      <div className="py-16 text-center text-white bg-gradient-to-b from-[#0d001a] to-[#000010]">
-        <h1 className="text-3xl font-bold mb-6">Why Project CapstoNova?</h1>
-        <p className="max-w-3xl mx-auto">
-          Project CapstoNova is a complete solution for managing and archiving
-          capstone projects. With powerful algorithms and secure local storage,
-          it simplifies title verification, classification, and tracking.
-          Designed for students, faculty, and administrators, it streamlines the
-          entire process.
-        </p>
-      </div>
-
-      {/* Fostering Innovation section - white bg */}
-      <div className="py-16 text-center bg-white text-gray-800">
-        <h1 className="text-3xl font-bold mb-4">
-          Fostering Innovation. Simplifying Management. Shaping Future Leaders.
-        </h1>
-        <p className="max-w-2xl mx-auto text-gray-600">
-          Join us in transforming capstone project management at CTU and beyond.
-        </p>
-      </div>
-
-      {/* Team Section */}
-      <div className="py-16 bg-gray-100">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-10">
-          Meet the Team
-        </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
-          <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition duration-300 hover:scale-105 hover:shadow-2xl">
-            <img
-              src="/images/nino.jpg"
-              alt="Arado, Niño John"
-              className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-            />
-            <h2 className="text-lg font-semibold text-gray-800">
-              Arado, Niño John
-            </h2>
-            <p className="text-sm text-gray-500">Hustler</p>
-          </div>
-          <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition duration-300 hover:scale-105 hover:shadow-2xl">
-            <img
-              src="/images/harddy.jpg"
-              alt="Canales, Kingston Harddy"
-              className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-            />
-            <h2 className="text-lg font-semibold text-gray-800">
-              Canales, Kingston Harddy
-            </h2>
-            <p className="text-sm text-gray-500">Hacker</p>
-          </div>
-          <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition duration-300 hover:scale-105 hover:shadow-2xl">
-            <img
-              src="/images/leah.jpg"
-              alt="Genson, Leah Faye"
-              className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-            />
-            <h2 className="text-lg font-semibold text-gray-800">
-              Genson, Leah Faye
-            </h2>
-            <p className="text-sm text-gray-500">Hipster</p>
-          </div>
-          <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition duration-300 hover:scale-105 hover:shadow-2xl">
-            <img
-              src="/images/shekinah.jpg"
-              alt="Jubahib, Shekinah Mae"
-              className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-            />
-            <h2 className="text-lg font-semibold text-gray-800">
-              Jubahib, Shekinah Mae
-            </h2>
-            <p className="text-sm text-gray-500">Hipster</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <motion.p
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: false, amount: 0.6 }}
+      className={className}
+    >
+      {words.map((word, index) => (
+        <motion.span
+          key={index}
+          ref={(el) => {
+            wordRefs.current[index] = el;
+          }}
+          variants={childVariants}
+          style={{ display: "inline-block", marginRight: "0.25em" }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </motion.p>
   );
 };
 
-export default ViewAbout;
+// --- MAIN COMPONENT ---
+export default function ViewAbout() {
+  return (
+    <div className="w-full bg-black text-white">
+      {/* Hero Section */}
+      <div className="relative h-screen w-full">
+        <iframe
+          src="https://my.spline.design/finalcapstonova-NtHDdxo20TxAXksU9fhORpnE/"
+          frameBorder="0"
+          width="100%"
+          height="700px"
+          className="block"
+        ></iframe>
+      </div>
+
+      {/* About Section */}
+      <div className="min-h-screen w-full flex flex-col items-center justify-center text-center p-4">
+        <ScrambleTitle text="About Us" />
+        <AnimatedTextWordByWord
+          className="mt-6 max-w-3xl text-xl text-gray-300 leading-relaxed"
+          text="Welcome to Project CapstoNova, an innovative and secure web-based platform designed to revolutionize how capstone projects are managed, stored, and retrieved at Cebu Technological University (CTU) – College of Computer, Information and Communications Technology (CCICT)."
+        />
+      </div>
+
+      {/* Our Mission */} 
+      <div className="py-12 text-center bg-black text-white"> 
+        <AnimatedSection> 
+          <ScrambleTitle text="Our Mission" /> 
+          <AnimatedTextWordByWord className="mt-4 max-w-3xl text-xl mx-auto text-gray-200" text="At CapstoNova, we aim to streamline the management of capstone projects by providing a centralized digital repository that is both secure and user-friendly. We eliminate the inefficiencies of traditional paper-based systems and manual tracking by offering a smart, automated solution that ensures academic integrity, promotes originality, 
+          and enhances collaboration between students, faculty, and advisers." /> </AnimatedSection> 
+      </div>
+
+      {/* What We Do Section */}
+      <section className="py-24 bg-black text-white text-center">
+        <AnimatedSection>
+          <ScrambleTitle text="What We Do" />
+          <AnimatedTextWordByWord
+          className="mt-6 max-w-3xl text-xl text-gray-300 leading-relaxed mx-auto"
+          text="Project CapstoNova is designed to address key challenges faced by both students and faculty. 
+            We provide a suite of powerful tools to streamline the entire capstone process."/>
+        </AnimatedSection>
+
+        {/* Carousel */}
+        <FeatureCarousel features={features} />
+      </section>
+
+      {/* Team Section */}
+      <section className="py-24 bg-black text-gray-800">
+        <AnimatedSection>
+          <ScrambleTitle text="Meet the Team" />
+        </AnimatedSection>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
+          {teamMembers.map((member) => (
+            <motion.div
+              key={member.name}
+              className="bg-white shadow-lg rounded-2xl p-6 text-center relative overflow-hidden"
+              whileHover="hover"
+              initial="rest"
+              variants={{
+                rest: { scale: 1, y: 0 },
+                hover: { scale: 1.05, y: -10 },
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            >
+              <img
+                src={member.imgSrc}
+                alt={member.name}
+                className="w-32 h-32 mx-auto rounded-full object-cover mb-4 border-4 border-white shadow-md"
+              />
+              <h2 className="text-lg font-semibold">{member.name}</h2>
+              <p className="text-sm text-gray-500">{member.role}</p>
+
+              <motion.div
+                className="absolute bottom-4 left-0 right-0 flex justify-center gap-4"
+                variants={{
+                  rest: { opacity: 0, y: 10 },
+                  hover: { opacity: 1, y: 0 },
+                }}
+                transition={{ duration: 0.2, ease: "easeIn" }}
+              >
+                <a
+                  href={member.socials.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-black"
+                >
+                  <FaGithub size={24} />
+                </a>
+                <a
+                  href={member.socials.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-blue-700"
+                >
+                  <FaLinkedin size={24} />
+                </a>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+

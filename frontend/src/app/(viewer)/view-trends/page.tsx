@@ -18,9 +18,9 @@ const AnalyticsDashboardPage = () => {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
   return (
-    <div className="p-4 md:p-8 mt-24 bg-black min-h-screen text-white">
+    <div className="p-4 md:p-8 bg-black min-h-screen text-white">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div className="mt-28 mb-18 flex flex-col md:flex-row md:items-center md:justify-between">
         <h1
           className="text-3xl font-bold text-[#E0A800] mb-4 md:mb-0"
           style={{ fontFamily: "'Roboto', sans-serif" }}

@@ -198,3 +198,7 @@
   display: none;
 }
 
+
+.perspective {
+  perspective: 2500px;
+}

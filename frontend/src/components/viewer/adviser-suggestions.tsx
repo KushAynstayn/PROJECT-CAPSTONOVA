@@ -84,7 +84,7 @@ export function AdviserSuggestions() {
             type="submit"
             variant="outline"
             size="icon"
-            className="border-gray-700 text-gray-300 hover:border-[#E0A800] hover:text-[#E0A800]"
+            className="h-10 bg-neutral-900 border-gray-700 text-gray-300 hover:border-[#E0A800] hover:text-[#E0A800]"
           >
             <Search className="h-5 w-5" />
           </Button>
