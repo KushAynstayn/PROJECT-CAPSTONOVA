@@ -158,8 +158,8 @@ const ViewLibrary = () => {
   };
 
   return (
-    <div className="p-4 px-8 mt-32 bg-black min-h-screen text-white">
-      <div className="mb-8">
+    <div className="mb-28 p-4 px-8 bg-black min-h-screen text-white">
+      <div className="mb-8 mt-28">
         <p
           className="mt-1 text-3xl text-[#E0A800]"
           style={{ fontFamily: "'Black Ops One', sans-serif" }}
