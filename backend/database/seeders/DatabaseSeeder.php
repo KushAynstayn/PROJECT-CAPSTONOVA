@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
 
             // Complex data with on-the-fly user creation (Proponents)
             CapstoneProjectSeeder::class,
-
+            PanelSeeder::class,
             // Remaining dependent data
             DocumentRequestSeeder::class,
             NotificationSeeder::class,
