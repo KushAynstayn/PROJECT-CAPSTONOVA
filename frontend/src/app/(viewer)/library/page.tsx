@@ -20,6 +20,11 @@ type Project = {
   manuscript_id: number | null;
   grant_date: string;
   expiry_date: string | null;
+  panel_members: {
+    panelist1: string | null;
+    panelist2: string | null;
+    panelist3: string | null;
+  } | null;
 };
 
 const ViewLibrary = () => {
@@ -286,6 +291,16 @@ const ViewLibrary = () => {
                       </span>{" "}
                       {project.adviser_name}
                     </p>
+                    {project.panel_members && (
+                      <p>
+                        <span className="font-bold text-neutral-100">
+                          Panel:
+                        </span>{" "}
+                        {Object.values(project.panel_members)
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    )}
                     <p>
                       <span className="font-bold text-neutral-100">Year:</span>{" "}
                       {project.submission_year}

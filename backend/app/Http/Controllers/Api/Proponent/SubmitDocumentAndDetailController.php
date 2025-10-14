@@ -7,6 +7,7 @@ use App\Jobs\ProcessCapstoneManuscripts;
 use App\Models\ActionType;
 use App\Models\CapstoneProject;
 use App\Models\Keyword;
+use App\Models\Panel; // Added the Panel model
 use App\Models\ProjectResearcher;
 use App\Models\SystemSetting;
 use App\Models\UserLog;
@@ -15,7 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -49,9 +49,7 @@ class SubmitDocumentAndDetailController extends Controller
         }
 
         // --- MODIFIED VALIDATION ---
-        // The controller no longer validates file types or sizes here.
-        // It now expects string paths for the files that have already been
-        // uploaded and assembled by the ChunkedUploadController.
+        // Added validation for panel members.
         $validator = Validator::make($request->all(), [
             'title' => ['required', 'string', 'max:255'],
             'abstract' => ['required', 'string'],
@@ -61,8 +59,11 @@ class SubmitDocumentAndDetailController extends Controller
             'member_hacker' => ['required', 'string', 'max:255'],
             'member_hipster1' => ['required', 'string', 'max:255'],
             'member_hipster2' => ['nullable', 'string', 'max:255'],
-            'manuscript_path' => ['required', 'string'], // Changed from manuscript_pdf
-            'acm_path' => ['required', 'string'], // Changed from acm_pdf
+            'panel_member_1' => ['required', 'string', 'max:255'], // Added panel validation
+            'panel_member_2' => ['nullable', 'string', 'max:255'], // Added panel validation
+            'panel_member_3' => ['nullable', 'string', 'max:255'], // Added panel validation
+            'manuscript_path' => ['required', 'string'],
+            'acm_path' => ['required', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -71,19 +72,13 @@ class SubmitDocumentAndDetailController extends Controller
 
         $validated = $validator->validated();
 
-        // --- REMOVED FILE STORAGE LOGIC ---
-        // The responsibility of storing the file has been moved to the
-        // ChunkedUploadController. We now get the paths directly from the request.
         $tempManuscriptPath = $validated['manuscript_path'];
         $tempAcmPath = $validated['acm_path'];
 
-        // Add a security check to ensure the files exist at the provided paths
-        // and belong to the current user's temporary directory.
         if (!Storage::exists($tempManuscriptPath) || !Storage::exists($tempAcmPath)) {
             return response()->json(['message' => 'One or more provided file paths are invalid.'], 404);
         }
 
-        // The tempPaths array is now populated with the validated paths.
         $tempPaths = [
             'manuscript' => $tempManuscriptPath,
             'acm' => $tempAcmPath,
@@ -91,7 +86,6 @@ class SubmitDocumentAndDetailController extends Controller
 
         DB::beginTransaction();
         try {
-            // This core business logic remains unchanged.
             $project = CapstoneProject::create([
                 'title' => $validated['title'],
                 'abstract' => $validated['abstract'],
@@ -108,7 +102,8 @@ class SubmitDocumentAndDetailController extends Controller
             }
             $project->keywords()->attach($keywordIds);
 
-            ProjectResearcher::create([
+            // Create the ProjectResearcher entry
+            $projectResearcher = ProjectResearcher::create([
                 'project_id' => $project->id,
                 'user_id' => $user->id,
                 'member_hacker' => $validated['member_hacker'],
@@ -116,9 +111,18 @@ class SubmitDocumentAndDetailController extends Controller
                 'member_hipster2' => $validated['member_hipster2'] ?? null,
             ]);
 
+            // --- ADDED PANEL CREATION LOGIC ---
+            // Create the Panel entry after creating the ProjectResearcher,
+            // using its ID for the foreign key relationship.
+            Panel::create([
+                'project_researcher_id' => $projectResearcher->id,
+                'panel_member_1' => $validated['panel_member_1'],
+                'panel_member_2' => $validated['panel_member_2'] ?? null,
+                'panel_member_3' => $validated['panel_member_3'] ?? null,
+            ]);
+
             DB::commit();
 
-            // The job dispatch remains the same, as it already expected paths.
             ProcessCapstoneManuscripts::dispatch($user, $project, $tempPaths);
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'upload_project']);
@@ -132,8 +136,6 @@ class SubmitDocumentAndDetailController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Capstone Submission Failed: {$e->getMessage()}");
-            // The cleanup logic still works perfectly, as it just deletes the files
-            // at the provided paths if the database transaction fails.
             Storage::delete([$tempManuscriptPath, $tempAcmPath]);
             return response()->json(['message' => 'An unexpected error occurred during submission.'], 500);
         }

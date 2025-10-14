@@ -24,26 +24,20 @@ class RequestProjectController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    /**
-     * Display a listing of the capstone projects the viewer has access to.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function index(Request $request)
     {
         $viewerId = Auth::id();
 
         // Retrieve the viewer's accessed projects, filtering for active grants.
         $accessedProjects = ViewerAccess::where('user_id', $viewerId)
-            // NEW LOGIC: This block ensures that only non-expired projects are returned.
             ->where(function ($query) {
-                $query->where('expiry_date', '>', now()) // The expiry date is in the future.
-                    ->orWhereNull('expiry_date');      // Or there is no expiry date (permanent access).
+                $query->where('expiry_date', '>', now())
+                    ->orWhereNull('expiry_date');
             })
             ->with([
                 'project.adviser',
                 'project.projectResearcher.user.userDetail',
+                'project.projectResearcher.panel', // Eager-load the panel relationship
                 'project.manuscript'
             ])
             ->get();
@@ -53,12 +47,14 @@ class RequestProjectController extends Controller
             $project = $access->project;
             $researcherInfo = $project->projectResearcher;
             $mainProponent = $researcherInfo->user;
+            $panel = $researcherInfo?->panel; // Get panel data from the researcher info
 
+            // MODIFIED: Prepend the project leader to the authors list.
             $authors = collect([
                 $researcherInfo->member_hacker,
                 $researcherInfo->member_hipster1,
                 $researcherInfo->member_hipster2
-            ])->filter()->all();
+            ])->filter()->prepend($mainProponent->first_name . ' ' . $mainProponent->last_name)->all();
 
             return [
                 'access_id' => $access->access_id,
@@ -72,6 +68,12 @@ class RequestProjectController extends Controller
                 'manuscript_id' => $project->manuscript->manuscript_id ?? null,
                 'grant_date' => $access->grant_date,
                 'expiry_date' => $access->expiry_date,
+                // NEW: Add panel members to the response.
+                'panel_members' => $panel ? [
+                    'panelist1' => $panel->panel_member_1,
+                    'panelist2' => $panel->panel_member_2,
+                    'panelist3' => $panel->panel_member_3,
+                ] : null,
             ];
         });
 
@@ -87,18 +89,16 @@ class RequestProjectController extends Controller
      */
     public function store(Request $request, $project_id)
     {
+        // (This method remains unchanged)
         $user = $request->user();
-        // Sanitize the role name to match the setting key format (e.g., "Super Admin" -> "superadmin")
         $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
 
-        // Guard Clause: Check if the 'requestFullAccess' feature is enabled for the user's role
         $settingName = $settingRoleKey . '_requestFullAccess';
         $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
             $setting = SystemSetting::where('setting_name', $settingName)->first();
-            return $setting ? $setting->is_enabled : false; // Default to false if not found
+            return $setting ? $setting->is_enabled : false;
         });
 
-        // This check is bypassed if the user is a Super Admin
         if (!$isFeatureEnabled && $user->role !== 'Super Admin') {
             return response()->json([
                 'message' => 'The ability to request project access is currently disabled.'
@@ -106,7 +106,6 @@ class RequestProjectController extends Controller
         }
 
         $project = CapstoneProject::findOrFail($project_id);
-
 
         $existingRequest = DocumentRequest::where('viewer_id', $user->id)
             ->where('project_id', $project->id)

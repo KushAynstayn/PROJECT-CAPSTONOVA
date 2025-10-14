@@ -129,6 +129,12 @@ Route::prefix('public')->group(function () {
     Route::get('project/{id}', [ProjectDetailsController::class, 'show'])
         ->name('project.show');
 
+    Route::get(
+        'project/{id}/related',
+        [ProjectDetailsController::class, 'getRelatedStudies']
+    )
+        ->name('project.related');
+
     Route::get('search', [SearchController::class, 'search'])
         ->name('search');
 

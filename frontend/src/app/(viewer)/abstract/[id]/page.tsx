@@ -6,8 +6,9 @@ import Header from "@/components/ui/header";
 import { Badge } from "@/components/ui/badge";
 import { apiCall, ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
-import { User, Tag, Code, Info, Users } from "lucide-react";
+import { User, Tag, Code, Info, Users, Shield } from "lucide-react"; // Added Shield icon
 import PdfViewer from "@/components/ui/pdf-viewer-dynamic";
+import RelatedStudies from "@/components/viewer/RelatedStudies";
 
 // Define the detailed project structure based on the controller's response
 interface ProjectDetails {
@@ -25,6 +26,11 @@ interface ProjectDetails {
     hipster1: string | null;
     hipster2: string | null;
   };
+  panel_members: { // Added panel_members
+    panelist1: string | null;
+    panelist2: string | null;
+    panelist3: string | null;
+  } | null;
   keyword_tags: string[];
   language_tags: string[];
   manuscript_id: number | null;
@@ -136,11 +142,14 @@ function ProjectDetailsContent({ id }: { id: string }) {
     ([, name]) => name
   );
 
+  const panelMembers = project.panel_members
+    ? Object.entries(project.panel_members).filter(([, name]) => name)
+    : [];
+
   return (
     <>
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
-          {/* Main Content: Title, Abstract, etc. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 lg:items-start">
           <main className="lg:col-span-2 bg-stone-900/50 p-8 rounded-lg">
             <h1 className="text-4xl font-bold text-yellow-400 mb-2">
               {project.title}
@@ -149,12 +158,14 @@ function ProjectDetailsContent({ id }: { id: string }) {
               Submitted in {project.submission_year}
             </p>
 
-            <h2 className="text-2xl font-semibold text-white mb-4 border-b-2 border-yellow-500/30 pb-2">
-              Abstract
-            </h2>
-            <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-              {project.abstract}
-            </p>
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-white mb-4 border-b-2 border-yellow-500/30 pb-2">
+                Abstract
+              </h2>
+              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                {project.abstract}
+              </p>
+            </div>
 
             <div className="mt-8 pt-6 border-t border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
@@ -185,9 +196,10 @@ function ProjectDetailsContent({ id }: { id: string }) {
                 ))}
               </div>
             </div>
+
+            <RelatedStudies projectId={id} />
           </main>
 
-          {/* Sidebar: Details and Actions */}
           <aside className="space-y-8">
             <button
               onClick={handleRequestAccess}
@@ -223,6 +235,25 @@ function ProjectDetailsContent({ id }: { id: string }) {
               <p className="text-gray-300">{project.adviser || "N/A"}</p>
             </div>
 
+            {/* Panel Members Section */}
+            {panelMembers.length > 0 && (
+              <div className="bg-stone-900/50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                  <Shield size={20} /> Panel Members
+                </h3>
+                <ul className="space-y-2 text-gray-300">
+                  {panelMembers.map(([role, name]) => (
+                    <li key={role}>
+                      <span className="capitalize font-semibold">
+                        {role.replace("panelist", "Panelist ")}:
+                      </span>{" "}
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="bg-stone-900/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <Info size={20} /> Details
@@ -239,7 +270,6 @@ function ProjectDetailsContent({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* --- MODIFIED PDF VIEWER MODAL --- */}
       {showPdf && project.manuscript_id && (
         <div
           className="fixed inset-0 flex justify-center items-center z-50 p-4"

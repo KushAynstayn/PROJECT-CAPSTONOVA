@@ -8,10 +8,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { AdvancedSearchModal } from "@/components/ui/advanced-search-modal";
 import { AiSuggestionCard } from "@/components/viewer/ai-suggestion-card";
 import { AdviserSuggestions } from "@/components/viewer/adviser-suggestions";
 
@@ -50,28 +46,7 @@ const ViewSuggestionsPage = () => {
       {/* Search and Title Section */}
       <div className="mt-28 mb-18 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-[#E0A800]">Suggestions</h1>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search projects..."
-            className="w-64 h-9 bg-neutral-900 border-gray-700 text-white placeholder-gray-500 focus:ring-[#E0A800] focus:border-[#E0A800]"
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            className="bg-neutral-900 border-gray-700 hover:border-[#E0A800] hover:text-[#E0A800]"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-          <AdvancedSearchModal>
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-neutral-900 border-gray-700 hover:border-[#E0A800] hover:text-[#E0A800]"
-            >
-              <SlidersHorizontal className="h-5 w-5" />
-            </Button>
-          </AdvancedSearchModal>
-        </div>
+        {/* The search bar here has been removed as requested */}
       </div>
 
       {/* AI Suggestions Carousel */}

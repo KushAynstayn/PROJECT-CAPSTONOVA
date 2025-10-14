@@ -8,6 +8,8 @@ use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Handles the display of detailed project information.
@@ -22,25 +24,23 @@ class ProjectDetailsController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        // 1. Find the project by ID and eager-load all necessary relationships.
         $project = CapstoneProject::with([
-            'adviser', // Load the adviser relationship
-            'projectResearcher.user', // Load researcher info and the leader (user)
+            'adviser',
+            'projectResearcher.user',
+            'projectResearcher.panel', // Eager-load the new panel relationship
             'keywords',
-            'manuscript', // Eager-load the manuscript relationship
+            'manuscript',
             'sourceCode.programmingLanguages'
         ])->findOrFail($id);
 
         $user = Auth::user();
         $isAbstractVisible = true;
 
-        // 2. Check permissions only if the user is a guest or a 'Viewer'.
-        // All other authenticated roles (Admin, Proponent, etc.) will bypass this.
         if (!$user || $user->role === 'Viewer') {
             $settingName = 'viewer_viewAbstract';
             $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
                 $setting = SystemSetting::where('setting_name', $settingName)->first();
-                return $setting ? $setting->is_enabled : false; // Default to false
+                return $setting ? $setting->is_enabled : false;
             });
 
             if (!$isFeatureEnabled) {
@@ -50,12 +50,11 @@ class ProjectDetailsController extends Controller
 
         $researcher = $project->projectResearcher;
         $leader = $researcher ? $researcher->user : null;
+        $panel = $researcher?->panel;
 
-        // 3. Construct the detailed JSON response with a conditional abstract.
         return response()->json([
             'id' => $project->id,
             'title' => $project->title,
-            // Conditionally show the abstract or a disabled message.
             'abstract' => $isAbstractVisible
                 ? $project->abstract
                 : 'Viewing project abstracts is currently disabled by an administrator.',
@@ -70,10 +69,58 @@ class ProjectDetailsController extends Controller
                 'leader' => $leader ? "{$leader->first_name} {$leader->last_name}" : null,
                 'hacker' => $researcher->member_hacker ?? null,
                 'hipster1' => $researcher->member_hipster1 ?? null,
+                // FIX: Removed the stray space before 'hipster2'
                 'hipster2' => $researcher->member_hipster2 ?? null,
             ],
+            'panel_members' => $panel ? [
+                'panelist1' => $panel->panel_member_1,
+                'panelist2' => $panel->panel_member_2,
+                'panelist3' => $panel->panel_member_3,
+            ] : null,
             'keyword_tags' => $project->keywords->pluck('keyword_name'),
             'language_tags' => $project->sourceCode?->programmingLanguages->pluck('language_name') ?? [],
         ]);
+    }
+
+    /**
+     *
+     * @param int $id The ID of the primary capstone project.
+     * @return JsonResponse
+     */
+    public function getRelatedStudies(int $id): JsonResponse
+    {
+        // (This method remains unchanged)
+        $project = CapstoneProject::with('keywords')->findOrFail($id);
+        $keywordIds = $project->keywords->pluck('id');
+
+        if ($keywordIds->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $relatedProjects = CapstoneProject::query()
+            ->select('capstone_projects.*', DB::raw('count(project_keywords.keyword_id) as matching_keywords'))
+            ->join('project_keywords', 'capstone_projects.id', '=', 'project_keywords.project_id')
+            ->whereIn('project_keywords.keyword_id', $keywordIds)
+            ->where('capstone_projects.id', '!=', $id)
+            ->with(['adviser', 'keywords', 'sourceCode.programmingLanguages'])
+            ->groupBy('capstone_projects.id')
+            ->orderByDesc('matching_keywords')
+            ->orderByDesc('submission_year')
+            ->limit(5)
+            ->get();
+
+        $formattedProjects = $relatedProjects->map(function ($relatedProject) {
+            return [
+                'id' => $relatedProject->id,
+                'title' => $relatedProject->title,
+                'submission_year' => $relatedProject->submission_year,
+                'adviser' => $relatedProject->adviser ? "{$relatedProject->adviser->first_name} {$relatedProject->adviser->last_name}" : null,
+                'abstract_snippet' => Str::limit($relatedProject->abstract, 150, '...'),
+                'keyword_tags' => $relatedProject->keywords->pluck('keyword_name'),
+                'language_tags' => $relatedProject->sourceCode?->programmingLanguages->pluck('language_name') ?? [],
+            ];
+        });
+
+        return response()->json($formattedProjects);
     }
 }
