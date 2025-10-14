@@ -2,7 +2,7 @@
 # FastAPI endpoints for Cohere AI powered suggestions.
 
 from fastapi import APIRouter, HTTPException, Depends
-from app.schemas.suggestion import VectorizeAndSaveRequest, SuggestionInput, SuggestedProject, SuggestionResponse
+from app.schemas.suggestion import CapstoneIdeaRequest, CapstoneIdeaResponse, VectorizeAndSaveRequest, SuggestionInput, SuggestedProject, SuggestionResponse
 from app.services.suggestion_service import SuggestionService
 from typing import List
 
@@ -45,3 +45,21 @@ async def get_suggestion(request: SuggestionInput):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while generating suggestions: {str(e)}")
+
+# New route for generating capstone ideas
+@router.post("/generate-idea", response_model=CapstoneIdeaResponse)
+async def generate_idea(request: CapstoneIdeaRequest):
+    """
+    Generates a capstone project idea based on a specified platform, field,
+    and an optional additional note, returning a conversational text response.
+    """
+    if not request.platform or not request.field:
+        raise HTTPException(status_code=400, detail="Platform and field are required.")
+    
+    try:
+        result = service.generate_capstone_idea(request)
+        return CapstoneIdeaResponse(ai_response=result['ai_response'])
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")

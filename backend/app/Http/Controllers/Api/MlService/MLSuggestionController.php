@@ -67,4 +67,37 @@ class MLSuggestionController extends Controller
 
         return response()->json($response->json(), $response->status());
     }
+
+    /**
+     * Generates a new capstone project idea using the ML service.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function generateIdea(Request $request)
+    {
+        // Validates the incoming request payload
+        $validated = $request->validate([
+            'platform' => 'required|string',
+            'field' => 'required|string',
+            'additional_note' => 'nullable|string', // 'nullable' makes this field optional
+        ]);
+
+        // Use env variable for ML service base URL, fallback to localhost
+        $mlServiceUrl = rtrim(env('ML_SERVICE_URL', 'http://127.0.0.1:8001'), '/');
+
+        // Forwards the validated data to the ML service endpoint
+        $response = Http::post("{$mlServiceUrl}/cohere/generate-idea", $validated);
+
+        // Check for a successful response and the presence of the 'ai_response' key
+        if ($response->successful() && isset($response->json()['ai_response'])) {
+            // Extract and return only the AI-generated text
+            return response()->json([
+                'ai_response' => $response->json()['ai_response']
+            ]);
+        }
+
+        // If the request failed or the response is malformed, return the original response
+        return response()->json($response->json(), $response->status());
+    }
 }
