@@ -2,7 +2,7 @@
 # Pydantic models for the Cohere AI powered suggestion feature.
 
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class ProjectSuggestionDataPoint(BaseModel):
     """Defines the structure of a single project suggestion."""
@@ -26,3 +26,12 @@ class SuggestionResponse(BaseModel):
     """The response body for an AI-powered suggestion."""
     ai_response: str
     similar_projects: List[SuggestedProject]
+
+# New schemas for the Capstone Idea Generator
+class CapstoneIdeaRequest(BaseModel):
+    platform: str
+    field: str
+    additional_note: Optional[str] = None
+
+class CapstoneIdeaResponse(BaseModel):
+    ai_response: str

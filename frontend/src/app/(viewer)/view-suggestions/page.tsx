@@ -10,46 +10,45 @@ import {
 } from "@/components/ui/carousel";
 import { AiSuggestionCard } from "@/components/viewer/ai-suggestion-card";
 import { AdviserSuggestions } from "@/components/viewer/adviser-suggestions";
+import { AiChatSuggestion } from "@/components/viewer/ai-chat-suggestion";
 
 const ViewSuggestionsPage = () => {
   const aiSuggestionPrompts = [
     {
       category: "Web App",
       prompt:
-        "Generate a capstone project idea for a web application that is innovative and uses modern technologies.",
+        "Suggest a groundbreaking capstone project for a web application using any modern technology stack that is feasible for students.",
     },
     {
       category: "Mobile App",
       prompt:
-        "Generate a capstone project idea for a mobile application for students, focusing on productivity and collaboration.",
+        "Propose a unique capstone project idea for a mobile application that targets a niche student audience and is feasible for students.",
     },
     {
       category: "Desktop App",
       prompt:
-        "Generate a capstone project idea for a desktop application for educational purposes, possibly for offline use.",
+        "Outline a concept for a desktop application that could be vital for offline educational scenarios and is feasible for students.",
     },
     {
       category: "IoT",
       prompt:
-        "Generate a capstone project idea for an Internet of Things (IoT) system for smart home automation and security.",
+        "Generate a creative capstone project idea for an Internet of Things (IoT) system that enhances daily life and is feasible for students.",
     },
     {
       category: "AI/ML",
       prompt:
-        "Generate a capstone project idea involving Artificial Intelligence or Machine Learning to solve a real-world problem.",
+        "Describe an innovative capstone project that uses AI or Machine Learning to tackle a complex, real-world challenge and is feasible for students.",
     },
   ];
 
   return (
-    // Added pt-8 to fix overlap with the navbar
     <div className="flex-1 p-6 md:p-8 pt-8 space-y-8 bg-black text-gray-200">
-      {/* Search and Title Section */}
-      <div className="mt-28 mb-18 flex justify-between items-center">
+      {/* Title Section */}
+      <div className="mt-28 mb-12 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-[#E0A800]">Suggestions</h1>
-        {/* The search bar here has been removed as requested */}
       </div>
 
-      {/* AI Suggestions Carousel */}
+      {/* AI-Powered Prompt Suggestions Carousel */}
       <div>
         <h2 className="text-2xl font-semibold mb-4 text-[#E0A800]">
           AI-Powered Suggestions
@@ -77,8 +76,13 @@ const ViewSuggestionsPage = () => {
         </Carousel>
       </div>
 
-      {/* Adviser Suggestions Section - Now appears first visually */}
-      <div className="mt-20">
+      {/* AI Idea Generator Section */}
+      <div className="pt-8">
+        <AiChatSuggestion />
+      </div>
+
+      {/* Adviser Suggestions Section */}
+      <div className="pt-8">
         <h2 className="text-2xl font-semibold mb-4 text-[#E0A800]">
           Adviser Suggestions
         </h2>

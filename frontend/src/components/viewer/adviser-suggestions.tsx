@@ -13,6 +13,7 @@ export function AdviserSuggestions() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   // State for the actual value in the input field
   const [inputValue, setInputValue] = useState("");
@@ -43,6 +44,7 @@ export function AdviserSuggestions() {
     async (pageNum: number, adviserName: string) => {
       setIsLoading(true);
       setError(null);
+      setIsUnauthorized(false);
       try {
         let url = `/user/suggestions?page=${pageNum}&sort_by=submission_date&sort_order=desc`;
         if (adviserName) {
@@ -56,7 +58,12 @@ export function AdviserSuggestions() {
         setPage(response.data.current_page);
       } catch (err) {
         if (err instanceof ApiError) {
-          setError(err.message);
+          if (err.status === 401) {
+            setIsUnauthorized(true);
+            setError("To see adviser suggestions, please log in.");
+          } else {
+            setError(err.message);
+          }
         } else {
           setError("Failed to load suggestions.");
         }
@@ -88,67 +95,80 @@ export function AdviserSuggestions() {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="relative">
-          <Input
-            name="search"
-            placeholder="Search by adviser name..."
-            className="bg-neutral-900 border-gray-700 text-white placeholder-gray-500 focus:ring-[#E0A800] focus:border-[#E0A800] pr-10"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+      {isUnauthorized ? (
+        <div className="text-center py-8">
+          <p className="text-gray-400 text-lg mb-4">
+            To see adviser suggestions, please log in.
+          </p>
+          {/* You could also add a login button here if you have a login component */}
         </div>
-      </div>
-
-      {isLoading && (
-        <p className="text-center text-gray-400">
-          Loading adviser suggestions...
-        </p>
-      )}
-      {error && <p className="text-red-500 text-center">{error}</p>}
-
-      {!isLoading && !error && suggestions.length > 0 && (
+      ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {suggestions.map((suggestion) => (
-              <AdviserSuggestionCard
-                key={suggestion.id}
-                suggestion={suggestion}
-                currentUserId={currentUserId}
-                onInterestChange={() => fetchSuggestions(page, searchTerm)}
+          <div className="mb-6">
+            <div className="relative">
+              <Input
+                name="search"
+                placeholder="Search by adviser name..."
+                className="bg-neutral-900 border-gray-700 text-white placeholder-gray-500 focus:ring-[#E0A800] focus:border-[#E0A800] pr-10"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
               />
-            ))}
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+            </div>
           </div>
 
-          <div className="flex justify-center items-center mt-8 gap-2">
-            <Button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page <= 1}
-              variant="outline"
-              className="text-gray-300 border-gray-700 hover:bg-neutral-800 hover:text-white"
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-400">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages}
-              variant="outline"
-              className="text-gray-300 border-gray-700 hover:bg-neutral-800 hover:text-white"
-            >
-              Next
-            </Button>
-          </div>
+          {isLoading && (
+            <p className="text-center text-gray-400">
+              Loading adviser suggestions...
+            </p>
+          )}
+          {error && !isUnauthorized && (
+            <p className="text-red-500 text-center">{error}</p>
+          )}
+
+          {!isLoading && !error && suggestions.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {suggestions.map((suggestion) => (
+                  <AdviserSuggestionCard
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                    currentUserId={currentUserId}
+                    onInterestChange={() => fetchSuggestions(page, searchTerm)}
+                  />
+                ))}
+              </div>
+
+              <div className="flex justify-center items-center mt-8 gap-2">
+                <Button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  variant="outline"
+                  className="text-gray-300 border-gray-700 hover:bg-neutral-800 hover:text-white"
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-400">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  variant="outline"
+                  className="text-gray-300 border-gray-700 hover:bg-neutral-800 hover:text-white"
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          )}
+
+          {!isLoading && !error && suggestions.length === 0 && (
+            <p className="text-center text-gray-500 py-8">
+              No adviser suggestions found for "{searchTerm}".
+            </p>
+          )}
         </>
-      )}
-
-      {!isLoading && !error && suggestions.length === 0 && (
-        <p className="text-center text-gray-500 py-8">
-          No adviser suggestions found for "{searchTerm}".
-        </p>
       )}
     </div>
   );

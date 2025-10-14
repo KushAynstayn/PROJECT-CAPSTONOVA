@@ -453,6 +453,7 @@ Route::prefix('ml-service')->group(function () {
 
     // Route to get a new suggestion from the Python service
     Route::post('/get-suggestion', [MLSuggestionController::class, 'getSuggestion']);
+    Route::post('/generate-idea', [MLSuggestionController::class, 'generateIdea']);
 
     Route::get('/train-association', [AssociationController::class, 'train'])->name('ml.association.train');
     Route::get('/predict-association', [AssociationController::class, 'predict'])->name('ml.association.predict');

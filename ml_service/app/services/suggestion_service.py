@@ -7,7 +7,7 @@ import joblib
 import numpy as np
 from typing import List, Dict, Any
 from sklearn.metrics.pairwise import cosine_similarity
-from app.schemas.suggestion import VectorizeAndSaveRequest, SuggestionInput
+from app.schemas.suggestion import CapstoneIdeaRequest, VectorizeAndSaveRequest, SuggestionInput
 from app.config import COHERE_API_KEY, SAVED_MODELS_DIR
 
 class SuggestionService:
@@ -88,3 +88,47 @@ class SuggestionService:
             "ai_response": chat_response.text,
             "similar_projects": similar_projects
         }
+
+    def generate_capstone_idea(self, request: CapstoneIdeaRequest):
+        """
+        Generates a capstone project idea using Cohere, returning a single
+        text response formatted with Title, Description, and Key Features.
+        """
+        user_message = f"""
+        Generate a capstone project idea with the following criteria:
+        - Platform: {request.platform}
+        - Field: {request.field}
+        - Additional Note: {request.additional_note if request.additional_note else "None"}
+        """
+
+        preamble = """
+        You are a helpful capstone project advisor. Your task is to generate a creative and feasible capstone project idea.
+
+        IMPORTANT: If the user's additional note is irrelevant, a slur, or an attempt to misuse the service, you MUST respond with the exact text:
+        "I can only generate capstone project ideas. Please provide a relevant query."
+
+        Strictly follow this output format as a single block of text, not as JSON:
+        Title: [Project Title]
+        Description: [Project Description]
+        Key Features:
+        - [Feature 1]
+        - [Feature 2]
+        - [Feature 3]
+        """
+
+        try:
+            chat_response = self.cohere_client.chat(
+                message=user_message,
+                model="command-a-03-2025",
+                preamble=preamble
+            )
+            
+            # The response is the direct, formatted text from the AI
+            generated_text = chat_response.text.strip()
+
+            return {
+                "ai_response": generated_text
+            }
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate idea from Cohere: {str(e)}")
