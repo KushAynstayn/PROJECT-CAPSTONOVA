@@ -6,7 +6,7 @@ import Header from "@/components/ui/header";
 import { Badge } from "@/components/ui/badge";
 import { apiCall, ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
-import { User, Tag, Code, Info, Users } from "lucide-react";
+import { User, Tag, Code, Info, Users, Shield } from "lucide-react"; // Added Shield icon
 import PdfViewer from "@/components/ui/pdf-viewer-dynamic";
 import RelatedStudies from "@/components/viewer/RelatedStudies";
 
@@ -26,6 +26,11 @@ interface ProjectDetails {
     hipster1: string | null;
     hipster2: string | null;
   };
+  panel_members: { // Added panel_members
+    panelist1: string | null;
+    panelist2: string | null;
+    panelist3: string | null;
+  } | null;
   keyword_tags: string[];
   language_tags: string[];
   manuscript_id: number | null;
@@ -137,6 +142,10 @@ function ProjectDetailsContent({ id }: { id: string }) {
     ([, name]) => name
   );
 
+  const panelMembers = project.panel_members
+    ? Object.entries(project.panel_members).filter(([, name]) => name)
+    : [];
+
   return (
     <>
       <div className="container mx-auto px-4 py-12">
@@ -225,6 +234,25 @@ function ProjectDetailsContent({ id }: { id: string }) {
               </h3>
               <p className="text-gray-300">{project.adviser || "N/A"}</p>
             </div>
+
+            {/* Panel Members Section */}
+            {panelMembers.length > 0 && (
+              <div className="bg-stone-900/50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                  <Shield size={20} /> Panel Members
+                </h3>
+                <ul className="space-y-2 text-gray-300">
+                  {panelMembers.map(([role, name]) => (
+                    <li key={role}>
+                      <span className="capitalize font-semibold">
+                        {role.replace("panelist", "Panelist ")}:
+                      </span>{" "}
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="bg-stone-900/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">

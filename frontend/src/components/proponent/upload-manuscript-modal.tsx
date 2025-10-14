@@ -102,6 +102,9 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
     member_hacker: "",
     member_hipster1: "",
     member_hipster2: "",
+    panel_member_1: "",
+    panel_member_2: "",
+    panel_member_3: "",
   });
 
   const [manuscriptPath, setManuscriptPath] = useState<string | null>(null);
@@ -130,6 +133,13 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
     data.append("member_hipster1", formData.member_hipster1);
     if (formData.member_hipster2) {
       data.append("member_hipster2", formData.member_hipster2);
+    }
+    data.append("panel_member_1", formData.panel_member_1);
+    if (formData.panel_member_2) {
+      data.append("panel_member_2", formData.panel_member_2);
+    }
+    if (formData.panel_member_3) {
+      data.append("panel_member_3", formData.panel_member_3);
     }
     if (manuscriptPath) {
       data.append("manuscript_path", manuscriptPath);
@@ -255,9 +265,10 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
             </div>
           </div>
 
+          {/* --- MODIFIED MEMBER LABELS --- */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hacker" className="text-right">
-              Member 1
+              Hacker
             </Label>
             <div className="col-span-3">
               <Input
@@ -273,7 +284,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="member_hipster1" className="text-right">
-              Member 2
+              Hipster 1
             </Label>
             <div className="col-span-3">
               <Input
@@ -292,7 +303,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
               htmlFor="member_hipster2"
               className="text-right whitespace-nowrap text-xs"
             >
-              Member 3 (Optional)
+              Hipster 2 (Optional)
             </Label>
             <div className="col-span-3">
               <Input
@@ -303,6 +314,61 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 }
               />
               <ErrorMessage field="member_hipster2" />
+            </div>
+          </div>
+
+          {/* --- MODIFIED PANEL MEMBER LABELS AND STYLING --- */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="panel_member_1" className="text-right">
+              Panel Member 1
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="panel_member_1"
+                value={formData.panel_member_1}
+                onChange={(e) =>
+                  setFormData({ ...formData, panel_member_1: e.target.value })
+                }
+              />
+              <ErrorMessage field="panel_member_1" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label
+              htmlFor="panel_member_2"
+              className="text-right whitespace-nowrap text-xs"
+            >
+              Panel Member 2 (Optional)
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="panel_member_2"
+                value={formData.panel_member_2}
+                onChange={(e) =>
+                  setFormData({ ...formData, panel_member_2: e.target.value })
+                }
+              />
+              <ErrorMessage field="panel_member_2" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label
+              htmlFor="panel_member_3"
+              className="text-right whitespace-nowrap text-xs"
+            >
+              Panel Member 3 (Optional)
+            </Label>
+            <div className="col-span-3">
+              <Input
+                id="panel_member_3"
+                value={formData.panel_member_3}
+                onChange={(e) =>
+                  setFormData({ ...formData, panel_member_3: e.target.value })
+                }
+              />
+              <ErrorMessage field="panel_member_3" />
             </div>
           </div>
 

@@ -24,10 +24,10 @@ class ProjectDetailsController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        // (This method remains unchanged)
         $project = CapstoneProject::with([
             'adviser',
             'projectResearcher.user',
+            'projectResearcher.panel', // Eager-load the new panel relationship
             'keywords',
             'manuscript',
             'sourceCode.programmingLanguages'
@@ -50,6 +50,7 @@ class ProjectDetailsController extends Controller
 
         $researcher = $project->projectResearcher;
         $leader = $researcher ? $researcher->user : null;
+        $panel = $researcher?->panel;
 
         return response()->json([
             'id' => $project->id,
@@ -68,8 +69,14 @@ class ProjectDetailsController extends Controller
                 'leader' => $leader ? "{$leader->first_name} {$leader->last_name}" : null,
                 'hacker' => $researcher->member_hacker ?? null,
                 'hipster1' => $researcher->member_hipster1 ?? null,
+                // FIX: Removed the stray space before 'hipster2'
                 'hipster2' => $researcher->member_hipster2 ?? null,
             ],
+            'panel_members' => $panel ? [
+                'panelist1' => $panel->panel_member_1,
+                'panelist2' => $panel->panel_member_2,
+                'panelist3' => $panel->panel_member_3,
+            ] : null,
             'keyword_tags' => $project->keywords->pluck('keyword_name'),
             'language_tags' => $project->sourceCode?->programmingLanguages->pluck('language_name') ?? [],
         ]);
@@ -82,7 +89,7 @@ class ProjectDetailsController extends Controller
      */
     public function getRelatedStudies(int $id): JsonResponse
     {
-        // 1. Find the original project and its keywords.
+        // (This method remains unchanged)
         $project = CapstoneProject::with('keywords')->findOrFail($id);
         $keywordIds = $project->keywords->pluck('id');
 
@@ -90,13 +97,11 @@ class ProjectDetailsController extends Controller
             return response()->json([]);
         }
 
-        // 2. Find related projects and eager-load all necessary data.
         $relatedProjects = CapstoneProject::query()
             ->select('capstone_projects.*', DB::raw('count(project_keywords.keyword_id) as matching_keywords'))
             ->join('project_keywords', 'capstone_projects.id', '=', 'project_keywords.project_id')
             ->whereIn('project_keywords.keyword_id', $keywordIds)
             ->where('capstone_projects.id', '!=', $id)
-            // MODIFIED: Eager-load all relationships needed for the response in one go.
             ->with(['adviser', 'keywords', 'sourceCode.programmingLanguages'])
             ->groupBy('capstone_projects.id')
             ->orderByDesc('matching_keywords')
@@ -104,7 +109,6 @@ class ProjectDetailsController extends Controller
             ->limit(5)
             ->get();
 
-        // 3. Format the data for front-end suggestion cards.
         $formattedProjects = $relatedProjects->map(function ($relatedProject) {
             return [
                 'id' => $relatedProject->id,
@@ -112,7 +116,6 @@ class ProjectDetailsController extends Controller
                 'submission_year' => $relatedProject->submission_year,
                 'adviser' => $relatedProject->adviser ? "{$relatedProject->adviser->first_name} {$relatedProject->adviser->last_name}" : null,
                 'abstract_snippet' => Str::limit($relatedProject->abstract, 150, '...'),
-                // NEW: Add keyword and language tags to the response.
                 'keyword_tags' => $relatedProject->keywords->pluck('keyword_name'),
                 'language_tags' => $relatedProject->sourceCode?->programmingLanguages->pluck('language_name') ?? [],
             ];
