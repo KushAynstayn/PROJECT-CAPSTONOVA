@@ -38,10 +38,11 @@ class MAdviserController extends Controller
         FROM
             users u
         WHERE
-            u.role = ?
+            u.role = ? AND u.status = ?
     ";
 
-        $bindings = ['Adviser'];
+        // MODIFIED: Added 'active' to the bindings to filter by status.
+        $bindings = ['Adviser', 'active'];
 
         if ($nameQuery) {
             $baseQuery .= " AND CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) LIKE ?";

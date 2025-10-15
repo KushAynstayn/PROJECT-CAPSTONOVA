@@ -18,7 +18,8 @@ class MAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::where('role', 'Admin');
+        // MODIFIED: Added where('status', 'active') to filter results
+        $query = User::where('role', 'Admin')->where('status', 'active');
 
         if ($request->has('name') && $request->query('name') !== '') {
             $name = $request->query('name');
