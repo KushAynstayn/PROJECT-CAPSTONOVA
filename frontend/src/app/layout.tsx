@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   title: "Project Capstonova",
   description:
     "A smart, secure platform designed to streamline capstone project management.",
+  icons: {
+    icon: "/images/logo_capstonova1.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation"; // Required for dynamic path
 import {
   Card,
   CardContent,
@@ -32,6 +34,20 @@ export const LatestSuggestion = () => {
   const [suggestion, setSuggestion] = useState<SuggestionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // --- Start of Hydration Error Fix ---
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // This runs only on the client, ensuring pathname is available and correct
+    setIsClient(true);
+  }, []);
+  // --- End of Hydration Error Fix ---
+
+  // Get current path and construct the new one
+  const pathname = usePathname();
+  const basePath = pathname.substring(0, pathname.lastIndexOf("/"));
+  const suggestionsPath = `${basePath}/suggestions`;
 
   useEffect(() => {
     const fetchLatestSuggestion = async () => {
@@ -93,9 +109,15 @@ export const LatestSuggestion = () => {
       </CardHeader>
       <CardContent className="flex-1">{renderContent()}</CardContent>
       <CardFooter className="justify-center">
-       <Button className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105">
-          View All Suggestions
-        </Button>
+        {/* Render Link only on the client to prevent hydration mismatch */}
+        {isClient && (
+          <Link
+            href={suggestionsPath}
+            className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+          >
+            View All Suggestions
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );

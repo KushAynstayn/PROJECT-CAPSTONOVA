@@ -251,7 +251,7 @@ const SuperAdminDashboardPage: React.FC = () => {
               </div>
               <InputWithClear
                 type="search"
-                placeholder="Search viewer"
+                placeholder="Search something..."
                 className={cn(
                   "ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 )}
