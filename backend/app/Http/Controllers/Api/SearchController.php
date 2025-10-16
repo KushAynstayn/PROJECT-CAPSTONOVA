@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -144,8 +145,8 @@ class SearchController extends Controller
         if (!empty($filters['adviser'])) {
             $adviserName = $this->escapeLike($filters['adviser']);
             $query->whereHas('adviser', function (Builder $q) use ($adviserName) {
-                $q->where('first_name', 'LIKE', "%{$adviserName}%")
-                    ->orWhere('last_name', 'LIKE', "%{$adviserName}%");
+                // FIXED: Search against the adviser's concatenated full name.
+                $q->where(DB::raw("CONCAT_WS(' ', first_name, middle_name, last_name)"), 'LIKE', "%{$adviserName}%");
             });
         }
 
@@ -159,8 +160,8 @@ class SearchController extends Controller
                             ->orWhere('member_hipster1', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('member_hipster2', 'LIKE', "%{$searchTerm}%")
                             ->orWhereHas('user', function (Builder $userQuery) use ($searchTerm) {
-                                $userQuery->where('first_name', 'LIKE', "%{$searchTerm}%")
-                                    ->orWhere('last_name', 'LIKE', "%{$searchTerm}%");
+                                // FIXED: Search against the proponent leader's concatenated full name from the users table.
+                                $userQuery->where(DB::raw("CONCAT_WS(' ', first_name, middle_name, last_name)"), 'LIKE', "%{$searchTerm}%");
                             });
                     }
                 });

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation"; // Required to get the current path
 import { format } from "date-fns";
 import {
   Card,
@@ -9,7 +11,6 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { apiCall, ApiError } from "@/lib/api";
 
 // Interface for the fetched data
@@ -24,6 +25,17 @@ export function LatestSubmission() {
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // This state ensures the component using the pathname only renders on the client
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const pathname = usePathname();
+  const basePath = pathname.substring(0, pathname.lastIndexOf("/"));
+  const submissionPath = `${basePath}/submissions`;
 
   useEffect(() => {
     const fetchLatestSubmission = async () => {
@@ -81,9 +93,19 @@ export function LatestSubmission() {
       </CardHeader>
       <CardContent className="flex-1">{renderContent()}</CardContent>
       <CardFooter className="justify-center">
-        <Button className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105">
-          View All Projects
-        </Button>
+        {/*
+          This check is crucial. It ensures the Link, which depends on the
+          client-side pathname, is only rendered on the client.
+          This prevents the hydration error.
+        */}
+        {isClient && (
+          <Link
+            href={submissionPath}
+            className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+          >
+            View All Projects
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );

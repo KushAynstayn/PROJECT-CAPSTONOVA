@@ -70,18 +70,20 @@ export const apiCall = async (
     const errorData = await response
       .json()
       .catch(() => ({ message: response.statusText }));
-    // Throw a custom error with status and details
+    // This is the key change: We now pass the *entire* errorData object as details.
+    // The previous implementation (`errorData.errors || {}`) was losing important error
+    // messages if they weren't validation errors. This is a safe, global fix.
     throw new ApiError(
       errorData.message || "An error occurred during the API call.",
       response.status,
-      errorData.errors || {}
+      errorData
     );
   }
 
   return await response.json();
 };
 
-// [NEW FUNCTION] A new function for fetching blobs (like images)
+// A new function for fetching blobs (like images)
 export const apiCallForBlob = async (path: string): Promise<Blob> => {
   const headers: { [key: string]: string } = {};
 
@@ -111,7 +113,7 @@ export const apiCallForBlob = async (path: string): Promise<Blob> => {
     throw new ApiError(
       errorData.message || "An error occurred during the API call.",
       response.status,
-      errorData.errors || {}
+      errorData
     );
   }
 

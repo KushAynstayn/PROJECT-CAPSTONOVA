@@ -128,6 +128,7 @@ const SuperAdminDashboardPage: React.FC = () => {
     // 2. View Project Details/Abstract
     if (selectedProject) {
       const proponents = [
+        selectedProject.team_roles.leader,
         selectedProject.team_roles.hacker,
         selectedProject.team_roles.hipster1,
         selectedProject.team_roles.hipster2,
@@ -251,7 +252,7 @@ const SuperAdminDashboardPage: React.FC = () => {
               </div>
               <InputWithClear
                 type="search"
-                placeholder="Search viewer"
+                placeholder="Search something..."
                 className={cn(
                   "ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 )}
