@@ -1,5 +1,4 @@
-// lib/auth.ts
-import { apiCall } from "./api";
+import { apiCall, initializeCsrf } from "./api";
 
 interface User {
   id: string;
@@ -10,18 +9,15 @@ interface User {
 
 interface LoginResponse {
   user: User;
-  token: string;
   two_factor_required?: boolean;
 }
 
 interface TwoFactorResponse {
   user: User;
-  token: string;
 }
 
 class AuthStore {
   private user: User | null = null;
-  private token: string | null = null;
 
   constructor() {
     this.loadFromStorage();
@@ -30,45 +26,45 @@ class AuthStore {
   private loadFromStorage() {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
-      const storedToken = localStorage.getItem("token");
-
-      if (storedUser && storedToken) {
+      if (storedUser) {
         this.user = JSON.parse(storedUser);
-        this.token = storedToken;
       }
     }
   }
 
-  setAuth(user: User, token: string) {
+  setAuth(user: User) {
     this.user = user;
-    this.token = token;
     localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("token", token);
   }
 
   getUser(): User | null {
     return this.user;
   }
 
-  getToken(): string | null {
-    return this.token;
-  }
-
   clearAuth() {
     this.user = null;
-    this.token = null;
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
   }
 
   isAuthenticated(): boolean {
-    return this.token !== null;
+    return this.user !== null;
   }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiCall("/auth/login", "POST", { email, password });
+  async login(
+    email: string,
+    password: string,
+    remember: boolean // <-- ADD 'remember' PARAMETER
+  ): Promise<LoginResponse> {
+    await initializeCsrf();
+
+    // Pass 'remember' in the request body
+    const response = await apiCall("/auth/login", "POST", {
+      email,
+      password,
+      remember,
+    });
     if (!response.two_factor_required) {
-      this.setAuth(response.user, response.token);
+      this.setAuth(response.user);
     }
     return response;
   }
@@ -78,7 +74,7 @@ class AuthStore {
     code: string
   ): Promise<TwoFactorResponse> {
     const response = await apiCall("/auth/verify-2fa", "POST", { email, code });
-    this.setAuth(response.user, response.token);
+    this.setAuth(response.user);
     return response;
   }
 
@@ -97,7 +93,7 @@ class AuthStore {
       email,
       password,
     });
-    this.setAuth(response.user, response.token);
+    this.setAuth(response.user);
     return response;
   }
 }

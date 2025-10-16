@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendTwoFactorCodeJob;
-use App\Models\User;
+use App\Models\ActionType;
 use App\Models\TwoFactorAuthentication;
+use App\Models\User;
+use App\Models\UserLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Models\ActionType;
-use App\Models\UserLog;
 
 class LoginController extends Controller
 {
@@ -27,6 +27,7 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'remember' => 'sometimes|boolean', // 1. Add 'remember' to validation
         ]);
 
         // Hash the incoming email to find the user by the hashed_email column.
@@ -44,9 +45,14 @@ class LoginController extends Controller
             return response()->json(['message' => 'This account is ' . $user->status . '. Please contact an administrator.'], 403);
         }
 
-        // If 2FA is disabled in the .env, log the user in directly.
+        // If 2FA is disabled, log the user in directly and start a session.
         if (config('auth.two_factor_enabled') === false) {
-            $token = $user->createToken('auth-token')->plainTextToken;
+            // Log the user into the session guard
+            // 2. Pass the 'remember' boolean to Auth::login()
+            Auth::login($user, $request->boolean('remember'));
+
+            // Regenerate the session ID for security
+            $request->session()->regenerate();
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'login']);
             UserLog::create([
@@ -58,22 +64,27 @@ class LoginController extends Controller
             return response()->json([
                 'message' => 'Login successful.',
                 'user' => $user,
-                'token' => $token,
                 'two_factor_required' => false,
             ]);
         }
 
         // --- Start Two-Factor Authentication Process ---
+        // Log the user in to a temporary "pending 2FA" session state.
+        // We will handle the 'remember' flag in the 2FA verification step.
+        Auth::login($user);
+
+        // Store the remember me flag in the session to use it after 2FA verification.
+        if ($request->boolean('remember')) {
+            $request->session()->put('auth.remember', true);
+        }
+
         $code = rand(100000, 999999); // Generate a 6-digit code.
 
         // Store the encrypted code and its expiration time.
-
-        // app/Http/Controllers/Api/Auth/LoginController.php
-
         TwoFactorAuthentication::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'code' => $code,
+                'code' => $code, // The model's mutator will handle encryption
                 'expires_at' => Carbon::now()->addMinutes(10),
             ]
         );
