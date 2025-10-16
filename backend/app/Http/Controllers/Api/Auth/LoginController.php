@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendTwoFactorCodeJob;
-use App\Models\User;
+use App\Models\ActionType;
 use App\Models\TwoFactorAuthentication;
+use App\Models\User;
+use App\Models\UserLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Auth; // 👈 Import Auth facade
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Models\ActionType;
-use App\Models\UserLog;
 
 class LoginController extends Controller
 {
@@ -44,9 +44,13 @@ class LoginController extends Controller
             return response()->json(['message' => 'This account is ' . $user->status . '. Please contact an administrator.'], 403);
         }
 
-        // If 2FA is disabled in the .env, log the user in directly.
+        // If 2FA is disabled, log the user in directly and start a session.
         if (config('auth.two_factor_enabled') === false) {
-            $token = $user->createToken('auth-token')->plainTextToken;
+            // Log the user into the session guard
+            Auth::login($user);
+
+            // Regenerate the session ID for security
+            $request->session()->regenerate();
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'login']);
             UserLog::create([
@@ -58,22 +62,22 @@ class LoginController extends Controller
             return response()->json([
                 'message' => 'Login successful.',
                 'user' => $user,
-                'token' => $token,
+                // The token is no longer returned
                 'two_factor_required' => false,
             ]);
         }
 
         // --- Start Two-Factor Authentication Process ---
+        // Log the user in to a temporary "pending 2FA" session state.
+        Auth::login($user);
+
         $code = rand(100000, 999999); // Generate a 6-digit code.
 
         // Store the encrypted code and its expiration time.
-
-        // app/Http/Controllers/Api/Auth/LoginController.php
-
         TwoFactorAuthentication::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'code' => $code,
+                'code' => $code, // The model's mutator will handle encryption
                 'expires_at' => Carbon::now()->addMinutes(10),
             ]
         );

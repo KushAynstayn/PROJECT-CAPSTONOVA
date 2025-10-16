@@ -1,10 +1,9 @@
-// (MODIFIED)
 // Location: frontend/src/lib/api.ts
 import { authStore } from "./auth";
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const ROOT_URL = "http://localhost:8000"; // Use localhost to match the server
+const API_BASE = `${ROOT_URL}/api`;
 
-// Custom Error class to handle API errors more gracefully
 export class ApiError extends Error {
   public status: number;
   public details: any;
@@ -15,6 +14,24 @@ export class ApiError extends Error {
     this.status = status;
     this.details = details;
   }
+}
+
+export const initializeCsrf = async () => {
+  try {
+    await fetch(`${ROOT_URL}/sanctum/csrf-cookie`, {
+      credentials: "include",
+    });
+  } catch (error) {
+    console.error("Could not initialize CSRF cookie", error);
+  }
+};
+
+// Helper function to read a cookie from the browser
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+  return null;
 }
 
 const defaultHeaders = {
@@ -36,14 +53,16 @@ export const apiCall = async (
     ...(isForm ? formHeaders : defaultHeaders),
   };
 
-  const token = authStore.getToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  // As per docs, fetch needs the X-XSRF-TOKEN header set manually.
+  const csrfToken = getCookie("XSRF-TOKEN");
+  if (csrfToken) {
+    headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
   }
 
   const options: RequestInit = {
     method,
     headers,
+    credentials: "include",
   };
 
   if (body) {
@@ -51,9 +70,6 @@ export const apiCall = async (
       options.body = body;
     } else {
       options.body = JSON.stringify(body);
-      if (!headers["Content-Type"]) {
-        headers["Content-Type"] = "application/json";
-      }
     }
   }
 
@@ -70,31 +86,33 @@ export const apiCall = async (
     const errorData = await response
       .json()
       .catch(() => ({ message: response.statusText }));
-    // This is the key change: We now pass the *entire* errorData object as details.
-    // The previous implementation (`errorData.errors || {}`) was losing important error
-    // messages if they weren't validation errors. This is a safe, global fix.
     throw new ApiError(
-      errorData.message || "An error occurred during the API call.",
+      errorData.message || "An error occurred",
       response.status,
       errorData
     );
   }
 
+  if (response.status === 204) {
+    return;
+  }
+
   return await response.json();
 };
 
-// A new function for fetching blobs (like images)
+// No changes needed for apiCallForBlob, the logic is the same.
 export const apiCallForBlob = async (path: string): Promise<Blob> => {
   const headers: { [key: string]: string } = {};
 
-  const token = authStore.getToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  const csrfToken = getCookie("XSRF-TOKEN");
+  if (csrfToken) {
+    headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
   }
 
   const options: RequestInit = {
     method: "GET",
     headers,
+    credentials: "include",
   };
 
   const response = await fetch(`${API_BASE}${path}`, options);
@@ -111,7 +129,7 @@ export const apiCallForBlob = async (path: string): Promise<Blob> => {
       .json()
       .catch(() => ({ message: response.statusText }));
     throw new ApiError(
-      errorData.message || "An error occurred during the API call.",
+      errorData.message || "An error occurred",
       response.status,
       errorData
     );

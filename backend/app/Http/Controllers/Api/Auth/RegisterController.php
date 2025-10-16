@@ -126,12 +126,14 @@ class RegisterController extends Controller
                 'details' => "User registered as {$user->role}."
             ]);
 
-            $token = $user->createToken('auth-token')->plainTextToken;
+            // **MODIFIED:** Log the new user in and start their session.
+            Auth::login($user);
+            $request->session()->regenerate();
 
+            // **MODIFIED:** The API token is no longer returned.
             return response()->json([
                 'message' => 'Registered successfully.',
                 'user' => $user->fresh('userDetail'),
-                'token' => $token,
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
