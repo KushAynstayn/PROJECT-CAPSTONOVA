@@ -5,46 +5,10 @@ import { motion, Variants } from "framer-motion";
 import { FaGithub, FaLinkedin } from "react-icons/fa";
 import { ScrambleTitle } from "@/components/ui/scramble-title";
 import FeatureCarousel from "@/components/ui/features-carousel-3d";
+import TeamSection from "@/components/ui/team-section";
 
-// --- Data for team members ---
-const teamMembers = [
-  {
-    name: "Arado, Niño John",
-    role: "Hustler",
-    imgSrc: "/images/nino.jpg",
-    socials: {
-      github: "https://github.com/",
-      linkedin: "https://linkedin.com/in/",
-    },
-  },
-  {
-    name: "Canales, Kingston Harddy",
-    role: "Hacker",
-    imgSrc: "/images/harddy.jpg",
-    socials: {
-      github: "https://github.com/",
-      linkedin: "https://linkedin.com/in/",
-    },
-  },
-  {
-    name: "Genson, Leah Faye",
-    role: "Hipster",
-    imgSrc: "/images/leah.jpg",
-    socials: {
-      github: "https://github.com/",
-      linkedin: "https://linkedin.com/in/",
-    },
-  },
-  {
-    name: "Jubahib, Shekinah Mae",
-    role: "Hipster",
-    imgSrc: "/images/shekinah.jpg",
-    socials: {
-      github: "https://github.com/",
-      linkedin: "https://linkedin.com/in/",
-    },
-  },
-];
+
+
 
 // --- Features for carousel ---
 const features = [
@@ -204,61 +168,20 @@ export default function ViewAbout() {
       </section>
 
       {/* Team Section */}
-      <section className="py-24 bg-black text-gray-800">
-        <AnimatedSection>
-          <ScrambleTitle text="Meet the Team" />
-        </AnimatedSection>
+      <section className="text-center py-24 bg-black text-gray-800">
+        <AnimatedSection> 
+          <ScrambleTitle text="Meet the Creators" /> 
+          <AnimatedTextWordByWord className="mt-4 max-w-3xl text-xl mx-auto text-gray-200" text="Behind every line of code and every design decision is a team that thrives on collaboration. We are a group of passionate students who supported, challenged, and inspired one another throughout this journey. This project is a testament to our shared dedication and teamwork." /> </AnimatedSection> 
+        <TeamSection />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
-          {teamMembers.map((member) => (
-            <motion.div
-              key={member.name}
-              className="bg-white shadow-lg rounded-2xl p-6 text-center relative overflow-hidden"
-              whileHover="hover"
-              initial="rest"
-              variants={{
-                rest: { scale: 1, y: 0 },
-                hover: { scale: 1.05, y: -10 },
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 15 }}
-            >
-              <img
-                src={member.imgSrc}
-                alt={member.name}
-                className="w-32 h-32 mx-auto rounded-full object-cover mb-4 border-4 border-white shadow-md"
-              />
-              <h2 className="text-lg font-semibold">{member.name}</h2>
-              <p className="text-sm text-gray-500">{member.role}</p>
-
-              <motion.div
-                className="absolute bottom-4 left-0 right-0 flex justify-center gap-4"
-                variants={{
-                  rest: { opacity: 0, y: 10 },
-                  hover: { opacity: 1, y: 0 },
-                }}
-                transition={{ duration: 0.2, ease: "easeIn" }}
-              >
-                <a
-                  href={member.socials.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-black"
-                >
-                  <FaGithub size={24} />
-                </a>
-                <a
-                  href={member.socials.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-blue-700"
-                >
-                  <FaLinkedin size={24} />
-                </a>
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
       </section>
+
+      {/* Our Adviser */} 
+      <div className="py-12 text-center bg-black text-white mb-20"> 
+        <AnimatedSection> 
+          <ScrambleTitle text="A Special Thanks to Our Mentor" /> 
+          <AnimatedTextWordByWord className="mt-4 max-w-3xl text-xl mx-auto text-gray-200" text="This project would not have been possible without the mentorship of Professor Angelbert Maghanoy. We are incredibly grateful for his unwavering support, insightful feedback, and constant encouragement that guided us every step of the way." /> </AnimatedSection> 
+      </div>
     </div>
   );
 }
