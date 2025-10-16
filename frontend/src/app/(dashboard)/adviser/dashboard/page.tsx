@@ -139,6 +139,7 @@ export default function AdviserDashboardPage() {
     // 2. View Project Details/Abstract
     if (selectedProject) {
       const proponents = [
+        selectedProject.team_roles.leader,
         selectedProject.team_roles.hacker,
         selectedProject.team_roles.hipster1,
         selectedProject.team_roles.hipster2,

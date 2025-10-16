@@ -56,7 +56,7 @@ const PendingAccessRequestsPage = () => {
       setError(null);
 
       const params = new URLSearchParams({ page: String(page) });
-      if (searchQuery) params.append("project_title", searchQuery); // FIX: Changed 'search' to 'project_title'
+      if (searchQuery) params.append("project_title", searchQuery);
       if (startDate)
         params.append("start_date", format(startDate, "yyyy-MM-dd"));
       if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"));
@@ -96,7 +96,7 @@ const PendingAccessRequestsPage = () => {
   useEffect(() => {
     const debounce = setTimeout(() => {
       fetchAndSetData(1);
-    }, 500);
+    }, 500); // 500ms debounce delay
     return () => clearTimeout(debounce);
   }, [fetchAndSetData]);
 
