@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\SystemSetting;
 use App\Models\CapstoneProject;
-use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -29,25 +26,9 @@ class SearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        // Try to authenticate manually via Sanctum if a token is provided
-        $user = null;
-
-        // Check Authorization header for Bearer token
-        $authHeader = $request->header('Authorization');
-        if ($authHeader && Str::startsWith($authHeader, 'Bearer ')) {
-            $token = Str::after($authHeader, 'Bearer ');
-
-            // Lookup Sanctum token
-            $accessToken = PersonalAccessToken::findToken($token);
-
-            if ($accessToken) {
-                $user = $accessToken->tokenable;
-                Auth::setUser($user); // optional, for downstream code that uses Auth::user()
-            }
-        }
-
-        // Now $user is either an authenticated user or null (guest)
-        // ----------------------------------------------------------
+        // With session-based authentication, Laravel's middleware handles user retrieval.
+        // We can simply use Auth::user(), which returns the authenticated user or null for guests.
+        $user = Auth::user();
 
         // This permission check ONLY applies if the user is an Admin or an Adviser.
         // Guests and other roles skip this.
@@ -67,7 +48,7 @@ class SearchController extends Controller
             }
         }
 
-        // Continue with your existing validation and query logic...
+        // The rest of your validation and query logic remains unchanged.
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
@@ -145,7 +126,6 @@ class SearchController extends Controller
         if (!empty($filters['adviser'])) {
             $adviserName = $this->escapeLike($filters['adviser']);
             $query->whereHas('adviser', function (Builder $q) use ($adviserName) {
-                // FIXED: Search against the adviser's concatenated full name.
                 $q->where(DB::raw("CONCAT_WS(' ', first_name, middle_name, last_name)"), 'LIKE', "%{$adviserName}%");
             });
         }
@@ -160,7 +140,6 @@ class SearchController extends Controller
                             ->orWhere('member_hipster1', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('member_hipster2', 'LIKE', "%{$searchTerm}%")
                             ->orWhereHas('user', function (Builder $userQuery) use ($searchTerm) {
-                                // FIXED: Search against the proponent leader's concatenated full name from the users table.
                                 $userQuery->where(DB::raw("CONCAT_WS(' ', first_name, middle_name, last_name)"), 'LIKE', "%{$searchTerm}%");
                             });
                     }
@@ -196,7 +175,7 @@ class SearchController extends Controller
         return [
             'id' => $project->id,
             'title' => $project->title,
-            'abstract_snippet' => Str::limit($project->abstract, 100),
+            'abstract_snippet' => \Illuminate\Support\Str::limit($project->abstract, 100),
             'submission_year' => $project->submission_year,
             'platform_type' => $project->platform_type,
             'adviser_name' => $adviser ? "{$adviser->first_name} {$adviser->last_name}" : null,

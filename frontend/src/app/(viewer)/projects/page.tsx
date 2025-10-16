@@ -2,14 +2,19 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams, ReadonlyURLSearchParams } from "next/navigation";
+import {
+  useSearchParams,
+  ReadonlyURLSearchParams,
+  useRouter,
+} from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/ui/header";
 import { apiCall, ApiError } from "@/lib/api";
-import { SearchX } from "lucide-react";
+import { SearchX, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Define the structure of a project
+// Define the structure of a project and pagination
 interface Project {
   id: number;
   title: string;
@@ -25,6 +30,14 @@ interface Project {
     hipster1: string | null;
     hipster2: string | null;
   };
+}
+
+interface PaginationInfo {
+  current_page: number;
+  last_page: number;
+  total: number;
+  from: number;
+  to: number;
 }
 
 // New component for the loading skeleton
@@ -43,13 +56,15 @@ function SkeletonCard() {
   );
 }
 
-// ActiveFiltersDisplay component
+// ActiveFiltersDisplay component (no changes)
 function ActiveFiltersDisplay({ params }: { params: ReadonlyURLSearchParams }) {
   if (params.toString() === "") {
     return null;
   }
   const filters = new Map<string, string[]>();
   params.forEach((value, key) => {
+    // Ignore pagination param for display
+    if (key === "page") return;
     const cleanKey = key.replace("[]", "");
     if (filters.has(cleanKey)) {
       filters.get(cleanKey)!.push(value);
@@ -57,6 +72,9 @@ function ActiveFiltersDisplay({ params }: { params: ReadonlyURLSearchParams }) {
       filters.set(cleanKey, [value]);
     }
   });
+
+  if (filters.size === 0) return null;
+
   const formatKey = (key: string) => {
     return key
       .replace(/_/g, " ")
@@ -81,7 +99,7 @@ function ActiveFiltersDisplay({ params }: { params: ReadonlyURLSearchParams }) {
   );
 }
 
-// Updated ProjectCard with enhanced hover effect
+// ProjectCard (no changes)
 function ProjectCard({ project }: { project: Project }) {
   return (
     <Card className="bg-neutral-900 border-yellow-500/30 text-white h-full transform transition-all duration-300 hover:border-yellow-400 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/20">
@@ -119,9 +137,68 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
+// [NEW] Pagination Component
+function PaginationControls({
+  pagination,
+  onPageChange,
+}: {
+  pagination: PaginationInfo;
+  onPageChange: (page: number) => void;
+}) {
+  const { current_page, last_page } = pagination;
+
+  const handlePrev = () => {
+    if (current_page > 1) {
+      onPageChange(current_page - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (current_page < last_page) {
+      onPageChange(current_page + 1);
+    }
+  };
+
+  if (last_page <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-4 mt-8">
+      <button
+        onClick={handlePrev}
+        disabled={current_page === 1}
+        className={cn(
+          "flex items-center gap-2 px-4 py-2 rounded-md bg-neutral-800 text-white border border-yellow-500/50",
+          "hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        )}
+      >
+        <ChevronLeft size={16} />
+        Previous
+      </button>
+
+      <span className="text-sm text-gray-300">
+        Page {current_page} of {last_page}
+      </span>
+
+      <button
+        onClick={handleNext}
+        disabled={current_page === last_page}
+        className={cn(
+          "flex items-center gap-2 px-4 py-2 rounded-md bg-neutral-800 text-white border border-yellow-500/50",
+          "hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        )}
+      >
+        Next
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+}
+
 function SearchResults() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -134,6 +211,7 @@ function SearchResults() {
           `/public/search?${searchParams.toString()}`
         );
         setProjects(result.data);
+        setPagination(result.meta); // Store pagination metadata
       } catch (e) {
         setError(
           e instanceof ApiError ? e.message : "An unexpected error occurred."
@@ -145,6 +223,12 @@ function SearchResults() {
     };
     fetchProjects();
   }, [searchParams]);
+
+  const handlePageChange = (page: number) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("page", page.toString());
+    router.push(`?${newParams.toString()}`);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -176,17 +260,25 @@ function SearchResults() {
       )}
 
       {!loading && !error && projects.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {projects.map((project) => (
-            <Link
-              href={`/abstract/${project.id}`}
-              key={project.id}
-              className="block"
-            >
-              <ProjectCard project={project} />
-            </Link>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {projects.map((project) => (
+              <Link
+                href={`/abstract/${project.id}`}
+                key={project.id}
+                className="block"
+              >
+                <ProjectCard project={project} />
+              </Link>
+            ))}
+          </div>
+          {pagination && (
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
       )}
     </div>
   );
