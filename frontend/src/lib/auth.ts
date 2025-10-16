@@ -1,4 +1,3 @@
-// Location: frontend/src/lib/auth.ts
 import { apiCall, initializeCsrf } from "./api";
 
 interface User {
@@ -51,10 +50,19 @@ class AuthStore {
     return this.user !== null;
   }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(
+    email: string,
+    password: string,
+    remember: boolean // <-- ADD 'remember' PARAMETER
+  ): Promise<LoginResponse> {
     await initializeCsrf();
 
-    const response = await apiCall("/auth/login", "POST", { email, password });
+    // Pass 'remember' in the request body
+    const response = await apiCall("/auth/login", "POST", {
+      email,
+      password,
+      remember,
+    });
     if (!response.two_factor_required) {
       this.setAuth(response.user);
     }

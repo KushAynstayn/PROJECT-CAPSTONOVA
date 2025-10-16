@@ -20,10 +20,11 @@ export function LoginForm({
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false); // <-- ADD STATE FOR REMEMBER ME
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showTwoFactor, setShowTwoFactor] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // <-- ADD STATE FOR VISIBILITY
+  const [showPassword, setPasswordVisibility] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +32,8 @@ export function LoginForm({
     setError(null);
 
     try {
-      const response = await authStore.login(email, password);
+      // Pass the 'remember' state to the login function
+      const response = await authStore.login(email, password, remember);
 
       if (response.two_factor_required) {
         setShowTwoFactor(true);
@@ -117,7 +119,7 @@ export function LoginForm({
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setPasswordVisibility(!showPassword)}
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
             >
               {showPassword ? (
@@ -133,7 +135,12 @@ export function LoginForm({
 
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <Checkbox id="remember-me" />
+            {/* UPDATE CHECKBOX TO BE CONTROLLED BY STATE */}
+            <Checkbox
+              id="remember-me"
+              checked={remember}
+              onCheckedChange={(checked) => setRemember(Boolean(checked))}
+            />
             <Label htmlFor="remember-me" className="font-normal text-gray-600">
               Remember me
             </Label>

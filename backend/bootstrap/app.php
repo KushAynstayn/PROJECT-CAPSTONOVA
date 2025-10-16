@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         //
         $middleware->api(prepend: [
-            EnsureFrontendRequestsAreStateful::class, // 👈 Add this here
+            EnsureFrontendRequestsAreStateful::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
