@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react"; // Import Suspense
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -506,199 +506,211 @@ const AdviserSuggestionsPage = () => {
     fetchSuggestions();
   };
 
+  // Create a loading fallback for Suspense
+  const fallback = <div>Loading...</div>;
+
   if (view === "add") {
     return (
-      <AddSuggestionPage
-        onGoBack={handleGoBack}
-        onSuggestionAdded={onSuggestionAdded}
-      />
+      <Suspense fallback={fallback}>
+        <AddSuggestionPage
+          onGoBack={handleGoBack}
+          onSuggestionAdded={onSuggestionAdded}
+        />
+      </Suspense>
     );
   }
 
   if (view === "details" && selectedAdviser) {
     return (
-      <AdviserSuggestionsDetails
-        adviser={selectedAdviser}
-        onGoBack={handleGoBack}
-      />
+      <Suspense fallback={fallback}>
+        <AdviserSuggestionsDetails
+          adviser={selectedAdviser}
+          onGoBack={handleGoBack}
+        />
+      </Suspense>
     );
   }
 
   return (
-    <div>
-      <div className="bg-[#6b0000] text-white py-3 font-bold text-center text-lg tracking-wider rounded-t-md">
-        ADVISERS' SUGGESTIONS
-      </div>
-      <div className="bg-white p-4 rounded-b-md shadow-md flex">
-        <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-          <div className="relative flex-grow">
-            <Input
-              type="search"
-              placeholder="Search adviser by name..."
-              className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          </div>
-          <div className="relative w-full md:w-auto flex-shrink-0">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  style={{ paddingRight: "2.5rem" }}
-                  className={cn(
-                    "w-full md:w-auto justify-start text-left font-normal bg-white border-gray-300 rounded-md shadow-md",
-                    !date && "text-black"
-                  )}
-                >
-                  <CalendarIcon className="mr-0 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-white border-gray-300 rounded-md shadow-md">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {date && (
-              <Button
-                variant="ghost"
-                onClick={() => setDate(undefined)}
-                className="absolute top-1 right-1 h-7 w-7 p-0 rounded-md hover:bg-gray-200 flex items-center justify-center "
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-
-          <div className="flex-shrink-0">
-            <DropdownMenu className="rounded-md shadow-md ">
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full md:w-auto border-gray-300 border-1"
-                >
-                  {getFilterButtonText()}
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-white border-gray-300 rounded-md shadow-md">
-                <DropdownMenuItem
-                  onSelect={() => setFilterMode("all")}
-                  className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
-                >
-                  All Suggestions
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => setFilterMode("mine")}
-                  className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
-                >
-                  My Suggestions
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => setFilterMode("archived")}
-                  className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
-                >
-                  My Archive
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <Button
-              onClick={() => setIsManageModalOpen(true)}
-              variant="outline"
-              className="flex items-center gap-2 rounded-md shadow-md border-gray-300 border-1"
-            >
-              <Settings size={18} />
-              Manage
-            </Button>
-            <Button
-              onClick={handleAddClick}
-              className="bg-[#660000] hover:bg-[#6b0000] hover:shadow-md hover:scale-105 hover:text-white text-white font-bold flex items-center gap-2"
-            >
-              <PlusCircle size={18} />
-              Add Suggestion
-            </Button>
-          </div>
+    <Suspense fallback={fallback}>
+      <div>
+        <div className="bg-[#6b0000] text-white py-3 font-bold text-center text-lg tracking-wider rounded-t-md">
+          ADVISERS' SUGGESTIONS
         </div>
-      </div>
-      <div className="p-8">
-        {isLoading ? (
-          <p className="col-span-full text-center text-gray-500">
-            Loading suggestions...
-          </p>
-        ) : error ? (
-          <p className="col-span-full text-center text-red-500">{error}</p>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {suggestions.length > 0 ? (
-                suggestions.map((s) => (
-                  <Card
-                    key={s.suggestion_id}
-                    className="flex flex-col shadow-md rounded-md border-gray-300 hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0 overflow-hidden"
+        <div className="bg-white p-4 rounded-b-md shadow-md flex">
+          <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+            <div className="relative flex-grow">
+              <Input
+                type="search"
+                placeholder="Search adviser by name..."
+                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            </div>
+            <div className="relative w-full md:w-auto flex-shrink-0">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    style={{ paddingRight: "2.5rem" }}
+                    className={cn(
+                      "w-full md:w-auto justify-start text-left font-normal bg-white border-gray-300 rounded-md shadow-md",
+                      !date && "text-black"
+                    )}
                   >
-                    <CardHeader className="bg-gradient-to-r from-[#660000] to-[#8c0000] text-white p-4">
-                      <CardTitle className="text-xl font-extrabold tracking-wide">
-                        {s.adviser?.first_name} {s.adviser?.last_name}
-                      </CardTitle>
-                      <p className="text-sm opacity-90">Adviser</p>
-                    </CardHeader>
-                    <CardContent className="flex-1 p-6 space-y-4">
-                      <p className="font-bold text-lg text-gray-800">
-                        {s.title}
-                      </p>
-                      <p className="italic text-gray-700 leading-relaxed">
-                        "{s.suggestion_text}"
-                      </p>
-                    </CardContent>
-                    <div className="px-6 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
-                      <p className="font-medium">
-                        Uploaded:{" "}
-                        <span className="text-gray-700">
-                          {s.submission_date
-                            ? format(new Date(s.submission_date), "MMM d, yyyy")
-                            : "N/A"}
-                        </span>
-                      </p>
-                      {s.adviser && (
-                        <Button
-                          variant="link"
-                          className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
-                          onClick={() => handleSeeMoreClick(s.adviser!)}
-                        >
-                          See more suggestions from this adviser
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <p className="col-span-full text-center text-gray-500">
-                  No suggestions found.
-                </p>
+                    <CalendarIcon className="mr-0 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-white border-gray-300 rounded-md shadow-md">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {date && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setDate(undefined)}
+                  className="absolute top-1 right-1 h-7 w-7 p-0 rounded-md hover:bg-gray-200 flex items-center justify-center "
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               )}
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </>
-        )}
+
+            <div className="flex-shrink-0">
+              <DropdownMenu className="rounded-md shadow-md ">
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full md:w-auto border-gray-300 border-1"
+                  >
+                    {getFilterButtonText()}
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white border-gray-300 rounded-md shadow-md">
+                  <DropdownMenuItem
+                    onSelect={() => setFilterMode("all")}
+                    className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
+                  >
+                    All Suggestions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setFilterMode("mine")}
+                    className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
+                  >
+                    My Suggestions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setFilterMode("archived")}
+                    className="text-gray-700 hover:bg-gray-300 hover:border-gray-300 hover:border-1 hover:text-black hover:shadow-md"
+                  >
+                    My Archive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <Button
+                onClick={() => setIsManageModalOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2 rounded-md shadow-md border-gray-300 border-1"
+              >
+                <Settings size={18} />
+                Manage
+              </Button>
+              <Button
+                onClick={handleAddClick}
+                className="bg-[#660000] hover:bg-[#6b0000] hover:shadow-md hover:scale-105 hover:text-white text-white font-bold flex items-center gap-2"
+              >
+                <PlusCircle size={18} />
+                Add Suggestion
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="p-8">
+          {isLoading ? (
+            <p className="col-span-full text-center text-gray-500">
+              Loading suggestions...
+            </p>
+          ) : error ? (
+            <p className="col-span-full text-center text-red-500">{error}</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {suggestions.length > 0 ? (
+                  suggestions.map((s) => (
+                    <Card
+                      key={s.suggestion_id}
+                      className="flex flex-col shadow-md rounded-md border-gray-300 hover:shadow-xl transition-shadow duration-300 ease-in-out pt-0 overflow-hidden"
+                    >
+                      <CardHeader className="bg-gradient-to-r from-[#660000] to-[#8c0000] text-white p-4">
+                        <CardTitle className="text-xl font-extrabold tracking-wide">
+                          {s.adviser?.first_name} {s.adviser?.last_name}
+                        </CardTitle>
+                        <p className="text-sm opacity-90">Adviser</p>
+                      </CardHeader>
+                      <CardContent className="flex-1 p-6 space-y-4">
+                        <p className="font-bold text-lg text-gray-800">
+                          {s.title}
+                        </p>
+                        <p className="italic text-gray-700 leading-relaxed">
+                          "{s.suggestion_text}"
+                        </p>
+                      </CardContent>
+                      <div className="px-6 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
+                        <p className="font-medium">
+                          Uploaded:{" "}
+                          <span className="text-gray-700">
+                            {s.submission_date
+                              ? format(
+                                  new Date(s.submission_date),
+                                  "MMM d, yyyy"
+                                )
+                              : "N/A"}
+                          </span>
+                        </p>
+                        {s.adviser && (
+                          <Button
+                            variant="link"
+                            className="px-0 pt-2 text-blue-600 hover:text-blue-800 font-semibold"
+                            onClick={() => handleSeeMoreClick(s.adviser!)}
+                          >
+                            See more suggestions from this adviser
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <p className="col-span-full text-center text-gray-500">
+                    No suggestions found.
+                  </p>
+                )}
+              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
+          )}
+        </div>
+        <ManageSuggestionsModal
+          isOpen={isManageModalOpen}
+          onClose={() => setIsManageModalOpen(false)}
+        />
       </div>
-      <ManageSuggestionsModal
-        isOpen={isManageModalOpen}
-        onClose={() => setIsManageModalOpen(false)}
-      />
-    </div>
+    </Suspense>
   );
 };
 
