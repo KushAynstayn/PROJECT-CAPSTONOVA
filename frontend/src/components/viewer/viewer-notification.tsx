@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation"; // Removed router
 import { apiCall } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 
@@ -20,7 +20,7 @@ const BellIcon: React.FC = () => (
     xmlns="http://www.w3.org/2000/svg"
     width="24"
     height="24"
-    viewBox="0 0 24 24"
+    viewBox="0 0 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -36,11 +36,15 @@ const BellIcon: React.FC = () => (
 const NotificationItem: React.FC<{ notification: Notification }> = ({
   notification,
 }) => {
-  const router = useRouter();
+  // const router = useRouter(); // Removed router
 
+  /*
   const handleClick = () => {
-    router.push(`/full-access/${notification.id}`);
+    // router.push(`/full-access/${notification.id}`); // Removed navigation
+    // The item is now clickable but does nothing
+    console.log("Notification clicked:", notification.id);
   };
+  */
 
   const status = "Request Granted";
   const project = notification.message
@@ -48,10 +52,9 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({
     .replace("' has been granted.", "");
 
   return (
-    // MODIFIED: Themed card design to match reference
+    // MODIFIED: Removed onClick handler and cursor-pointer class
     <div
-      onClick={handleClick}
-      className={`bg-neutral-950 rounded-lg p-5 hover:bg-neutral-900/80 hover:shadow-lg transition-all duration-300 cursor-pointer border ${
+      className={`bg-neutral-950 rounded-lg p-5 hover:bg-neutral-900/80 hover:shadow-lg transition-all duration-300 border ${
         notification.is_read ? "border-yellow-500/20" : "border-yellow-500/50"
       }`}
     >

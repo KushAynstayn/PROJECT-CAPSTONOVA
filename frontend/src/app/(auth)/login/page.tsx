@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react"; // Import Suspense
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,8 @@ export default function LoginPage() {
           router.push("/admin/dashboard");
           break;
         case "adviser":
-          router.push("/adviser/dashboard");
+          // This is the change you requested. It will work after the build is fixed.
+          router.push("/adviser/suggest-ideas");
           break;
         case "proponent":
           router.push("/proponent/manage-account");
@@ -53,7 +54,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <LoginForm />
+          {/* Wrap the component using useSearchParams in Suspense */}
+          <Suspense fallback={<div>Loading form...</div>}>
+            <LoginForm />
+          </Suspense>
 
           <div className="mt-4 text-center text-sm text-gray-600">
             Don&apos;t have an account?{" "}

@@ -3,6 +3,7 @@ import { Inter, Orbitron, Black_Ops_One } from "next/font/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TopLoader } from "@/components/ui/top-loader";
+import { Suspense } from "react"; // Import Suspense
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,7 +58,10 @@ export default function RootLayout({
       <body
         className={`${blackOpsOne.variable} ${geistSans.variable} ${geistMono.variable} ${inter.variable} ${orbitron.variable} antialiased text-black`}
       >
-        <TopLoader />
+        {/* Wrap TopLoader in Suspense as it uses client-side hooks */}
+        <Suspense fallback={null}>
+          <TopLoader />
+        </Suspense>
         {children}
       </body>
     </html>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react"; // Import Suspense
 import { useRouter } from "next/navigation";
 import { authStore } from "@/lib/auth";
 import { apiCall, ApiError } from "@/lib/api";
@@ -104,7 +104,7 @@ const ManageAccountPage = () => {
   const hasChanged = JSON.stringify(formData) !== JSON.stringify(originalData);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>; // This loading state handles the data fetch
   }
 
   if (error) {
@@ -145,14 +145,19 @@ const ManageAccountPage = () => {
           </div>
 
           <div className="pt-8 p-6">
-            <ProponentManageAccountForm
-              formData={formData}
-              onFormChange={handleFormChange}
-              onSubmit={handleUpdate}
-              onClear={() => setFormData(originalData)}
-              hasChanged={hasChanged}
-              isLoading={isLoading}
-            />
+            {/* Wrap the component using useSearchParams in Suspense */}
+            <Suspense
+              fallback={<div>Loading form...</div>} // This fallback handles the Suspense
+            >
+              <ProponentManageAccountForm
+                formData={formData}
+                onFormChange={handleFormChange}
+                onSubmit={handleUpdate}
+                onClear={() => setFormData(originalData)}
+                hasChanged={hasChanged}
+                isLoading={isLoading} // This prop is for the button loading state
+              />
+            </Suspense>
           </div>
         </div>
       </div>
