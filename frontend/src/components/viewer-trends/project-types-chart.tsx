@@ -17,7 +17,7 @@ interface PlatformData {
   count: number;
 }
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
+const COLORS = ["#FFD700", "#DAA520", "#B8860B", "#F0E68C", "#C5B358"];
 
 export const ProjectTypesChart = ({ year }: { year: number }) => {
   const [data, setData] = useState<PlatformData[]>([]);

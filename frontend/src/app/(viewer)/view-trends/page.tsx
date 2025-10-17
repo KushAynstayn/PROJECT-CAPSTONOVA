@@ -22,15 +22,15 @@ const AnalyticsDashboardPage = () => {
       {/* Page Header */}
       <div className="mt-28 mb-18 flex flex-col md:flex-row md:items-center md:justify-between">
         <h1
-          className="text-3xl font-bold text-[#E0A800] mb-4 md:mb-0"
-          style={{ fontFamily: "'Roboto', sans-serif" }}
+          className="text-3xl text-[#E0A800] mb-4 md:mb-0"
+          style={{ fontFamily: "'Black Ops One', sans-serif" }}
         >
           Project Data Analytics
         </h1>
 
         {/* Year Picker */}
         <div className="flex items-center gap-2">
-          <label htmlFor="year-picker" className="text-gray-300 font-medium">
+          <label htmlFor="year-picker" className="text-[#E0A800] font-medium">
             Select Year:
           </label>
           <div className="relative">
@@ -77,7 +77,7 @@ const AnalyticsDashboardPage = () => {
         </div>
 
         {/* Row 4 (Tech Stacks - MODIFIED) */}
-        <div className="mb-14 lg:col-span-3 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
+        <div className="mb-30 lg:col-span-3 bg-gray-900/50 p-4 rounded-lg border border-yellow-500/30">
           {/* MODIFICATION: Removed the 'year' prop */}
           <TechStackChart />
         </div>
