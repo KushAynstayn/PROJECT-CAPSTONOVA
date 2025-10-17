@@ -18,12 +18,12 @@ interface KeywordData {
 }
 
 const COLORS = [
-  "#FF6384",
-  "#36A2EB",
-  "#FFCE56",
-  "#4BC0C0",
-  "#9966FF",
-  "#FF9F40",
+  "#FFD700", // Gold
+  "#DAA520", // Goldenrod
+  "#B8860B", // DarkGoldenrod
+  "#F0E68C", // Khaki
+  "#C5B358", // DarkKhaki
+  "#FFC300", // Vivid Yellow
 ];
 
 export const EnvironmentStudyChart = ({ year }: { year: number }) => {

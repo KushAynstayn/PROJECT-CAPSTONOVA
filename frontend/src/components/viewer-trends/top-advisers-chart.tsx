@@ -75,7 +75,7 @@ export const TopAdvisersChart = () => {
             <Bar
               dataKey="project_count"
               name="Projects Advised"
-              fill="#d88848"
+              fill="#E0A800"
             />
           </BarChart>
         </ResponsiveContainer>

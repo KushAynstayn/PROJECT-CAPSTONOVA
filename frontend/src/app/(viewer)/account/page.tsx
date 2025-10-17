@@ -144,9 +144,10 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="pt-8 space-y-8 bg-black text-gray-200 border-2 border-[#E0A800]/50 rounded-lg p-8">
-      <h1 className="text-2xl font-bold text-[#E0A800] mb-6">Account</h1>
-      <Card className="bg-neutral-950 border-gray-800 text-gray-200">
+    <div className="space-y-8 mx-10 bg-black text-gray-200 p-8">
+      <h1 className="mt-28 text-3xl text-[#E0A800] mb-6"
+          style={{ fontFamily: "'Black Ops One', sans-serif" }}>Manage Account</h1>
+      <Card className="bg-neutral-950 border-2 border-[#E0A800] rounded-lg text-gray-200">
         <CardHeader>
           <CardTitle className="text-gray-50">Manage Information</CardTitle>
           <CardDescription>Update your account details here.</CardDescription>
@@ -163,7 +164,7 @@ export default function AccountPage() {
                   id="first-name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="bg-neutral-900 border-gray-700"
+                  className="bg-neutral-900 border-2 border-[#E0A800]"
                 />
               </div>
               <div className="space-y-2">
@@ -172,7 +173,7 @@ export default function AccountPage() {
                   id="last-name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="bg-neutral-900 border-gray-700"
+                  className="bg-neutral-900 border-2 border-[#E0A800]"
                 />
               </div>
             </div>
@@ -182,7 +183,7 @@ export default function AccountPage() {
                 id="middle-name"
                 value={middleName}
                 onChange={(e) => setMiddleName(e.target.value)}
-                className="bg-neutral-900 border-gray-700"
+                className="bg-neutral-900 border-2 border-[#E0A800]"
               />
             </div>
             <div className="space-y-2">
@@ -192,17 +193,17 @@ export default function AccountPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-neutral-900 border-gray-700"
+                className="bg-neutral-900 border-2 border-[#E0A800]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger className="bg-neutral-900 border-gray-700">
+                  <SelectTrigger className="bg-neutral-900 border-2 border-[#E0A800]">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
-                  <SelectContent className="bg-neutral-900 border-gray-700 text-gray-200">
+                  <SelectContent className="bg-neutral-900 border-2 border-[#E0A800] text-gray-200">
                     <SelectItem value="BSIS">BSIS</SelectItem>
                     <SelectItem value="BSIT">BSIT</SelectItem>
                     <SelectItem value="BIT-CT">BIT-CT</SelectItem>
@@ -212,10 +213,10 @@ export default function AccountPage() {
               <div className="space-y-2">
                 <Label htmlFor="program">Program</Label>
                 <Select value={program} onValueChange={setProgram}>
-                  <SelectTrigger className="bg-neutral-900 border-gray-700">
+                  <SelectTrigger className="bg-neutral-900 border-2 border-[#E0A800]">
                     <SelectValue placeholder="Select program" />
                   </SelectTrigger>
-                  <SelectContent className="bg-neutral-900 border-gray-700 text-gray-200">
+                  <SelectContent className="bg-neutral-900 border-2 border-[#E0A800] text-gray-200">
                     <SelectItem value="Day program">Day program</SelectItem>
                     <SelectItem value="Evening program">
                       Evening program
@@ -233,7 +234,7 @@ export default function AccountPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Leave blank to keep current"
-                  className="bg-neutral-900 border-gray-700"
+                  className="bg-neutral-900 border-2 border-[#E0A800]"
                 />
               </div>
               <div className="space-y-2">
@@ -243,7 +244,7 @@ export default function AccountPage() {
                   type="password"
                   value={passwordConfirmation}
                   onChange={(e) => setPasswordConfirmation(e.target.value)}
-                  className="bg-neutral-900 border-gray-700"
+                  className="bg-neutral-900 border-2 border-[#E0A800]"
                 />
               </div>
             </div>
@@ -255,7 +256,7 @@ export default function AccountPage() {
             <Button
               type="submit"
               variant="ghost"
-              className="border border-[#E0A800] hover:bg-[#E0A800]/10"
+              className="border border-[#E0A800] hover:bg-[#E0A800]/10 hover:text-white"
             >
               Save Changes
             </Button>

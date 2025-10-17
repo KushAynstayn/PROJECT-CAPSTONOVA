@@ -44,8 +44,9 @@ const ViewSuggestionsPage = () => {
   return (
     <div className="flex-1 p-6 md:p-8 pt-8 space-y-8 bg-black text-gray-200">
       {/* Title Section */}
-      <div className="mt-28 mb-12 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#E0A800]">Suggestions</h1>
+      <div className="mt-28 mb-18 flex justify-between items-center">
+        <h1 className="text-3xl text-[#E0A800]"
+            style={{ fontFamily: "'Black Ops One', sans-serif" }}>Suggestions</h1>
       </div>
 
       {/* AI-Powered Prompt Suggestions Carousel */}

@@ -82,7 +82,7 @@ export const ProgrammingLanguagesChart = ({ year }: { year: number }) => {
               }}
             />
             <Legend />
-            <Bar dataKey="project_count" name="Projects" fill="#8884d8" />
+            <Bar dataKey="project_count" name="Projects" fill="#E0A800" />
           </BarChart>
         </ResponsiveContainer>
       ) : (
