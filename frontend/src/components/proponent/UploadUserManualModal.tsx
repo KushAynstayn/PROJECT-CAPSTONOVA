@@ -65,7 +65,7 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
           general: [error.message || "An unexpected error occurred."],
         });
       }
-      console.error("Failed to submit user manual:", error);
+      console.error("Failed to submit system manual:", error);
     } finally {
       setIsLoading(false);
     }
@@ -87,9 +87,9 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Upload User Manual</DialogTitle>
+          <DialogTitle>Upload System Manual</DialogTitle>
           <DialogDescription>
-            Upload the user manual for your project.
+            Upload the system manual for your project.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">

@@ -150,9 +150,9 @@ const UploadProjectPage = () => {
             alt="User Manual Folder"
             className="h-20 w-20"
           />
-          <h2 className="text-2xl font-bold">User Manual</h2>
+          <h2 className="text-2xl font-bold">System Manual</h2>
           <p className="text-muted-foreground">
-            Submit the user manual for your project.
+            Submit the system manual for your project.
           </p>
           <Button
             onClick={() => setIsUserManualModalOpen(true)}
@@ -167,7 +167,7 @@ const UploadProjectPage = () => {
                 : ""
             }
           >
-            {userManualSubmitted ? "Submitted ✓" : "Upload User Manual"}
+            {userManualSubmitted ? "Submitted ✓" : "Upload System Manual"}
           </Button>
         </div>
 
@@ -178,9 +178,9 @@ const UploadProjectPage = () => {
             alt="Usage Guide Folder"
             className="h-20 w-20"
           />
-          <h2 className="text-2xl font-bold">Usage Guide</h2>
+          <h2 className="text-2xl font-bold">User Guide</h2>
           <p className="text-muted-foreground">
-            Submit the usage guide for your project.
+            Submit the user guide for your project.
           </p>
           <Button
             onClick={() => setIsUsageGuideModalOpen(true)}
@@ -195,7 +195,7 @@ const UploadProjectPage = () => {
                 : ""
             }
           >
-            {usageGuideSubmitted ? "Submitted ✓" : "Upload Usage Guide"}
+            {usageGuideSubmitted ? "Submitted ✓" : "Upload User Guide"}
           </Button>
         </div>
       </div>

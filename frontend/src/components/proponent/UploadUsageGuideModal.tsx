@@ -65,7 +65,7 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
           general: [error.message || "An unexpected error occurred."],
         });
       }
-      console.error("Failed to submit usage guide:", error);
+      console.error("Failed to submit user guide:", error);
     } finally {
       setIsLoading(false);
     }
@@ -87,15 +87,15 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Upload Usage Guide</DialogTitle>
+          <DialogTitle>Upload User Guide</DialogTitle>
           <DialogDescription>
-            Upload the usage guide for your project.
+            Upload the user guide for your project.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <FileUploaderWithProgress
             id="usage_guide"
-            label="Usage Guide (PDF)"
+            label="User Guide (PDF)"
             maxSizeMB={20} // Example size
             accept=".pdf"
             onUploadStart={() => {
