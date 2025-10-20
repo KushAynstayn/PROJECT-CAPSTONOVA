@@ -49,7 +49,7 @@ const SubmittedManuscriptView: React.FC = () => {
       <h1 className="text-2xl font-bold mb-4">Submitted Manuscript</h1>
       <div className="border rounded-lg overflow-hidden h-[80vh]">
         {/* Replaced iframe with our new PdfViewer component */}
-        <PdfViewer url={`/user/stream/acm/${manuscriptId}`} />
+        <PdfViewer url={`/user/stream/manuscript/${manuscriptId}`} />
       </div>
     </div>
   );
