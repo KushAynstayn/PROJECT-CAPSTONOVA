@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -9,13 +10,12 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Crypt;
 use Exception;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'users';
     protected $guarded = [];
-
     protected $hidden = [
         'password',
         'remember_token',
@@ -27,6 +27,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the email address that should be used for verification.
+     *
+     * @return string
+     */
+    public function getEmailForVerification(): string
+    {
+        try {
+            // Decrypt the raw attribute value directly.
+            return Crypt::decryptString($this->attributes['encrypted_email']);
+        } catch (Exception $e) {
+            // Return the raw value if decryption fails
+            return $this->attributes['encrypted_email'];
+        }
     }
 
     public function getEncryptedEmailAttribute($value)
