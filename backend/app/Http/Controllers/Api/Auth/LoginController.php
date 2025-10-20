@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNotification;
 use App\Jobs\SendTwoFactorCodeJob;
 use App\Models\ActionType;
 use App\Models\TwoFactorAuthentication;
@@ -12,6 +13,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -27,8 +30,12 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'remember' => 'sometimes|boolean', // 1. Add 'remember' to validation
+            'remember' => 'sometimes|boolean',
         ]);
+
+        // MODIFIED: Define throttle key and max attempts
+        $throttleKey = 'login-failed:' . $request->email;
+        $maxAttempts = 5; // Set the limit for failed attempts
 
         // Hash the incoming email to find the user by the hashed_email column.
         $hashedEmail = hash('sha256', $request->email);
@@ -36,6 +43,23 @@ class LoginController extends Controller
 
         // Verify user exists, password is correct, and status is active.
         if (!$user || !Hash::check($request->password, $user->password)) {
+            // MODIFIED: Handle failed login attempt
+            RateLimiter::hit($throttleKey);
+
+            // Check if this attempt just hit the limit
+            if (RateLimiter::attempts($throttleKey) === $maxAttempts) {
+                // Find all Super Admins
+                $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
+
+                if (!empty($superAdminIds)) {
+                    $message = "Suspicious activity: {$maxAttempts} failed login attempts detected for email: {$request->email}.";
+                    // Dispatch notification to all Super Admins
+                    SendNotification::dispatch(null, $message, $superAdminIds);
+                    Log::warning("Excessive failed login attempts trigger for: {$request->email}");
+                }
+            }
+            // End of modification
+
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -47,6 +71,9 @@ class LoginController extends Controller
 
         // If 2FA is disabled, log the user in directly and start a session.
         if (config('auth.two_factor_enabled') === false) {
+            // MODIFIED: Clear the failed login attempt counter on success
+            RateLimiter::clear($throttleKey);
+
             // Log the user into the session guard
             // 2. Pass the 'remember' boolean to Auth::login()
             Auth::login($user, $request->boolean('remember'));
@@ -71,6 +98,10 @@ class LoginController extends Controller
         // --- Start Two-Factor Authentication Process ---
         // Log the user in to a temporary "pending 2FA" session state.
         // We will handle the 'remember' flag in the 2FA verification step.
+
+        // MODIFIED: Clear the failed login attempt counter on success
+        RateLimiter::clear($throttleKey);
+
         Auth::login($user);
 
         // Store the remember me flag in the session to use it after 2FA verification.
