@@ -30,16 +30,21 @@ class RegisterController extends Controller
      */
     public function __invoke(Request $request)
     {
+        // Define custom messages for validation
+        $messages = [
+            'email.regex' => 'The email must be a valid @ctu.edu.ph address.',
+        ];
+
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'regex:/^.+@ctu\.edu\.ph$/i'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])],
             'student_id' => ['required_if:role,Proponent', 'nullable', 'string', 'max:50'],
             'department' => ['required', 'string', 'max:50'],
             'program' => ['required', 'string', 'max:50'],
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
