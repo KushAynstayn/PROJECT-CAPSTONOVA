@@ -206,17 +206,28 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ url }) => {
                 position: relative !important;
                 overflow: visible !important;
               }
+
               .rpv-core__page-layer::after {
-                content: 'CTU';
+                content: '';
+                background-image: url('/images/logo_capstonova1.png'); /* Path to your logo */
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain; 
+
+                /* Adjust width/height as needed */
+                width: 50vw; 
+                height: 50vw;
+
                 position: absolute;
                 top: 50%;
                 left: 50%;
-                transform: translate(-50%, -50%) rotate(-45deg);
-                font-size: 10vw;
-                color: rgba(0, 0, 0, 0.1);
-                font-weight: bold;
+
+                /* --- THIS IS THE CHANGE --- */
+                /* Removed the 'rotate(-45deg)' */
+                transform: translate(-50%, -50%); 
+
+                opacity: 0.1;
                 pointer-events: none;
-                text-transform: uppercase;
                 z-index: 1000;
               }
             `}

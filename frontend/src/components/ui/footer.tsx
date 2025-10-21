@@ -1,5 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
+import { AdvancedSearchModal } from "@/components/ui/advanced-search-modal";
+// ... other imports
 
 // SVG Icon Components (no changes here)
 const FacebookIcon = () => (
@@ -61,7 +63,7 @@ const Footer = () => {
             height={50}
             className="object-contain mx-auto"
           />
-          <p className="text-gray-300 mb-4 max-w-xl">
+          <p className="text-gray-300 mb-4 max-w-xl italic font-bold">
             "From Inquiry to Insight: Charting the Course of Academic Innovation."
           </p>
         </div>
@@ -69,11 +71,22 @@ const Footer = () => {
         {/* 2. Navigation Links */}
         <nav className="mb-8">
           <ul className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
-            <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors uppercase text-sm tracking-wider">Library</a></li>
-            <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors uppercase text-sm tracking-wider">Suggestions</a></li>
-            <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors uppercase text-sm tracking-wider">Data & Analytics</a></li>
-            <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors uppercase text-sm tracking-wider">Advanced Search</a></li>
-            <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors uppercase text-sm tracking-wider">About</a></li>
+            <li><a href="/" className="text-gray-300 animated-button uppercase text-sm tracking-wider">Home</a></li>
+            <li><a href="/library" className="text-gray-300 animated-button uppercase text-sm tracking-wider">Library</a></li>
+            <li><a href="/view-suggestions" className="text-gray-300 animated-button uppercase text-sm tracking-wider">Suggestions</a></li>
+            <li><a href="/view-trends" className="text-gray-300 animated-button uppercase text-sm tracking-wider">Data Analytics</a></li>
+            <li>
+              <AdvancedSearchModal>
+                <button
+                  type="button"
+                  // Use the exact same classes as your other links for consistent styling
+                  className="text-gray-300 animated-button uppercase text-sm tracking-wider"
+                >
+                  Advanced Search
+                </button>
+              </AdvancedSearchModal>
+            </li>
+            <li><a href="/about" className="text-gray-300 animated-button uppercase text-sm tracking-wider">About</a></li>
           </ul>
         </nav>
 
@@ -90,8 +103,8 @@ const Footer = () => {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-x-4 gap-y-2">
             <span>&copy; {new Date().getFullYear()} Project Capstonova. All Rights Reserved.</span>
             <div className="flex gap-x-4">
-                <a href="#" className="hover:text-yellow-400 transition-colors">Terms of Service</a>
-                <a href="#" className="hover:text-yellow-400 transition-colors">Privacy Policy</a>
+                <a href="/terms-of-service" className="animated-button">Terms of Service</a>
+                <a href="/privacy-policy" className="animated-button">Privacy Policy</a>
             </div>
           </div>
         </div>

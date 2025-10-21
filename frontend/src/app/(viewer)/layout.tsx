@@ -11,6 +11,7 @@ export default function ViewerLayout({
   children: React.ReactNode;
 }) {
   return (
+    
     // 3. Apply the font variables to your main container
     <div className={`relative bg-black text-white min-h-screen`}>
       <Header />
