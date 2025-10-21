@@ -132,6 +132,10 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     );
 
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch(
+        '/notifications/{notification}/read',
+        [NotificationController::class, 'markAsRead']
+    );
 
     //whitelist routes general purpose
     Route::get('/suggestions', [\App\Http\Controllers\Api\User\SuggestionController::class, 'index']);

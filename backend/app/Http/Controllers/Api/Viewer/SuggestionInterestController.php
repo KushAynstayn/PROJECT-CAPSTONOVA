@@ -35,7 +35,9 @@ class SuggestionInterestController extends Controller
 
         $studentName = $request->user()->first_name . ' ' . $request->user()->last_name;
         $notificationMessage = "A student, {$studentName}, has expressed interest in your suggestion: '{$suggestion->title}'.";
-        SendNotification::dispatch($suggestion->adviser_id, $notificationMessage);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Interest in Suggestion', $notificationMessage, $suggestion->adviser_id);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'express_interest']);
         UserLog::create([

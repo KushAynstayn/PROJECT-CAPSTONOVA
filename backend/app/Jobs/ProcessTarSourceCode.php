@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Models\CapstoneProject; // Import CapstoneProject model
 
 class ProcessTarSourceCode implements ShouldQueue
 {
@@ -30,20 +31,19 @@ class ProcessTarSourceCode implements ShouldQueue
         public int $projectId,
         public array $programmingLanguages,
         public string $tempTarPath
-    ) {
-    }
+    ) {}
 
     /**
      * @throws \Exception
      */
     public function handle(): void
     {
-        Notification::create([
-            'user_id' => $this->user->id,
-            'message' => 'Your TAR file upload is now being processed.',
-            'notification_date' => now(),
-            'is_read' => false,
-        ]);
+        // MODIFIED: Use the SendNotification job with a title
+        SendNotification::dispatch(
+            'Processing Uploaded File',
+            'Your file upload is now being processed.',
+            $this->user->id
+        );
 
         $sourceTarStream = null;
         $destinationEncryptedStream = null;
@@ -78,7 +78,7 @@ class ProcessTarSourceCode implements ShouldQueue
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             $tempEncryptedPath = dirname($this->tempTarPath) . "/{$uuid}.enc.tmp";
-            
+
             $fullTempEncryptedPath = Storage::path($tempEncryptedPath);
             Storage::makeDirectory(dirname($tempEncryptedPath));
             $destinationEncryptedStream = fopen($fullTempEncryptedPath, 'wb');
@@ -98,7 +98,7 @@ class ProcessTarSourceCode implements ShouldQueue
                 // c. Encrypt the entire compressed frame
                 $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
                 $encryptedChunk = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($compressedFrame, '', $nonce, $sodiumEncryptionKey);
-                
+
                 // d. Write a header and the encrypted frame to the destination
                 $header = pack('N', strlen($encryptedChunk)) . $nonce;
                 if (fwrite($destinationEncryptedStream, $header . $encryptedChunk) === false) {
@@ -133,6 +133,23 @@ class ProcessTarSourceCode implements ShouldQueue
                     ->update(['project_size' => $sizeInMB]);
             });
 
+            // --- ADDED: Success Notifications ---
+            $project = CapstoneProject::find($this->projectId);
+
+            $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->all();
+            $adminMessage = "User {$this->user->first_name} {$this->user->last_name} has submitted a source code file for the project: '{$project->title}'.";
+            SendNotification::dispatch('New Source Code Submission', $adminMessage, null, $adminIds);
+
+            if ($this->user->userDetail && $this->user->userDetail->adviser_id) {
+                $adviserMessage = "Your advisee, {$this->user->first_name} {$this->user->last_name}, has submitted a source code file for the project: '{$project->title}'.";
+                SendNotification::dispatch('Advisee Source Code Submission', $adviserMessage, $this->user->userDetail->adviser_id);
+            }
+
+            SendNotification::dispatch(
+                'File Processing Complete',
+                "Your source code file for project '{$project->title}' has been processed successfully.",
+                $this->user->id
+            );
         } catch (Throwable $e) {
             Log::error("Failed processing TAR for project ID {$this->projectId}: " . $e->getMessage());
             $this->fail($e);
@@ -149,5 +166,19 @@ class ProcessTarSourceCode implements ShouldQueue
                 Storage::delete($tempEncryptedPath);
             }
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(Throwable $exception): void
+    {
+        // ADDED: Failure notification logic
+        $project = CapstoneProject::find($this->projectId);
+        SendNotification::dispatch(
+            'File Processing Failed',
+            "Processing your source code file for project '{$project->title}' failed. Please try again.",
+            $this->user->id
+        );
     }
 }

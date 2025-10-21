@@ -145,9 +145,11 @@ class RegisterController extends Controller
             }
 
             if ($user->role === 'Proponent' && !is_null($adviserId)) {
+                // MODIFIED: Added a title to the notification dispatch.
                 SendNotification::dispatch(
-                    $adviserId,
-                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement."
+                    'New Proponent Registration', // title
+                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement.", // message
+                    $adviserId // recipientId
                 );
             }
 

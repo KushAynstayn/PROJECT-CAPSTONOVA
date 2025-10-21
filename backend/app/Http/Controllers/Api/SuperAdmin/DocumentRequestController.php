@@ -147,7 +147,9 @@ class DocumentRequestController extends Controller
 
         $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
         $message = "Your request to access the document for the project '{$projectTitle}' has been approved.";
-        SendNotification::dispatch($documentRequest->viewer_id, $message);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('Request Approved', $message, $documentRequest->viewer_id);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'approve_request']);
         $user = Auth::user();
@@ -198,7 +200,9 @@ class DocumentRequestController extends Controller
 
         $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
         $message = "Your request to access the document for the project '{$projectTitle}' has been rejected.";
-        SendNotification::dispatch($documentRequest->viewer_id, $message);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('Request Rejected', $message, $documentRequest->viewer_id);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'reject_request']);
         $user = Auth::user();

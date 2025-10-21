@@ -125,7 +125,9 @@ class RequestProjectController extends Controller
         $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
         $userName = $user->first_name . ' ' . $user->last_name;
         $notificationMessage = "User {$userName} has requested access to the project: '{$project->title}'.";
-        SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Project Access Request', $notificationMessage, null, $superAdminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'request_project_access']);
         UserLog::create([

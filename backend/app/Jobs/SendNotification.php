@@ -24,26 +24,32 @@ class SendNotification implements ShouldQueue
     protected ?int $recipientId;
 
     /**
-     * The notification message content.
-     * @var string
-     */
-    protected string $message;
-
-    /**
      * An array of user IDs to receive the notification.
      * @var array
      */
     protected array $recipientIds;
 
     /**
+     * The notification title.
+     * @var string
+     */
+    protected string $title; // ADDED
+
+    /**
+     * The notification message content.
+     * @var string
+     */
+    protected string $message;
+
+    /**
      * Create a new job instance.
-     * This constructor is backward-compatible.
      *
-     * @param int|null $recipientId The ID of the single user to notify, or null for multiple.
+     * @param string $title The notification title.
      * @param string $message The notification message.
+     * @param int|null $recipientId The ID of the single user to notify, or null for multiple.
      * @param array $recipientIds An array of user IDs for group notifications.
      */
-    public function __construct(?int $recipientId, string $message, array $recipientIds = [])
+    public function __construct(string $title, string $message, ?int $recipientId = null, array $recipientIds = []) // MODIFIED
     {
         // Fail early if the parameters are used incorrectly.
         if (is_null($recipientId) && empty($recipientIds)) {
@@ -55,6 +61,7 @@ class SendNotification implements ShouldQueue
 
         $this->recipientId = $recipientId;
         $this->recipientIds = $recipientIds;
+        $this->title = $title; // ADDED
         $this->message = $message;
     }
 
@@ -67,9 +74,9 @@ class SendNotification implements ShouldQueue
     {
         // Check if we are sending to a single, specified user.
         if (!is_null($this->recipientId)) {
-            // This is the original logic for backward compatibility.
             Notification::create([
                 'user_id' => $this->recipientId,
+                'title' => $this->title, // ADDED
                 'message' => $this->message,
                 'notification_date' => now(),
                 'is_read' => false,
@@ -84,6 +91,7 @@ class SendNotification implements ShouldQueue
             foreach ($this->recipientIds as $userId) {
                 $notifications[] = [
                     'user_id' => $userId,
+                    'title' => $this->title, // ADDED
                     'message' => $this->message,
                     'notification_date' => $now,
                     'is_read' => false,

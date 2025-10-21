@@ -39,7 +39,9 @@ class SACapstoneProjectController extends Controller
         $project = DB::table('capstone_projects')->where('id', $projectId)->first();
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $notificationMessage = "The capstone project titled '{$project->title}' has been archived.";
-        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('Project Archived', $notificationMessage, null, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'archive_project']);
         $user = Auth::user();
@@ -65,7 +67,9 @@ class SACapstoneProjectController extends Controller
         $project = DB::table('capstone_projects')->where('id', $projectId)->first();
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $notificationMessage = "The capstone project titled '{$project->title}' has been un-archived.";
-        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('Project Restored', $notificationMessage, null, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'unarchive_project']);
         $user = Auth::user();

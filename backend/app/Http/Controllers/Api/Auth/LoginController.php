@@ -46,7 +46,10 @@ class LoginController extends Controller
                 $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
                 if (!empty($superAdminIds)) {
                     $message = "Suspicious activity: {$maxAttempts} failed login attempts detected for email: {$request->email}.";
-                    SendNotification::dispatch(null, $message, $superAdminIds);
+
+                    // MODIFIED: Added a title to the notification dispatch.
+                    SendNotification::dispatch('Suspicious Login Activity', $message, null, $superAdminIds);
+
                     Log::warning("Excessive failed login attempts trigger for: {$request->email}");
                 }
             }
