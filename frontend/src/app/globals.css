@@ -202,3 +202,99 @@
 .perspective {
   perspective: 2500px;
 }
+
+
+/* --- Add this to your app/globals.css file --- */
+
+/* 1. The wrapper for the animated search border */
+.search-wrapper {
+  position: relative; /* Already on your component */
+  border-radius: 9999px; /* Matches 'rounded-full' */
+  overflow: hidden; /* Clips the rotating gradient */
+  
+  /* This creates the static gold border (2px thick) */
+  padding: 4px;
+  background: #E9A319; /* Gold color, change as needed */
+  transition: background 0.3s ease;
+}
+
+/* 2. When the input is focused, make the static border transparent */
+.search-wrapper:focus-within {
+  background: transparent;
+}
+
+/* 3. The rotating pseudo-element for the animation */
+.search-wrapper::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  /* Make it larger than the container to allow for rotation */
+  inset: -150px; 
+  
+  /* The conic gradient that creates the "traveling dash" effect */
+  background: conic-gradient(
+    from 90deg at 50% 50%,
+    #FFB22C,  /* Bright Gold */
+    #F3C623,  /* Lighter Gold */
+    transparent 30%, /* This creates the gap */
+    transparent 70%,
+    #FFB22C   /* Bright Gold */
+  );
+  
+  /* The animation */
+  animation: spin 2.2s linear infinite;
+  
+  /* Hide by default, fade in on focus */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* 4. When the input is focused, show the animation */
+.search-wrapper:focus-within::before {
+  opacity: 1;
+}
+
+/* 5. The rotation keyframes */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+
+.animated-button {
+  position: relative; /* Essential for positioning the ::after pseudo-element */
+  display: inline-block; /* Allows width calculation for underline */
+  /* Remove default underline if any, we're making our own */
+  text-decoration: none; 
+  
+  /* Initial text color and glow */
+  color: #D1D5DB; /* gray-300 */
+  transition: color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
+}
+
+.animated-button:hover {
+  color: #FACC15; /* yellow-400 */
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.7); /* gold glow */
+}
+
+/* The animated underline pseudo-element */
+.animated-button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* Position it slightly below the text */
+  left: 0;
+  width: 0; /* Starts hidden */
+  height: 2px; /* Thickness of the underline */
+  background-color: #FACC15; /* Gold color for the underline */
+  transition: width 0.3s ease-out; /* Animate the width */
+}
+
+/* When hovered, expand the underline from left to right */
+.animated-button:hover::after {
+  width: 100%; /* Expands to full width */
+}

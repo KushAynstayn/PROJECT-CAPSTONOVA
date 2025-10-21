@@ -42,7 +42,7 @@ const ViewSuggestionsPage = () => {
   ];
 
   return (
-    <div className="flex-1 p-6 md:p-8 pt-8 space-y-8 bg-black text-gray-200">
+    <div className="flex-1 p-6 md:p-8 pt-8 space-y-8 bg-black text-gray-200 mb-20">
       {/* Title Section */}
       <div className="mt-28 mb-18 flex justify-between items-center">
         <h1 className="text-3xl text-[#E0A800]"
@@ -72,8 +72,8 @@ const ViewSuggestionsPage = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="text-white bg-neutral-800 hover:bg-neutral-700 border-gray-700" />
-          <CarouselNext className="text-white bg-neutral-800 hover:bg-neutral-700 border-gray-700" />
+          <CarouselPrevious className="text-white bg-neutral-800 hover:bg-neutral-700 border-gray-700 ml-4" />
+          <CarouselNext className="text-white bg-neutral-800 hover:bg-neutral-700 border-gray-700 mr-4" />
         </Carousel>
       </div>
 

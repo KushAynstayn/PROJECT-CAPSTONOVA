@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdvancedSearchModal } from "@/components/ui/advanced-search-modal";
 
+
 const HeroSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
@@ -54,16 +55,16 @@ const HeroSection = () => {
         />
 
         <form onSubmit={handleSearch} className="-mt-55 w-full max-w-3xl px-4">
-          <div className="relative">
+          <div className="relative search-wrapper">
             <input
               type="text"
               placeholder="Enter title or abstract phrase to search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full py-2 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 border-2 border-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full py-2 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 rounded-full focus:outline-none"
             />
             <button
-              type="submit"
+              type="submit" 
               className="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-700 hover:text-yellow-800"
               aria-label="Search"
             >
@@ -87,7 +88,7 @@ const HeroSection = () => {
             <AdvancedSearchModal>
               <button
                 type="button" // Add type="button" to prevent form submission
-                className="text-gray-300 hover:text-white transition-colors duration-300 ease-in-out"
+                className="animated-button"
               >
                 Advanced Search
               </button>
