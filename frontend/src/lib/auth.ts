@@ -96,6 +96,13 @@ class AuthStore {
     this.setAuth(response.user);
     return response;
   }
+
+  // --- NEW METHOD ---
+  async resendVerificationEmail(email: string): Promise<any> {
+    await initializeCsrf();
+    return await apiCall("/auth/email/resend", "POST", { email });
+  }
+  // --- END NEW METHOD ---
 }
 
 export const authStore = new AuthStore();

@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
 use PharData;
 use Symfony\Component\Process\Process;
 use Throwable;
+use App\Models\CapstoneProject; // Import CapstoneProject model
 
 class ProcessGithubSourceCode implements ShouldQueue
 {
@@ -34,26 +35,25 @@ class ProcessGithubSourceCode implements ShouldQueue
         public array $programmingLanguages,
         public string $githubUrl,
         public ?string $githubToken
-    ) {
-    }
+    ) {}
 
     /**
      * @throws \Exception
      */
     public function handle(): void
     {
-        Notification::create([
-            'user_id' => $this->user->id,
-            'message' => 'Your GitHub repository is now being processed.',
-            'notification_date' => now(),
-            'is_read' => false,
-        ]);
-        
+        // MODIFIED: Use the SendNotification job with a title
+        SendNotification::dispatch(
+            'Processing GitHub Repository',
+            'Your GitHub repository is now being processed.',
+            $this->user->id
+        );
+
         $cloneId = Str::uuid();
         $tempClonePath = storage_path("app/private/temp/{$this->user->id}/{$cloneId}");
         $tempTarPath = storage_path("app/private/temp/{$this->user->id}/{$cloneId}.tar");
-        
-        $tempEncryptedPath = null; 
+
+        $tempEncryptedPath = null;
         $sourceTarStream = null;
         $destinationEncryptedStream = null;
 
@@ -90,7 +90,7 @@ class ProcessGithubSourceCode implements ShouldQueue
             if (strlen($sodiumEncryptionKey) !== SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
                 throw new \Exception('Invalid application key length for Sodium encryption.');
             }
-            
+
             $chunkSize = 1048576; // 1MB
 
             // --- CORRECTED SINGLE PIPELINE FOR GITHUB TAR ---
@@ -103,7 +103,7 @@ class ProcessGithubSourceCode implements ShouldQueue
             $uuid = Str::uuid();
             $finalPath = "private/source_codes/{$uuid}.tar.zst.enc";
             $tempEncryptedPath = "private/temp/{$this->user->id}/{$uuid}.enc.tmp";
-            
+
             $fullTempEncryptedPath = Storage::path($tempEncryptedPath);
             Storage::makeDirectory(dirname($tempEncryptedPath));
             $destinationEncryptedStream = fopen($fullTempEncryptedPath, 'wb');
@@ -124,7 +124,7 @@ class ProcessGithubSourceCode implements ShouldQueue
                 }
             }
             Storage::move($tempEncryptedPath, $finalPath);
-            
+
             $sizeInBytes = Storage::size($finalPath);
             $sizeInMB = round($sizeInBytes / 1024 / 1024, 2);
 
@@ -133,24 +133,41 @@ class ProcessGithubSourceCode implements ShouldQueue
                 $sourceCode = CapstoneSourceCode::create(['project_id' => $this->projectId, 'file_path' => $finalPath, 'repository_url' => $this->githubUrl, 'upload_date' => now()]);
                 $languageIds = [];
                 foreach ($this->programmingLanguages as $langName) {
-                    $language = ProgrammingLanguage::firstOrCreate(['language_name' => trim($langName)],['is_framework' => false]);
+                    $language = ProgrammingLanguage::firstOrCreate(['language_name' => trim($langName)], ['is_framework' => false]);
                     $languageIds[] = $language->id;
                 }
                 $sourceCode->programmingLanguages()->attach($languageIds);
                 CapstoneManuscript::where('project_id', $this->projectId)->update(['project_size' => $sizeInMB]);
             });
 
+            // --- ADDED: Success Notifications ---
+            $project = CapstoneProject::find($this->projectId);
+
+            $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->all();
+            $adminMessage = "User {$this->user->first_name} {$this->user->last_name} has submitted a GitHub repository for the project: '{$project->title}'.";
+            SendNotification::dispatch('New GitHub Submission', $adminMessage, null, $adminIds);
+
+            if ($this->user->userDetail && $this->user->userDetail->adviser_id) {
+                $adviserMessage = "Your advisee, {$this->user->first_name} {$this->user->last_name}, has submitted a GitHub repository for the project: '{$project->title}'.";
+                SendNotification::dispatch('Advisee GitHub Submission', $adviserMessage, $this->user->userDetail->adviser_id);
+            }
+
+            SendNotification::dispatch(
+                'GitHub Processing Complete',
+                "Your GitHub repository for project '{$project->title}' has been processed successfully.",
+                $this->user->id
+            );
         } catch (Throwable $e) {
             Log::error("Failed processing GitHub repo for project ID {$this->projectId}: " . $e->getMessage());
             $this->fail($e);
         } finally {
             // --- ENHANCED CLEANUP LOGIC FOR GITHUB CLONE DIRECTORIES (UNCHANGED) ---
             $filesystem = new Filesystem();
-            
+
             // Ensure streams are closed even on failure
             if (is_resource($sourceTarStream)) fclose($sourceTarStream);
             if (is_resource($destinationEncryptedStream)) fclose($destinationEncryptedStream);
-            
+
             try {
                 // 1. Force delete the cloned repository directory (including .git and read-only files)
                 if ($filesystem->isDirectory($tempClonePath)) {
@@ -173,12 +190,26 @@ class ProcessGithubSourceCode implements ShouldQueue
                 if ($filesystem->isDirectory($userTempDir) && $this->isDirectoryEmpty($userTempDir, $filesystem)) {
                     $filesystem->deleteDirectory($userTempDir);
                 }
-
             } catch (Throwable $cleanupException) {
                 // Don't throw here - we don't want cleanup failures to fail the job
             }
         }
     }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(Throwable $exception): void
+    {
+        // ADDED: Failure notification logic
+        $project = CapstoneProject::find($this->projectId);
+        SendNotification::dispatch(
+            'GitHub Processing Failed',
+            "Processing your GitHub repository for project '{$project->title}' failed. Please check the repository URL and try again.",
+            $this->user->id
+        );
+    }
+
 
     /**
      * Make all files and directories writable recursively
@@ -200,7 +231,7 @@ class ProcessGithubSourceCode implements ShouldQueue
 
             foreach ($iterator as $file) {
                 $filePath = $file->getPathname();
-                
+
                 if ($file->isDir()) {
                     chmod($filePath, 0755);
                 } else {

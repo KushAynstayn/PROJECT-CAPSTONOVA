@@ -15,7 +15,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Exceptions\Renderer\Exception;
 use App\Models\ActionType;
 use App\Models\UserLog;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\support\Facades\Auth;
 
 class MProponentController extends Controller
 {
@@ -171,7 +171,9 @@ class MProponentController extends Controller
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $newProponentName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Proponent account has been created for {$newProponentName}.";
-        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Proponent Account', $notificationMessage, null, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'create_proponent']);
         UserLog::create([

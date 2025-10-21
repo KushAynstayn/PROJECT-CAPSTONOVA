@@ -119,7 +119,9 @@ class SuggestionController extends Controller
         $adminIds = User::whereIn('role', ['Admin', 'Super Admin'])->pluck('id')->toArray();
         $adviserName = $user->first_name . ' ' . $user->last_name;
         $notificationMessage = "A new suggestion titled '{$suggestion->title}' has been posted by {$adviserName}.";
-        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Suggestion Posted', $notificationMessage, null, $adminIds);
 
         // 3. Return a success response with the new suggestion data.
         return response()->json([

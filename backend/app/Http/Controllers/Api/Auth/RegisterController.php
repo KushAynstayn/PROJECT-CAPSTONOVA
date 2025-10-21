@@ -11,7 +11,6 @@ use App\Models\UserDetail;
 use App\Models\UserLog;
 use App\Models\Whitelist;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +18,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Jobs\SendVerificationEmailJob;
+use Illuminate\Support\Facades\URL;
 
 class RegisterController extends Controller
 {
@@ -30,16 +31,21 @@ class RegisterController extends Controller
      */
     public function __invoke(Request $request)
     {
+        // Define custom messages for validation
+        $messages = [
+            'email.regex' => 'The email must be a valid @ctu.edu.ph address.',
+        ];
+
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'regex:/^.+@ctu\.edu\.ph$/i'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])],
             'student_id' => ['required_if:role,Proponent', 'nullable', 'string', 'max:50'],
             'department' => ['required', 'string', 'max:50'],
             'program' => ['required', 'string', 'max:50'],
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -84,14 +90,12 @@ class RegisterController extends Controller
                     403
                 );
             }
-            // Capture the adviser_id from the whitelist entry.
             $adviserId = $whitelistEntry->adviser_id;
         }
 
         try {
             DB::beginTransaction();
 
-            // Create the User record with encrypted and hashed email fields.
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -112,10 +116,40 @@ class RegisterController extends Controller
 
             DB::commit();
 
+            try {
+                // Create the signed API-only URL
+                $hash = sha1($user->getEmailForVerification());
+                $backendVerificationUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addMinutes(config('auth.verification.expire', 60)),
+                    [
+                        'id' => $user->id,
+                        'hash' => $hash,
+                    ]
+                );
+
+                // MODIFIED: Parse the backend URL to extract query parameters
+                $parts = parse_url($backendVerificationUrl);
+                parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+
+                // Dispatch the job, passing the plain-text email and individual URL parts
+                SendVerificationEmailJob::dispatch(
+                    $email,
+                    (string) $user->id,
+                    $hash,
+                    $query['expires'],
+                    $query['signature']
+                );
+            } catch (\Exception $e) {
+                Log::error("Failed to dispatch verification email for new user {$user->id}: " . $e->getMessage());
+            }
+
             if ($user->role === 'Proponent' && !is_null($adviserId)) {
+                // MODIFIED: Added a title to the notification dispatch.
                 SendNotification::dispatch(
-                    $adviserId,
-                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement."
+                    'New Proponent Registration', // title
+                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement.", // message
+                    $adviserId // recipientId
                 );
             }
 
@@ -126,14 +160,8 @@ class RegisterController extends Controller
                 'details' => "User registered as {$user->role}."
             ]);
 
-            // **MODIFIED:** Log the new user in and start their session.
-            Auth::login($user);
-            $request->session()->regenerate();
-
-            // **MODIFIED:** The API token is no longer returned.
             return response()->json([
-                'message' => 'Registered successfully.',
-                'user' => $user->fresh('userDetail'),
+                'message' => 'Registered successfully. A verification link has been sent to your email.',
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();

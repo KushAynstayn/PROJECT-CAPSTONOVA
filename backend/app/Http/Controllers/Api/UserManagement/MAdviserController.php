@@ -119,7 +119,9 @@ class MAdviserController extends Controller
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $newAdviserName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Adviser account has been created for {$newAdviserName}.";
-        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Adviser Account', $notificationMessage, null, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'create_adviser']);
         UserLog::create([

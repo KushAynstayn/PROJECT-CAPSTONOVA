@@ -1,65 +1,73 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { apiCall } from "@/lib/api";
+import { NotificationItemWithModal } from "@/components/ui/notification-item-with-modal";
+import { cn } from "@/lib/utils"; // Import cn for conditional class names
 
-// --- Reusable NotificationItem Component ---
+// Define the Notification interface
 interface Notification {
   notification_id: number;
+  title: string;
   message: string;
   notification_date: string;
   is_read: boolean;
 }
 
-const NotificationItem: React.FC<{ notification: Notification }> = ({
-  notification,
+// Define Tab type
+type Tab = "all" | "unread" | "read";
+
+// --- Tab Button Component ---
+interface TabButtonProps {
+  label: string;
+  count: number;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({
+  label,
+  count,
+  isActive,
+  onClick,
 }) => (
-  <div
-    className={`group flex items-start gap-3 p-4 border border-gray-300 rounded-md shadow-md mb-3 hover:bg-[#660000] transition-colors duration-200 ${
-      notification.is_read ? "bg-gray-100" : "bg-white"
-    }`}
-  >
-    <div className="flex-shrink-0">
-      <svg
-        className={`w-6 h-6 group-hover:text-white ${
-          notification.is_read ? "text-gray-400" : "text-blue-500"
-        }`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        ></path>
-      </svg>
-    </div>
-    <div className="flex-grow">
-      <p className="text-gray-800 font-medium group-hover:text-white">
-        {notification.message}
-      </p>
-      <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-200">
-        {new Date(notification.notification_date).toLocaleString()}
-      </p>
-    </div>
-    {!notification.is_read && (
-      <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+  <button
+    onClick={onClick}
+    className={cn(
+      "py-3 px-5 font-semibold text-sm transition-colors duration-200",
+      "border-b-4",
+      isActive
+        ? "border-[#660000] text-[#660000]"
+        : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
     )}
-  </div>
+  >
+    {label}
+    <span
+      className={cn(
+        "ml-2 py-0.5 px-2 rounded-full text-xs",
+        isActive ? "bg-[#660000] text-white" : "bg-gray-200 text-gray-600"
+      )}
+    >
+      {count}
+    </span>
+  </button>
 );
 
 // --- Main Page Component ---
 const AdminNotificationsPage = () => {
-  // --- START: SYSTEM SETTING CHECK ---
+  // --- System Setting State ---
   const [isFeatureEnabled, setIsFeatureEnabled] = useState<boolean>(false);
   const [isSettingLoading, setIsSettingLoading] = useState<boolean>(true);
 
+  // --- Notification and Tab State ---
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<Tab>("all");
+
+  // --- Check System Setting on Mount ---
   useEffect(() => {
     const settingName = "admin_getNotifications";
-
     const checkSetting = async () => {
       setIsSettingLoading(true);
       try {
@@ -69,26 +77,28 @@ const AdminNotificationsPage = () => {
         setIsFeatureEnabled(response.is_enabled);
       } catch (error) {
         console.error(`Error checking system setting ${settingName}:`, error);
-        setIsFeatureEnabled(false); // Default to disabled on error
+        setIsFeatureEnabled(false);
       } finally {
         setIsSettingLoading(false);
       }
     };
-
     checkSetting();
   }, []);
-  // --- END: SYSTEM SETTING CHECK ---
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  // --- Fetch Notifications ---
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await apiCall(`/user/notifications`);
-      setNotifications(response.data || []);
+      // Default sort: Unread first, then by date
+      const sortedData = (response.data || []).sort(
+        (a: Notification, b: Notification) =>
+          Number(a.is_read) - Number(b.is_read) ||
+          new Date(b.notification_date).getTime() -
+            new Date(a.notification_date).getTime()
+      );
+      setNotifications(sortedData);
     } catch (err: any) {
       setError(err.message || "Failed to fetch notifications.");
     } finally {
@@ -97,43 +107,79 @@ const AdminNotificationsPage = () => {
   }, []);
 
   useEffect(() => {
-    // Only fetch notifications if the feature is enabled
     if (isFeatureEnabled) {
       fetchNotifications();
     }
   }, [fetchNotifications, isFeatureEnabled]);
 
+  // --- Callback for child component ---
+  const handleMarkedAsRead = (notificationId: number) => {
+    setNotifications((prevNotifications) =>
+      prevNotifications.map((n) =>
+        n.notification_id === notificationId ? { ...n, is_read: true } : n
+      )
+    );
+  };
+
+  // --- Memoized Counts and Filtered List ---
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.is_read).length,
+    [notifications]
+  );
+
+  const readCount = useMemo(
+    () => notifications.filter((n) => n.is_read).length,
+    [notifications]
+  );
+
+  const filteredNotifications = useMemo(() => {
+    switch (currentTab) {
+      case "unread":
+        return notifications.filter((n) => !n.is_read);
+      case "read":
+        return notifications.filter((n) => n.is_read);
+      case "all":
+      default:
+        return notifications;
+    }
+  }, [notifications, currentTab]);
+
+  // --- Render Logic ---
   const renderContent = () => {
     if (isLoading) {
       return (
-        <p className="text-center text-gray-500">Loading notifications...</p>
+        <p className="text-center text-gray-500 pt-10">
+          Loading notifications...
+        </p>
       );
     }
     if (error) {
-      return <p className="text-center text-red-500">{error}</p>;
+      return <p className="text-center text-red-500 pt-10">{error}</p>;
     }
-    if (notifications.length > 0) {
-      const unreadCount = notifications.filter((n) => !n.is_read).length;
+    if (filteredNotifications.length > 0) {
       return (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">
-            All Notifications ({unreadCount} unread)
-          </h2>
-          {notifications.map((notification) => (
-            <NotificationItem
+        <div className="mt-4">
+          {filteredNotifications.map((notification) => (
+            <NotificationItemWithModal
               key={notification.notification_id}
               notification={notification}
+              onMarkedAsRead={handleMarkedAsRead}
             />
           ))}
         </div>
       );
     }
-    return (
-      <p className="text-center text-gray-500">No notifications to display.</p>
-    );
+    // Show empty state message based on the current tab
+    let emptyMessage = "No notifications to display.";
+    if (currentTab === "unread") {
+      emptyMessage = "You have no unread notifications.";
+    } else if (currentTab === "read") {
+      emptyMessage = "You have no read notifications.";
+    }
+    return <p className="text-center text-gray-500 pt-10">{emptyMessage}</p>;
   };
 
-  // --- START: RENDER BASED ON SETTING CHECK ---
+  // --- Page Loading / Disabled States ---
   if (isSettingLoading) {
     return <p>Loading page...</p>;
   }
@@ -152,12 +198,38 @@ const AdminNotificationsPage = () => {
       </div>
     );
   }
-  // --- END: RENDER BASED ON SETTING CHECK ---
 
+  // --- Main Render ---
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Notifications</h1>
-      <div className="mt-8">{renderContent()}</div>
+
+      {/* --- Tab Navigation --- */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-2" aria-label="Tabs">
+          <TabButton
+            label="All"
+            count={notifications.length}
+            isActive={currentTab === "all"}
+            onClick={() => setCurrentTab("all")}
+          />
+          <TabButton
+            label="Unread"
+            count={unreadCount}
+            isActive={currentTab === "unread"}
+            onClick={() => setCurrentTab("unread")}
+          />
+          <TabButton
+            label="Read"
+            count={readCount}
+            isActive={currentTab === "read"}
+            onClick={() => setCurrentTab("read")}
+          />
+        </nav>
+      </div>
+
+      {/* --- Notification List --- */}
+      <div className="mt-6">{renderContent()}</div>
     </div>
   );
 };

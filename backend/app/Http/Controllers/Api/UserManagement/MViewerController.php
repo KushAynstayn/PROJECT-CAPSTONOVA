@@ -11,13 +11,14 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use App\Models\ActionType;
 use App\Models\UserLog;
-use Illuminate\Support\Facades\Auth;
+
 
 class MViewerController extends Controller
 {
@@ -125,7 +126,9 @@ class MViewerController extends Controller
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $newViewerName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Viewer account has been created for {$newViewerName}.";
-        SendNotification::dispatch(null, $notificationMessage, $adminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Viewer Account', $notificationMessage, null, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'create_viewer']);
         UserLog::create([

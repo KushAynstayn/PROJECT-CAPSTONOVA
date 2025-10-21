@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNotification;
 use App\Jobs\SendTwoFactorCodeJob;
 use App\Models\ActionType;
 use App\Models\TwoFactorAuthentication;
@@ -12,6 +13,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -27,15 +30,30 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'remember' => 'sometimes|boolean', // 1. Add 'remember' to validation
+            'remember' => 'sometimes|boolean',
         ]);
 
-        // Hash the incoming email to find the user by the hashed_email column.
+        $throttleKey = 'login-failed:' . $request->email;
+        $maxAttempts = 5;
+
         $hashedEmail = hash('sha256', $request->email);
         $user = User::where('hashed_email', $hashedEmail)->first();
 
-        // Verify user exists, password is correct, and status is active.
         if (!$user || !Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($throttleKey);
+
+            if (RateLimiter::attempts($throttleKey) === $maxAttempts) {
+                $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
+                if (!empty($superAdminIds)) {
+                    $message = "Suspicious activity: {$maxAttempts} failed login attempts detected for email: {$request->email}.";
+
+                    // MODIFIED: Added a title to the notification dispatch.
+                    SendNotification::dispatch('Suspicious Login Activity', $message, null, $superAdminIds);
+
+                    Log::warning("Excessive failed login attempts trigger for: {$request->email}");
+                }
+            }
+
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -45,13 +63,18 @@ class LoginController extends Controller
             return response()->json(['message' => 'This account is ' . $user->status . '. Please contact an administrator.'], 403);
         }
 
+        // Add email verification check
+        if (!$user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Your email address is not verified. Please check your email for a verification link.',
+                'resend_info' => 'To resend the link, POST your email to /api/auth/email/resend'
+            ], 403);
+        }
+
         // If 2FA is disabled, log the user in directly and start a session.
         if (config('auth.two_factor_enabled') === false) {
-            // Log the user into the session guard
-            // 2. Pass the 'remember' boolean to Auth::login()
+            RateLimiter::clear($throttleKey);
             Auth::login($user, $request->boolean('remember'));
-
-            // Regenerate the session ID for security
             $request->session()->regenerate();
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'login']);
@@ -63,36 +86,30 @@ class LoginController extends Controller
 
             return response()->json([
                 'message' => 'Login successful.',
-                'user' => $user,
+                'user' => $user->load('userDetail'), // Eager load userDetail
                 'two_factor_required' => false,
             ]);
         }
 
         // --- Start Two-Factor Authentication Process ---
-        // Log the user in to a temporary "pending 2FA" session state.
-        // We will handle the 'remember' flag in the 2FA verification step.
+        RateLimiter::clear($throttleKey);
         Auth::login($user);
 
-        // Store the remember me flag in the session to use it after 2FA verification.
         if ($request->boolean('remember')) {
             $request->session()->put('auth.remember', true);
         }
 
-        $code = rand(100000, 999999); // Generate a 6-digit code.
-
-        // Store the encrypted code and its expiration time.
+        $code = rand(100000, 999999);
         TwoFactorAuthentication::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'code' => $code, // The model's mutator will handle encryption
+                'code' => $code,
                 'expires_at' => Carbon::now()->addMinutes(10),
             ]
         );
 
-        // Dispatch a job to send the 2FA code via email.
         SendTwoFactorCodeJob::dispatch($user, $code);
 
-        // Return a response indicating that 2FA is required.
         return response()->json([
             'message' => 'A verification code has been sent to your email.',
             'two_factor_required' => true,

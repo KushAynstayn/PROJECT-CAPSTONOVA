@@ -66,7 +66,9 @@ class MAdminController extends Controller
         $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
         $newAdminName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Admin account has been created for {$newAdminName}.";
-        SendNotification::dispatch(null, $notificationMessage, $superAdminIds);
+
+        // MODIFIED: Added a title to the notification dispatch.
+        SendNotification::dispatch('New Admin Account', $notificationMessage, null, $superAdminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'create_admin']);
         UserLog::create([

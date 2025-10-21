@@ -1,148 +1,183 @@
 "use client";
 
-import React from "react";
-// import { useRouter } from "next/navigation"; // Removed router
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { apiCall } from "@/lib/api";
 import { authStore } from "@/lib/auth";
+import { ViewerNotificationItem } from "./viewer-notification-item";
+import { cn } from "@/lib/utils";
 
-// 1. Define the type for a single notification object
+// --- 1. Define types ---
 interface Notification {
-  id: number;
+  notification_id: number; // <-- FIX: Changed from 'id' to 'notification_id'
   user_id: number;
   message: string;
   created_at: string;
   is_read: boolean;
 }
 
-// --- SVG Icon (Bell Icon for better context) ---
-const BellIcon: React.FC = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+type Tab = "all" | "unread" | "read";
+
+// --- 2. TabButton component ---
+interface TabButtonProps {
+  label: string;
+  count: number;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({
+  label,
+  count,
+  isActive,
+  onClick,
+}) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "py-3 px-4 font-semibold text-sm transition-colors duration-200 border-b-2",
+      isActive
+        ? "border-[#E0A800] text-[#E0A800]"
+        : "border-transparent text-gray-500 hover:text-gray-300"
+    )}
   >
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-
-// --- Single Notification Item ---
-const NotificationItem: React.FC<{ notification: Notification }> = ({
-  notification,
-}) => {
-  // const router = useRouter(); // Removed router
-
-  /*
-  const handleClick = () => {
-    // router.push(`/full-access/${notification.id}`); // Removed navigation
-    // The item is now clickable but does nothing
-    console.log("Notification clicked:", notification.id);
-  };
-  */
-
-  const status = "Request Granted";
-  const project = notification.message
-    .replace("Request for access to '", "")
-    .replace("' has been granted.", "");
-
-  return (
-    // MODIFIED: Removed onClick handler and cursor-pointer class
-    <div
-      className={`bg-neutral-950 rounded-lg p-5 hover:bg-neutral-900/80 hover:shadow-lg transition-all duration-300 border ${
-        notification.is_read ? "border-yellow-500/20" : "border-yellow-500/50"
-      }`}
+    {label}
+    <span
+      className={cn(
+        "ml-2 py-0.5 px-2 rounded-full text-xs font-mono",
+        isActive ? "bg-[#E0A800] text-black" : "bg-neutral-800 text-gray-400"
+      )}
     >
-      <div className="flex items-center space-x-4">
-        <div className="flex-shrink-0">
-          {/* MODIFIED: Themed icon */}
-          <div className="w-10 h-10 bg-neutral-900 text-[#E0A800] rounded-full flex items-center justify-center">
-            <BellIcon />
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          {/* MODIFIED: Light text colors */}
-          <p className="text-sm text-[#E0A800] truncate">{status}</p>
-          <p className="text-base font-semibold text-gray-200 mt-1 truncate">
-            {project}
-          </p>
-        </div>
-        <div className="flex-shrink-0 text-right">
-          <p className="text-sm text-gray-500 whitespace-nowrap">
-            {new Date(notification.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+      {count}
+    </span>
+  </button>
+);
 
 // --- Main List Component ---
 export const ViewerNotification: React.FC = () => {
-  const [notifications, setNotifications] = React.useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<Tab>("all");
 
-  React.useEffect(() => {
+  // 3. Encapsulate the fetching logic
+  const fetchNotifications = useCallback(async () => {
+    // Set loading state for refetches
+    setIsLoading(true);
+    try {
+      const response = await apiCall("/user/notifications");
+      if (response.success) {
+        const sortedData = (response.data || []).sort(
+          (a: Notification, b: Notification) =>
+            Number(a.is_read) - Number(b.is_read) ||
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setNotifications(sortedData);
+      } else {
+        setError(response.message || "Failed to fetch notifications.");
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 4. Initial fetch on component mount
+  // --- SYNTAX ERROR FIX: Corrected arrow function syntax ---
+  useEffect(() => {
     const user = authStore.getUser();
-
     if (!user) {
       setError("You must be logged in to view notifications.");
       setIsLoading(false);
       return;
     }
-
-    const fetchNotifications = async () => {
-      try {
-        const response = await apiCall("/user/notifications");
-        if (response.success) {
-          setNotifications(response.data);
-        } else {
-          setError(response.message || "Failed to fetch notifications.");
-        }
-      } catch (err: any) {
-        setError(err.message || "An unexpected error occurred.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
-  if (isLoading) {
-    return (
-      <div className="text-center text-gray-400 mt-10">
-        Loading notifications...
-      </div>
-    );
-  }
+  // 5. This function now simply calls the fetch function to get fresh data
+  const handleNotificationUpdated = useCallback(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // --- 6. Memoized counts and filtering logic (no changes here) ---
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.is_read).length,
+    [notifications]
+  );
+
+  const readCount = useMemo(
+    () => notifications.filter((n) => n.is_read).length,
+    [notifications]
+  );
+
+  const filteredNotifications = useMemo(() => {
+    switch (currentTab) {
+      case "unread":
+        return notifications.filter((n) => !n.is_read);
+      case "read":
+        return notifications.filter((n) => n.is_read);
+      case "all":
+      default:
+        return notifications;
+    }
+  }, [notifications, currentTab]);
 
   if (error) {
     return <div className="text-red-500 text-center mt-10">{error}</div>;
   }
 
   return (
-    <div className="flex flex-col space-y-4">
-      {notifications.length > 0 ? (
-        notifications.map((notification) => (
-          <NotificationItem key={notification.id} notification={notification} />
-        ))
+    <>
+      <div className="border-b border-yellow-500/20 mb-6">
+        <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+          <TabButton
+            label="All"
+            count={notifications.length}
+            isActive={currentTab === "all"}
+            onClick={() => setCurrentTab("all")}
+          />
+          <TabButton
+            label="Unread"
+            count={unreadCount}
+            isActive={currentTab === "unread"}
+            onClick={() => setCurrentTab("unread")}
+          />
+          <TabButton
+            label="Read"
+            count={readCount}
+            isActive={currentTab === "read"}
+            onClick={() => setCurrentTab("read")}
+          />
+        </nav>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center text-gray-400 mt-10">
+          Loading notifications...
+        </div>
       ) : (
-        // MODIFIED: Themed empty state
-        <div className="text-center bg-neutral-950 border border-yellow-500/20 p-10 rounded-lg">
-          <p className="text-gray-400">You have no new notifications.</p>
+        <div className="flex flex-col space-y-4">
+          {filteredNotifications.length > 0 ? (
+            filteredNotifications.map((notification, index) => (
+              <ViewerNotificationItem
+                // 7. KEY PROP FIX: Use the 'notification_id' which is now correct
+                key={notification.notification_id || `item-${index}`}
+                notification={notification}
+                onNotificationUpdated={handleNotificationUpdated}
+              />
+            ))
+          ) : (
+            <div className="text-center bg-neutral-950 border-yellow-500/20 p-10 rounded-lg">
+              <p className="text-gray-400">
+                {currentTab === "unread"
+                  ? "You have no unread notifications."
+                  : "No notifications in this category."}
+                {/* --- SYNTAX ERROR FIX: Correctly closed the <p> tag --- */}
+              </p>
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 };

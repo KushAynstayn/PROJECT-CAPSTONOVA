@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TwoFactorAuthForm } from "./two-factor-auth-form"; // Import the new component
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { TwoFactorAuthForm } from "./two-factor-auth-form";
+import { EyeIcon, EyeOffIcon, MailCheck } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -20,26 +20,51 @@ export function LoginForm({
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false); // <-- ADD STATE FOR REMEMBER ME
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [showPassword, setPasswordVisibility] = useState(false);
 
+  // --- NEW STATE FOR EMAIL VERIFICATION ---
+  const [isEmailUnverified, setIsEmailUnverified] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+  // --- END NEW STATE ---
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setError(null);
+    setResendStatus(null);
+    try {
+      const response = await authStore.resendVerificationEmail(email);
+      setResendStatus({ message: response.message, type: "success" });
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError ? err.message : "An unexpected error occurred.";
+      setResendStatus({ message: errorMessage, type: "error" });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setIsEmailUnverified(false);
+    setResendStatus(null);
 
     try {
-      // Pass the 'remember' state to the login function
       const response = await authStore.login(email, password, remember);
 
       if (response.two_factor_required) {
         setShowTwoFactor(true);
       } else {
         const { user } = response;
-        // Redirect based on the user's role from the API response
         switch (user.role.toLowerCase()) {
           case "super admin":
             router.push("/super-admin/dashboard");
@@ -54,11 +79,19 @@ export function LoginForm({
             router.push("/proponent/manage-account");
             break;
           default:
-            router.push("/"); // Default redirect for viewers or other roles
+            router.push("/");
         }
       }
     } catch (err: any) {
-      if (err instanceof ApiError) {
+      if (
+        err instanceof ApiError &&
+        err.status === 403 &&
+        err.message.toLowerCase().includes("not verified")
+      ) {
+        // --- HANDLE UNVERIFIED EMAIL ERROR ---
+        setError(err.message);
+        setIsEmailUnverified(true);
+      } else if (err instanceof ApiError) {
         if (err.status === 422 && err.details.email) {
           setError(err.details.email[0]);
         } else {
@@ -98,7 +131,7 @@ export function LoginForm({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
+            disabled={isLoading || isResending}
           />
         </div>
         <div className="grid gap-3">
@@ -106,15 +139,13 @@ export function LoginForm({
             <Label htmlFor="password">Password</Label>
           </div>
           <div className="relative">
-            {" "}
-            {/* Container for both input and button */}
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
+              disabled={isLoading || isResending}
               className="pr-10"
             />
             <button
@@ -131,11 +162,44 @@ export function LoginForm({
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+        {error && (
+          <p
+            className={cn("text-sm text-center", {
+              "text-red-500": !isEmailUnverified,
+              "text-yellow-600": isEmailUnverified,
+            })}
+          >
+            {error}
+          </p>
+        )}
+
+        {/* --- RESEND BUTTON AND STATUS MESSAGE --- */}
+        {isEmailUnverified && (
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleResendVerification}
+              disabled={isResending || isLoading}
+            >
+              {isResending ? "Sending..." : "Resend Verification Email"}
+            </Button>
+            {resendStatus && (
+              <p
+                className={cn("text-sm text-center", {
+                  "text-green-600": resendStatus.type === "success",
+                  "text-red-500": resendStatus.type === "error",
+                })}
+              >
+                {resendStatus.message}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            {/* UPDATE CHECKBOX TO BE CONTROLLED BY STATE */}
             <Checkbox
               id="remember-me"
               checked={remember}
@@ -156,7 +220,7 @@ export function LoginForm({
         <Button
           type="submit"
           className="w-full bg-red-800 text-white hover:bg-red-900 mt-4"
-          disabled={isLoading}
+          disabled={isLoading || isResending}
         >
           {isLoading ? "Logging in..." : "Login"}
         </Button>

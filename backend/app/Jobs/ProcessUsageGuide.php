@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Jobs; // CORRECTED: Changed '.' to '\'
 
 use App\Models\Notification;
 use App\Models\ProjectAttachment;
@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Jobs\SendNotification; // CORRECTED: Changed '.' to '\'
+use App\Models\CapstoneProject;
 
 class ProcessUsageGuide implements ShouldQueue
 {
@@ -31,11 +33,11 @@ class ProcessUsageGuide implements ShouldQueue
 
     public function handle(): void
     {
-        Notification::create([
-            'user_id' => $this->user->id,
-            'message' => 'Your usage guide upload is now being processed.',
-            'notification_date' => now(),
-        ]);
+        SendNotification::dispatch(
+            'Processing Usage Guide',
+            'Your usage guide upload is now being processed.',
+            $this->user->id
+        );
 
         $sourceStream = null;
         $destinationStream = null;
@@ -91,18 +93,25 @@ class ProcessUsageGuide implements ShouldQueue
                 );
             });
 
-            Notification::create([
-                'user_id' => $this->user->id,
-                'message' => 'Your usage guide has been successfully uploaded and secured.',
-                'notification_date' => now(),
-            ]);
+            // --- ADDED: Success Notifications ---
+            $project = CapstoneProject::find($this->projectId);
+
+            $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->all();
+            $adminMessage = "User {$this->user->first_name} {$this->user->last_name} has uploaded a usage guide for the project: '{$project->title}'.";
+            SendNotification::dispatch('New Usage Guide Submission', $adminMessage, null, $adminIds);
+
+            if ($this->user->userDetail && $this->user->userDetail->adviser_id) {
+                $adviserMessage = "Your advisee, {$this->user->first_name} {$this->user->last_name}, has uploaded a usage guide for the project: '{$project->title}'.";
+                SendNotification::dispatch('Advisee Usage Guide Submission', $adviserMessage, $this->user->userDetail->adviser_id);
+            }
+
+            SendNotification::dispatch(
+                'File Processing Complete',
+                "Your usage guide for project '{$project->title}' has been successfully uploaded and secured.",
+                $this->user->id
+            );
         } catch (Throwable $e) {
             Log::error("Failed processing usage guide for project ID {$this->projectId}: " . $e->getMessage());
-            Notification::create([
-                'user_id' => $this->user->id,
-                'message' => 'There was an error processing your usage guide. Please try again.',
-                'notification_date' => now(),
-            ]);
             $this->fail($e);
         } finally {
             if (is_resource($sourceStream)) fclose($sourceStream);
@@ -110,5 +119,19 @@ class ProcessUsageGuide implements ShouldQueue
             if (Storage::exists($this->tempFilePath)) Storage::delete($this->tempFilePath);
             if ($tempEncryptedPath && Storage::exists($tempEncryptedPath)) Storage::delete($tempEncryptedPath);
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(Throwable $exception): void
+    {
+        // ADDED: Failure notification logic
+        $project = CapstoneProject::find($this->projectId);
+        SendNotification::dispatch(
+            'File Processing Failed',
+            "Processing your usage guide for project '{$project->title}' failed. Please try again.",
+            $this->user->id
+        );
     }
 }

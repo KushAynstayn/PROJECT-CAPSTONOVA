@@ -149,16 +149,21 @@ class ProcessCapstoneManuscripts implements ShouldQueue
             $adminMessage = "User {$this->user->first_name} {$this->user->last_name} 
             has uploaded documents for the project: '{$this->project->title}'.";
 
-            SendNotification::dispatch(null, $adminMessage, $adminIds);
+            // MODIFIED: Added a title to the notification dispatch.
+            SendNotification::dispatch('New Document Submission', $adminMessage, null, $adminIds);
 
             if ($this->user->userDetail && $this->user->userDetail->adviser_id) {
                 $adviserMessage = "Your advisee, {$this->user->first_name} {$this->user->last_name}, has uploaded documents for the project: '{$this->project->title}'.";
-                SendNotification::dispatch($this->user->userDetail->adviser_id, $adviserMessage);
+
+                // MODIFIED: Added a title to the notification dispatch.
+                SendNotification::dispatch('Advisee Document Submission', $adviserMessage, $this->user->userDetail->adviser_id);
             }
 
+            // MODIFIED: Added a title to the notification dispatch.
             SendNotification::dispatch(
-                $this->user->id,
-                "Your project '{$this->project->title}' files have been processed successfully."
+                'File Processing Complete', // title
+                "Your project '{$this->project->title}' files have been processed successfully.", // message
+                $this->user->id // recipientId
             );
         } catch (Throwable $e) {
             Log::error("Job failed for Project ID {$this->project->id}: " . $e->getMessage());
@@ -181,9 +186,11 @@ class ProcessCapstoneManuscripts implements ShouldQueue
         // It ensures the entire temporary directory for the user is cleaned up.
         Storage::deleteDirectory("private/temp/{$this->user->id}");
 
+        // MODIFIED: Added a title to the notification dispatch.
         SendNotification::dispatch(
-            $this->user->id,
-            "Your project '{$this->project->title}' file processing failed. Please try again."
+            'File Processing Failed', // title
+            "Your project '{$this->project->title}' file processing failed. Please try again.", // message
+            $this->user->id // recipientId
         );
     }
 }

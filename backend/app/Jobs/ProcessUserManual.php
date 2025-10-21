@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Jobs\SendNotification; // ADDED
+use App\Models\CapstoneProject; // ADDED
 
 class ProcessUserManual implements ShouldQueue
 {
@@ -31,11 +33,12 @@ class ProcessUserManual implements ShouldQueue
 
     public function handle(): void
     {
-        Notification::create([
-            'user_id' => $this->user->id,
-            'message' => 'Your user manual upload is now being processed.',
-            'notification_date' => now(),
-        ]);
+        // MODIFIED: Use the SendNotification job with a title
+        SendNotification::dispatch(
+            'Processing User Manual',
+            'Your user manual upload is now being processed.',
+            $this->user->id
+        );
 
         $sourceStream = null;
         $destinationStream = null;
@@ -91,18 +94,26 @@ class ProcessUserManual implements ShouldQueue
                 );
             });
 
-            Notification::create([
-                'user_id' => $this->user->id,
-                'message' => 'Your user manual has been successfully uploaded and secured.',
-                'notification_date' => now(),
-            ]);
+            // --- ADDED: Success Notifications ---
+            $project = CapstoneProject::find($this->projectId);
+
+            $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->all();
+            $adminMessage = "User {$this->user->first_name} {$this->user->last_name} has uploaded a user manual for the project: '{$project->title}'.";
+            SendNotification::dispatch('New User Manual Submission', $adminMessage, null, $adminIds);
+
+            if ($this->user->userDetail && $this->user->userDetail->adviser_id) {
+                $adviserMessage = "Your advisee, {$this->user->first_name} {$this->user->last_name}, has uploaded a user manual for the project: '{$project->title}'.";
+                SendNotification::dispatch('Advisee User Manual Submission', $adviserMessage, $this->user->userDetail->adviser_id);
+            }
+
+            SendNotification::dispatch(
+                'File Processing Complete',
+                "Your user manual for project '{$project->title}' has been successfully uploaded and secured.",
+                $this->user->id
+            );
         } catch (Throwable $e) {
             Log::error("Failed processing user manual for project ID {$this->projectId}: " . $e->getMessage());
-            Notification::create([
-                'user_id' => $this->user->id,
-                'message' => 'There was an error processing your user manual. Please try again.',
-                'notification_date' => now(),
-            ]);
+            // REMOVED: Notification creation is now handled by the failed() method.
             $this->fail($e);
         } finally {
             if (is_resource($sourceStream)) fclose($sourceStream);
@@ -110,5 +121,19 @@ class ProcessUserManual implements ShouldQueue
             if (Storage::exists($this->tempFilePath)) Storage::delete($this->tempFilePath);
             if ($tempEncryptedPath && Storage::exists($tempEncryptedPath)) Storage::delete($tempEncryptedPath);
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(Throwable $exception): void
+    {
+        // ADDED: Failure notification logic
+        $project = CapstoneProject::find($this->projectId);
+        SendNotification::dispatch(
+            'File Processing Failed',
+            "Processing your user manual for project '{$project->title}' failed. Please try again.",
+            $this->user->id
+        );
     }
 }
