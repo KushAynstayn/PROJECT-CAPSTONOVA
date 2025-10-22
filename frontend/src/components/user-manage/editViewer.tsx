@@ -123,9 +123,8 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleInputChange}
-              onClear={() => handleClear("email")}
-              className="rounded-md border-gray-300 shadow-md"
+              disabled // Field is now disabled
+              className="rounded-md border-gray-300 bg-gray-100 shadow-md" // Added bg-gray-100 for visual indication
             />
           </div>
           <div>

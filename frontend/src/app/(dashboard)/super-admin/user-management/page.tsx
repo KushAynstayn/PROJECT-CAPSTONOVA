@@ -73,11 +73,13 @@ interface Adviser extends BaseUser {
   advisees_count: number;
 }
 
+// ✅ MODIFIED: Added email field here to match the prop type of EditAdviserView
 interface AdviserEditData {
   id: number;
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  email: string; // <-- This was the missing field
 }
 
 // ✅ This interface can be reused for Admin and Super Admin

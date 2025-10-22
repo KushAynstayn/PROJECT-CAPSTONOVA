@@ -22,7 +22,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
   // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
 
-   const handleClear = (field: string) =>
+  const handleClear = (field: string) =>
     setFormData((prev) => ({ ...prev, [field]: "" }));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +71,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
               value={formData.first_name}
               onChange={handleChange}
               onClear={() => handleClear("first_name")}
-                className="rounded-md border-gray-300 shadow-md"
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -90,7 +90,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
               value={formData.last_name}
               onChange={handleChange}
               onClear={() => handleClear("last_name")}
-                className="rounded-md border-gray-300 shadow-md"
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -108,8 +108,8 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
               name="middle_name"
               value={formData.middle_name || ""}
               onChange={handleChange}
-            onClear={() => handleClear("middle_name")}
-                className="rounded-md border-gray-300 shadow-md"
+              onClear={() => handleClear("middle_name")}
+              className="rounded-md border-gray-300 shadow-md"
             />
           </div>
 
@@ -121,14 +121,13 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
             >
               Email
             </label>
-             <InputWithClear
+            <InputWithClear
               id="email"
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleChange}
-             onClear={() => handleClear("email")}
-                className="rounded-md border-gray-300 shadow-md"
+              disabled // Field is now disabled
+              className="rounded-md border-gray-300 bg-gray-100 shadow-md" // Added bg-gray-100
             />
           </div>
         </div>
@@ -144,7 +143,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
           <Button
             variant="outline"
             onClick={onCancel}
-             className="bg-gray hover:bg-[#630808] border-1 border-gray-300 text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+            className="bg-gray hover:bg-[#630808] border-1 border-gray-300 text-gray-700 hover:text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
           >
             Cancel
           </Button>

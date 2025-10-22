@@ -201,7 +201,8 @@ class MAdviserController extends Controller
     public function show($id)
     {
         $adviser = DB::table('users')
-            ->select('first_name', 'last_name', 'middle_name')
+            // MODIFIED: Select encrypted_email to decrypt it
+            ->select('id', 'first_name', 'last_name', 'middle_name', 'encrypted_email')
             ->where('id', $id)
             ->where('role', 'Adviser')
             ->first();
@@ -210,7 +211,25 @@ class MAdviserController extends Controller
             return response()->json(['message' => 'Adviser not found.'], 404);
         }
 
-        return response()->json($adviser);
+        // ADDED: Decrypt the email
+        $decryptedEmail = 'Email not available'; // Default fallback
+        try {
+            $decryptedEmail = Crypt::decryptString($adviser->encrypted_email);
+        } catch (Exception $e) {
+            Log::error("Failed to decrypt email for adviser {$id}: " . $e->getMessage());
+            // The email will remain 'Email not available'
+        }
+
+        // MODIFIED: Return a custom response object with the plain email
+        $response = [
+            'id' => $adviser->id,
+            'first_name' => $adviser->first_name,
+            'last_name' => $adviser->last_name,
+            'middle_name' => $adviser->middle_name,
+            'email' => $decryptedEmail // Add the plain email to the response
+        ];
+
+        return response()->json($response);
     }
 
     /**

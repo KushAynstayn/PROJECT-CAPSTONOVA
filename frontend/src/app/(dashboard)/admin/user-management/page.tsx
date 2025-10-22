@@ -64,6 +64,7 @@ interface AdviserEditData {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  email: string;
 }
 
 type User =
@@ -88,7 +89,7 @@ const AdminUserManagementPage = () => {
     Viewer: [],
     Proponents: [],
     Advisers: [],
-    Restricted: [], // 🆕 added for state consistency
+    Restricted: [],
   });
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
     useState<Adviser | null>(null);
@@ -135,13 +136,9 @@ const AdminUserManagementPage = () => {
     }
   }, [searchQuery]);
 
-  // 🆕 Optional: If you want to fetch restricted accounts from API in the future
   const fetchRestricted = useCallback(async () => {
     setIsLoading(false);
     setError(null);
-    // Example placeholder — you can integrate your real fetch here
-    // const data = await apiCall(`/user-mgt/restricted?search=${searchQuery}`);
-    // setUsers((prev) => ({ ...prev, Restricted: data }));
   }, [searchQuery]);
 
   useEffect(() => {
@@ -151,7 +148,7 @@ const AdminUserManagementPage = () => {
     if (currentRole === "Viewer") fetchViewers();
     if (currentRole === "Proponents") fetchProponents();
     if (currentRole === "Advisers") fetchAdvisers();
-    if (currentRole === "Restricted") fetchRestricted(); // 🆕 added
+    if (currentRole === "Restricted") fetchRestricted();
   }, [
     currentRole,
     searchQuery,
@@ -253,7 +250,8 @@ const AdminUserManagementPage = () => {
       payload = updatedUser as ProponentEditData;
       fetchAction = fetchProponents;
     } else if (currentRole === "Advisers") {
-      endpoint = `user-mgt/advisers/${updatedUser.id}`;
+      // ✅ FIXED: Added the leading slash /
+      endpoint = `/user-mgt/advisers/${updatedUser.id}`;
       payload = updatedUser as AdviserEditData;
       fetchAction = fetchAdvisers;
     }
@@ -310,9 +308,7 @@ const AdminUserManagementPage = () => {
         onAddUser={() => setIsAddModalOpen(true)}
       />
     ),
-    Restricted: (
-      <RestrictedAccounts />
-    ),
+    Restricted: <RestrictedAccounts />,
   };
 
   return (
