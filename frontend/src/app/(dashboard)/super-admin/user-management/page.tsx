@@ -21,8 +21,20 @@ import { apiCall, ApiError } from "@/lib/api";
 // ✅ NEW IMPORT — your Restricted Accounts component
 import RestrictedAccounts from "../../../../components/user-manage/restricted-accounts";
 
+// ✅ NEW IMPORTS --- for Super Admin
+import SuperAdminView from "../../../../components/user-manage/view-super-admin";
+import EditSuperAdminView from "../../../../components/user-manage/edit-super-admin";
+import AddSuperAdmin from "../../../../components/user-manage/add-super-admin";
+
 // --- Type and Interface definitions ---
-type Role = "Viewer" | "Proponents" | "Advisers" | "Admin" | "Restricted";
+// ✅ ADDED "Super Admin" to Role type
+type Role =
+  | "Viewer"
+  | "Proponents"
+  | "Advisers"
+  | "Admin"
+  | "Super Admin"
+  | "Restricted";
 
 interface BaseUser {
   id: number;
@@ -68,6 +80,7 @@ interface AdviserEditData {
   last_name: string;
 }
 
+// ✅ This interface can be reused for Admin and Super Admin
 interface Admin extends BaseUser {
   name: string;
   first_name: string;
@@ -88,6 +101,7 @@ const placeholderText = {
   Proponents: "Search Proponents Here",
   Advisers: "Search Advisers Here",
   Admin: "Search Admins Here",
+  "Super Admin": "Search Super Admins Here", // ✅ ADDED
   Restricted: "Search Restricted Accounts Here",
 };
 
@@ -100,6 +114,7 @@ const SuperAdminUserManagementPage = () => {
     Proponents: [],
     Advisers: [],
     Admin: [],
+    "Super Admin": [], // ✅ ADDED
     Restricted: [],
   });
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
@@ -165,6 +180,56 @@ const SuperAdminUserManagementPage = () => {
     }
   }, [searchQuery]);
 
+  // ✅ NEW FUNCTION for fetching Super Admins
+  const fetchSuperAdmins = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // ❗ Placeholder for backend integration
+      // const data = await apiCall(`/user-mgt/super-admin?name=${searchQuery}`);
+
+      // --- MOCK DATA FOR NOW ---
+      console.log("Fetching mock Super Admins with query:", searchQuery);
+      const mockData = {
+        data: [
+          {
+            id: 9001,
+            first_name: "Mock",
+            last_name: "SuperAdmin",
+            email: "super@test.com",
+            name: "Mock SuperAdmin",
+            middle_name: null,
+          },
+          {
+            id: 9002,
+            first_name: "John",
+            last_name: "Doe (SA)",
+            email: "john.sa@test.com",
+            name: "John Doe (SA)",
+            middle_name: "M",
+          },
+        ],
+      };
+      // Filter mock data based on search query
+      const filteredMockData = mockData.data.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      // --- END MOCK DATA ---
+
+      const formattedData = filteredMockData.map((admin: any) => ({
+        ...admin,
+        name: `${admin.first_name} ${admin.last_name}`,
+      }));
+      setUsers((prev) => ({ ...prev, "Super Admin": formattedData }));
+    } catch (err) {
+      setError("Failed to fetch super admins.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
   useEffect(() => {
     setEditingUser(null);
     setViewingSuggestionsFor(null);
@@ -182,6 +247,9 @@ const SuperAdminUserManagementPage = () => {
       case "Admin":
         fetchAdmins();
         break;
+      case "Super Admin": // ✅ ADDED
+        fetchSuperAdmins();
+        break;
       case "Restricted":
         // 🔸 For now, RestrictedAccounts has static data, so no fetch needed
         break;
@@ -193,9 +261,10 @@ const SuperAdminUserManagementPage = () => {
     fetchProponents,
     fetchAdvisers,
     fetchAdmins,
+    fetchSuperAdmins, // ✅ ADDED
   ]);
 
-    const handleEditUser = async (userId: number) => {
+  const handleEditUser = async (userId: number) => {
     setError(null);
     setIsLoading(true);
     try {
@@ -205,10 +274,18 @@ const SuperAdminUserManagementPage = () => {
         endpoint = `/user-mgt/proponents/${userId}`;
       if (currentRole === "Advisers") endpoint = `/user-mgt/advisers/${userId}`;
       if (currentRole === "Admin") endpoint = `/user-mgt/admin/${userId}`;
+      if (currentRole === "Super Admin")
+        endpoint = `/user-mgt/super-admin/${userId}`; // ✅ ADDED (Placeholder)
 
       if (endpoint) {
-        const userToEdit = await apiCall(endpoint);
-        setEditingUser({ id: userId, ...userToEdit });
+        // ❗ Mocking fetch for edit, remove when integrating
+        if (currentRole === "Super Admin") {
+          const userToEdit = users["Super Admin"].find((u) => u.id === userId);
+          setEditingUser(userToEdit || null);
+        } else {
+          const userToEdit = await apiCall(endpoint);
+          setEditingUser({ id: userId, ...userToEdit });
+        }
       }
     } catch (err) {
       setError(`Failed to fetch user details for editing.`);
@@ -221,6 +298,7 @@ const SuperAdminUserManagementPage = () => {
     let endpoint = "";
     let fetchAction: (() => void) | null = null;
     let roleName = currentRole.slice(0, -1);
+    if (currentRole === "Super Admin") roleName = "Super Admin";
 
     if (currentRole === "Viewer") {
       endpoint = `/user-mgt/viewers/${userId}`;
@@ -234,12 +312,27 @@ const SuperAdminUserManagementPage = () => {
     } else if (currentRole === "Admin") {
       endpoint = `/user-mgt/admin/${userId}/restrict`;
       fetchAction = fetchAdmins;
+    } else if (currentRole === "Super Admin") {
+      // ✅ ADDED
+      endpoint = `/user-mgt/super-admin/${userId}/restrict`; // (Placeholder)
+      fetchAction = fetchSuperAdmins;
     }
 
     if (window.confirm(`Are you sure you want to restrict this ${roleName}?`)) {
       try {
-        const method = currentRole === "Admin" ? "PATCH" : "DELETE";
-        await apiCall(endpoint, method);
+        // ✅ MODIFIED method check
+        const method =
+          currentRole === "Admin" || currentRole === "Super Admin"
+            ? "PATCH"
+            : "DELETE";
+
+        // ❗ Mocking API call, remove when integrating
+        if (currentRole === "Super Admin") {
+          console.log(`Mock ${method} to ${endpoint}`);
+        } else {
+          await apiCall(endpoint, method);
+        }
+
         if (fetchAction) fetchAction();
       } catch (err) {
         setError(`Failed to restrict ${roleName}.`);
@@ -262,10 +355,20 @@ const SuperAdminUserManagementPage = () => {
     } else if (currentRole === "Admin") {
       endpoint = "/user-mgt/admin";
       fetchAction = fetchAdmins;
+    } else if (currentRole === "Super Admin") {
+      // ✅ ADDED
+      endpoint = "/user-mgt/super-admin"; // (Placeholder)
+      fetchAction = fetchSuperAdmins;
     }
 
     try {
-      await apiCall(endpoint, "POST", userData);
+      // ❗ Mocking API call, remove when integrating
+      if (currentRole === "Super Admin") {
+        console.log(`Mock POST to ${endpoint} with data:`, userData);
+      } else {
+        await apiCall(endpoint, "POST", userData);
+      }
+
       setIsAddModalOpen(false);
       if (fetchAction) fetchAction();
     } catch (err: any) {
@@ -310,10 +413,21 @@ const SuperAdminUserManagementPage = () => {
       endpoint = `/user-mgt/admin/${updatedUser.id}`;
       payload = updatedUser as Admin;
       fetchAction = fetchAdmins;
+    } else if (currentRole === "Super Admin") {
+      // ✅ ADDED
+      endpoint = `/user-mgt/super-admin/${updatedUser.id}`; // (Placeholder)
+      payload = updatedUser as Admin; // Can reuse Admin interface
+      fetchAction = fetchSuperAdmins;
     }
 
     try {
-      await apiCall(endpoint, "PUT", payload);
+      // ❗ Mocking API call, remove when integrating
+      if (currentRole === "Super Admin") {
+        console.log(`Mock PUT to ${endpoint} with payload:`, payload);
+      } else {
+        await apiCall(endpoint, "PUT", payload);
+      }
+
       if (fetchAction) fetchAction();
     } catch (err) {
       setError(`Failed to update ${currentRole.slice(0, -1)}.`);
@@ -325,7 +439,6 @@ const SuperAdminUserManagementPage = () => {
   const handleViewSuggestions = (adviser: Adviser) =>
     setViewingSuggestionsFor(adviser);
   const handleCloseSuggestions = () => setViewingSuggestionsFor(null);
-
 
   // --- Component Map ---
   const componentMap = {
@@ -378,10 +491,21 @@ const SuperAdminUserManagementPage = () => {
         onDeleteUser={handleDeleteUser}
       />
     ),
-    // ✅ NEW TAB: Restricted
-    Restricted: (
-      <RestrictedAccounts />
+    // ✅ NEW TAB: Super Admin
+    "Super Admin": (
+      <SuperAdminView
+        searchQuery={searchQuery}
+        onSearchChange={(e) => setSearchQuery(e.target.value)}
+        onClear={() => setSearchQuery("")}
+        placeholder={placeholderText["Super Admin"]}
+        filteredUsers={users["Super Admin"] as Admin[]}
+        onEditUser={handleEditUser}
+        onAddUser={() => setIsAddModalOpen(true)}
+        onDeleteUser={handleDeleteUser}
+      />
     ),
+    // ✅ NEW TAB: Restricted
+    Restricted: <RestrictedAccounts />,
   };
 
   return (
@@ -419,6 +543,14 @@ const SuperAdminUserManagementPage = () => {
             />
           )}
 
+          {/* ✅ ADDED Modal for Super Admin */}
+          {isAddModalOpen && currentRole === "Super Admin" && (
+            <AddSuperAdmin
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
+            />
+          )}
+
           {viewingSuggestionsFor && currentRole === "Advisers" ? (
             <SuggestionView
               adviser={viewingSuggestionsFor}
@@ -450,6 +582,14 @@ const SuperAdminUserManagementPage = () => {
               {currentRole === "Admin" && (
                 <EditAdminView
                   user={editingUser as Admin}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {/* ✅ ADDED Edit View for Super Admin */}
+              {currentRole === "Super Admin" && (
+                <EditSuperAdminView
+                  user={editingUser as Admin} // Can reuse Admin interface
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />
