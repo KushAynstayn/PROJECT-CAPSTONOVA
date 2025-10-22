@@ -180,45 +180,16 @@ const SuperAdminUserManagementPage = () => {
     }
   }, [searchQuery]);
 
-  // ✅ NEW FUNCTION for fetching Super Admins
+  // ✅ MODIFIED FUNCTION for fetching Super Admins (now uses API)
   const fetchSuperAdmins = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // ❗ Placeholder for backend integration
-      // const data = await apiCall(`/user-mgt/super-admin?name=${searchQuery}`);
+      // ✅ Use the new endpoint
+      const data = await apiCall(`/user-mgt/super-admin?name=${searchQuery}`);
 
-      // --- MOCK DATA FOR NOW ---
-      console.log("Fetching mock Super Admins with query:", searchQuery);
-      const mockData = {
-        data: [
-          {
-            id: 9001,
-            first_name: "Mock",
-            last_name: "SuperAdmin",
-            email: "super@test.com",
-            name: "Mock SuperAdmin",
-            middle_name: null,
-          },
-          {
-            id: 9002,
-            first_name: "John",
-            last_name: "Doe (SA)",
-            email: "john.sa@test.com",
-            name: "John Doe (SA)",
-            middle_name: "M",
-          },
-        ],
-      };
-      // Filter mock data based on search query
-      const filteredMockData = mockData.data.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      // --- END MOCK DATA ---
-
-      const formattedData = filteredMockData.map((admin: any) => ({
+      // ✅ Format data as the view component expects a 'name' field
+      const formattedData = data.data.map((admin: any) => ({
         ...admin,
         name: `${admin.first_name} ${admin.last_name}`,
       }));
@@ -251,7 +222,7 @@ const SuperAdminUserManagementPage = () => {
         fetchSuperAdmins();
         break;
       case "Restricted":
-        // 🔸 For now, RestrictedAccounts has static data, so no fetch needed
+        // This component fetches its own data, so no call needed here.
         break;
     }
   }, [
@@ -275,17 +246,12 @@ const SuperAdminUserManagementPage = () => {
       if (currentRole === "Advisers") endpoint = `/user-mgt/advisers/${userId}`;
       if (currentRole === "Admin") endpoint = `/user-mgt/admin/${userId}`;
       if (currentRole === "Super Admin")
-        endpoint = `/user-mgt/super-admin/${userId}`; // ✅ ADDED (Placeholder)
+        endpoint = `/user-mgt/super-admin/${userId}`; // ✅ ADDED
 
       if (endpoint) {
-        // ❗ Mocking fetch for edit, remove when integrating
-        if (currentRole === "Super Admin") {
-          const userToEdit = users["Super Admin"].find((u) => u.id === userId);
-          setEditingUser(userToEdit || null);
-        } else {
-          const userToEdit = await apiCall(endpoint);
-          setEditingUser({ id: userId, ...userToEdit });
-        }
+        // ✅ Removed mock logic, this now works for all roles
+        const userToEdit = await apiCall(endpoint);
+        setEditingUser({ id: userId, ...userToEdit });
       }
     } catch (err) {
       setError(`Failed to fetch user details for editing.`);
@@ -314,28 +280,28 @@ const SuperAdminUserManagementPage = () => {
       fetchAction = fetchAdmins;
     } else if (currentRole === "Super Admin") {
       // ✅ ADDED
-      endpoint = `/user-mgt/super-admin/${userId}/restrict`; // (Placeholder)
+      endpoint = `/user-mgt/super-admin/${userId}/restrict`; // ✅ Use new endpoint
       fetchAction = fetchSuperAdmins;
     }
 
     if (window.confirm(`Are you sure you want to restrict this ${roleName}?`)) {
       try {
-        // ✅ MODIFIED method check
         const method =
           currentRole === "Admin" || currentRole === "Super Admin"
             ? "PATCH"
             : "DELETE";
 
-        // ❗ Mocking API call, remove when integrating
-        if (currentRole === "Super Admin") {
-          console.log(`Mock ${method} to ${endpoint}`);
-        } else {
-          await apiCall(endpoint, method);
-        }
+        // ✅ Removed mock logic
+        await apiCall(endpoint, method);
 
         if (fetchAction) fetchAction();
-      } catch (err) {
-        setError(`Failed to restrict ${roleName}.`);
+      } catch (err: any) {
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : `Failed to restrict ${roleName}.`;
+        // ✅ Display specific backend error if available (e.g., "You cannot restrict your own account.")
+        setError(message);
       }
     }
   };
@@ -357,17 +323,13 @@ const SuperAdminUserManagementPage = () => {
       fetchAction = fetchAdmins;
     } else if (currentRole === "Super Admin") {
       // ✅ ADDED
-      endpoint = "/user-mgt/super-admin"; // (Placeholder)
+      endpoint = "/user-mgt/super-admin"; // ✅ Use new endpoint
       fetchAction = fetchSuperAdmins;
     }
 
     try {
-      // ❗ Mocking API call, remove when integrating
-      if (currentRole === "Super Admin") {
-        console.log(`Mock POST to ${endpoint} with data:`, userData);
-      } else {
-        await apiCall(endpoint, "POST", userData);
-      }
+      // ✅ Removed mock logic
+      await apiCall(endpoint, "POST", userData);
 
       setIsAddModalOpen(false);
       if (fetchAction) fetchAction();
@@ -415,18 +377,14 @@ const SuperAdminUserManagementPage = () => {
       fetchAction = fetchAdmins;
     } else if (currentRole === "Super Admin") {
       // ✅ ADDED
-      endpoint = `/user-mgt/super-admin/${updatedUser.id}`; // (Placeholder)
+      endpoint = `/user-mgt/super-admin/${updatedUser.id}`; // ✅ Use new endpoint
       payload = updatedUser as Admin; // Can reuse Admin interface
       fetchAction = fetchSuperAdmins;
     }
 
     try {
-      // ❗ Mocking API call, remove when integrating
-      if (currentRole === "Super Admin") {
-        console.log(`Mock PUT to ${endpoint} with payload:`, payload);
-      } else {
-        await apiCall(endpoint, "PUT", payload);
-      }
+      // ✅ Removed mock logic
+      await apiCall(endpoint, "PUT", payload);
 
       if (fetchAction) fetchAction();
     } catch (err) {
