@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Foundation\Exceptions\Renderer\Exception;
+use Exception; // MODIFIED: Corrected namespace
+use App\Jobs\SendVerificationEmailJob; // ADDED
+use Illuminate\Support\Facades\URL;    // ADDED
+use Illuminate\Support\Facades\Log;    // ADDED
 
 class MAdviserController extends Controller
 {
@@ -99,7 +102,19 @@ class MAdviserController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
-            'email' => 'required|string|email|max:255|unique:users,hashed_email',
+            // MODIFIED: Changed to a closure for consistency
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $hashedEmail = hash('sha256', $value);
+                    if (User::where('hashed_email', $hashedEmail)->exists()) {
+                        $fail('The ' . $attribute . ' has already been taken.');
+                    }
+                },
+            ],
             'password' => 'required|string|min:8',
         ]);
 
@@ -112,9 +127,43 @@ class MAdviserController extends Controller
             'password' => Hash::make($validatedData['password']),
             'role' => 'Adviser',
             'status' => 'active',
+            // email_verified_at will be null by default
         ];
 
         $adviser = User::create($userData);
+
+        // --- ADDED: Send Verification Email ---
+        try {
+            $plainTextEmail = $validatedData['email'];
+
+            // Create the signed API-only URL
+            $hash = sha1($adviser->getEmailForVerification());
+            $backendVerificationUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(config('auth.verification.expire', 60)),
+                [
+                    'id' => $adviser->id,
+                    'hash' => $hash,
+                ]
+            );
+
+            // Parse the backend URL to extract query parameters
+            $parts = parse_url($backendVerificationUrl);
+            parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+
+            // Dispatch the job
+            SendVerificationEmailJob::dispatch(
+                $plainTextEmail,
+                (string) $adviser->id,
+                $hash,
+                $query['expires'],
+                $query['signature']
+            );
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch verification email for new adviser {$adviser->id} (created by admin/superadmin): " . $e->getMessage());
+            // We don't fail the whole request, just log the error.
+        }
+        // --- END: Send Verification Email ---
 
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $newAdviserName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
@@ -169,8 +218,8 @@ class MAdviserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // First, check if the adviser exists
-        $adviser = DB::table('users')->where('id', $id)->where('role', 'Adviser')->first();
+        // MODIFIED: Fetch the Eloquent model to use its methods
+        $adviser = User::where('id', $id)->where('role', 'Adviser')->first();
         if (!$adviser) {
             return response()->json(['message' => 'Adviser not found.'], 404);
         }
@@ -179,17 +228,66 @@ class MAdviserController extends Controller
             'first_name' => 'sometimes|required|string|max:100',
             'last_name' => 'sometimes|required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
+            // ADDED: Allow email updates
+            'email' => [
+                'sometimes',
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'hashed_email')->ignore($adviser->id),
+            ],
         ]);
 
-        if (empty($validatedData)) {
+        // MODIFIED: Use an array for updates to handle email logic
+        $updateData = $validatedData;
+        $emailChanged = false;
+
+        // Check if email is being updated and if it's different
+        if (isset($validatedData['email']) && $validatedData['email'] !== $adviser->getEmailForVerification()) {
+            $email = $validatedData['email'];
+            $updateData['encrypted_email'] = Crypt::encryptString($email);
+            $updateData['hashed_email'] = hash('sha256', $email);
+            $updateData['email_verified_at'] = null; // Reset verification
+            $emailChanged = true;
+            unset($updateData['email']); // Remove plain email from update array
+        } elseif (isset($validatedData['email'])) {
+            unset($updateData['email']); // Remove if it's the same
+        }
+
+        if (empty($updateData)) {
             return response()->json(['message' => 'No data provided for update.'], 400);
         }
 
-        $validatedData['updated_at'] = now();
+        $updateData['updated_at'] = now();
 
-        DB::table('users')->where('id', $id)->update($validatedData);
+        // Use Eloquent update
+        $adviser->update($updateData);
 
-        $updatedAdviser = DB::table('users')->find($id);
+        // --- ADDED: Re-send Verification Email if it was changed ---
+        if ($emailChanged) {
+            try {
+                $plainTextEmail = $adviser->getEmailForVerification(); // Gets the new email
+                $hash = sha1($plainTextEmail);
+                $backendVerificationUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addMinutes(config('auth.verification.expire', 60)),
+                    ['id' => $adviser->id, 'hash' => $hash]
+                );
+                $parts = parse_url($backendVerificationUrl);
+                parse_str($parts['query'], $query);
+                SendVerificationEmailJob::dispatch(
+                    $plainTextEmail,
+                    (string) $adviser->id,
+                    $hash,
+                    $query['expires'],
+                    $query['signature']
+                );
+            } catch (\Exception $e) {
+                Log::error("Failed to re-send verification email for adviser {$adviser->id} (admin update): " . $e->getMessage());
+            }
+        }
+        // --- END: Re-send Verification Email ---
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'update_adviser']);
         UserLog::create([
@@ -198,7 +296,11 @@ class MAdviserController extends Controller
             'details' => "Updated details for Adviser (ID: {$id})."
         ]);
 
-        return response()->json($updatedAdviser);
+        // MODIFIED: Return the full user object with decrypted email
+        $adviser->refresh();
+        $adviser->email = $adviser->encrypted_email; // Use accessor
+
+        return response()->json($adviser);
     }
 
     /**
@@ -220,7 +322,9 @@ class MAdviserController extends Controller
             ]);
 
         if ($affectedRows === 0) {
-            return response()->json(['message' => 'Adviser not found.'], 404);
+            // This case might happen if status was already 'restricted'
+            // but we'll keep the 404 logic as it was
+            return response()->json(['message' => 'Adviser not found or no change made.'], 404);
         }
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_adviser']);

@@ -13,6 +13,9 @@ use Illuminate\Validation\Rules\Password;
 use App\Models\ActionType;
 use App\Models\UserLog;
 use Illuminate\Support\Facades\Auth;
+use App\Jobs\SendVerificationEmailJob; // ADDED
+use Illuminate\Support\Facades\URL;    // ADDED
+use Illuminate\Support\Facades\Log;    // ADDED
 
 class MAdminController extends Controller
 {
@@ -46,7 +49,19 @@ class MAdminController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
-            'email' => 'required|string|email|max:255|unique:users,hashed_email',
+            // MODIFIED: Changed to a closure to match your MViewerController for consistency
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $hashedEmail = hash('sha256', $value);
+                    if (User::where('hashed_email', $hashedEmail)->exists()) {
+                        $fail('The ' . $attribute . ' has already been taken.');
+                    }
+                },
+            ],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
@@ -61,7 +76,42 @@ class MAdminController extends Controller
             'password' => Hash::make($validatedData['password']),
             'role' => 'Admin',
             'status' => 'active',
+            // email_verified_at will be null by default
         ]);
+
+        // --- ADDED: Send Verification Email ---
+        try {
+            $plainTextEmail = $validatedData['email'];
+
+            // Create the signed API-only URL
+            // The getEmailForVerification() method correctly decrypts the email
+            $hash = sha1($admin->getEmailForVerification());
+            $backendVerificationUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(config('auth.verification.expire', 60)),
+                [
+                    'id' => $admin->id,
+                    'hash' => $hash,
+                ]
+            );
+
+            // Parse the backend URL to extract query parameters
+            $parts = parse_url($backendVerificationUrl);
+            parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+
+            // Dispatch the job
+            SendVerificationEmailJob::dispatch(
+                $plainTextEmail,
+                (string) $admin->id,
+                $hash,
+                $query['expires'],
+                $query['signature']
+            );
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch verification email for new admin {$admin->id} (created by superadmin): " . $e->getMessage());
+            // We don't fail the whole request, just log the error.
+        }
+        // --- END: Send Verification Email ---
 
         $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
         $newAdminName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
@@ -115,15 +165,48 @@ class MAdminController extends Controller
             ],
         ]);
 
+        $emailChanged = false; // ADDED: Flag to track email change
+
         // If email is being updated, update both encrypted and hashed versions
         if (isset($validatedData['email'])) {
-            $email = $validatedData['email'];
-            $admin->encrypted_email = Crypt::encryptString($email);
-            $admin->hashed_email = hash('sha256', $email);
-            unset($validatedData['email']);
+            // Check if the email is actually different from the current one
+            if ($validatedData['email'] !== $admin->getEmailForVerification()) {
+                $email = $validatedData['email'];
+                $admin->encrypted_email = Crypt::encryptString($email);
+                $admin->hashed_email = hash('sha256', $email);
+                $admin->email_verified_at = null; // ADDED: Reset verification status
+                $emailChanged = true;             // ADDED: Set flag to true
+            }
+            unset($validatedData['email']); // Unset to avoid mass assignment error
         }
 
         $admin->update($validatedData);
+
+        // --- ADDED: Re-send Verification Email if it was changed ---
+        if ($emailChanged) {
+            try {
+                // Get the newly set, decrypted email
+                $plainTextEmail = $admin->getEmailForVerification();
+                $hash = sha1($plainTextEmail);
+                $backendVerificationUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addMinutes(config('auth.verification.expire', 60)),
+                    ['id' => $admin->id, 'hash' => $hash]
+                );
+                $parts = parse_url($backendVerificationUrl);
+                parse_str($parts['query'], $query);
+                SendVerificationEmailJob::dispatch(
+                    $plainTextEmail,
+                    (string) $admin->id,
+                    $hash,
+                    $query['expires'],
+                    $query['signature']
+                );
+            } catch (\Exception $e) {
+                Log::error("Failed to re-send verification email for admin {$admin->id} (superadmin update): " . $e->getMessage());
+            }
+        }
+        // --- END: Re-send Verification Email ---
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'update_admin']);
         UserLog::create([

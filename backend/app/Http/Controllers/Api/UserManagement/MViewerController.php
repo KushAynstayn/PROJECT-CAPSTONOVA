@@ -18,6 +18,8 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use App\Models\ActionType;
 use App\Models\UserLog;
+use App\Jobs\SendVerificationEmailJob; // ADDED
+use Illuminate\Support\Facades\URL;    // ADDED
 
 
 class MViewerController extends Controller
@@ -123,6 +125,41 @@ class MViewerController extends Controller
             return $newUser;
         });
 
+        // --- ADDED: Send Verification Email ---
+        // This logic is copied from your RegisterController
+        try {
+            $plainTextEmail = $validatedData['email'];
+
+            // Create the signed API-only URL
+            // The getEmailForVerification() method correctly decrypts the email
+            $hash = sha1($user->getEmailForVerification());
+            $backendVerificationUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(config('auth.verification.expire', 60)),
+                [
+                    'id' => $user->id,
+                    'hash' => $hash,
+                ]
+            );
+
+            // Parse the backend URL to extract query parameters
+            $parts = parse_url($backendVerificationUrl);
+            parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+
+            // Dispatch the job, passing the plain-text email and individual URL parts
+            SendVerificationEmailJob::dispatch(
+                $plainTextEmail,
+                (string) $user->id,
+                $hash,
+                $query['expires'],
+                $query['signature']
+            );
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch verification email for new user {$user->id} (created by admin): " . $e->getMessage());
+            // We don't fail the whole request, just log the error.
+        }
+        // --- END: Send Verification Email ---
+
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $newViewerName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Viewer account has been created for {$newViewerName}.";
@@ -207,10 +244,11 @@ class MViewerController extends Controller
                 ],
             ]);
 
-            DB::transaction(function () use ($validatedData, $id) {
+            DB::transaction(function () use ($validatedData, $id, $viewer) { // Pass $viewer into the closure
                 // --- Update the 'users' table ---
                 $userFieldsToUpdate = [];
                 $userBindings = [];
+                $emailChanged = false; // ADDED: Flag to track email change
 
                 if (isset($validatedData['first_name'])) {
                     $userFieldsToUpdate[] = 'first_name = ?';
@@ -221,16 +259,47 @@ class MViewerController extends Controller
                     $userBindings[] = $validatedData['last_name'];
                 }
                 if (isset($validatedData['email'])) {
-                    $userFieldsToUpdate[] = 'encrypted_email = ?';
-                    $userBindings[] = Crypt::encryptString($validatedData['email']);
-                    $userFieldsToUpdate[] = 'hashed_email = ?';
-                    $userBindings[] = hash('sha256', $validatedData['email']);
+                    // Check if the email is actually different
+                    // We must decrypt the *current* email to compare
+                    if ($validatedData['email'] !== $viewer->getEmailForVerification()) {
+                        $userFieldsToUpdate[] = 'encrypted_email = ?';
+                        $userBindings[] = Crypt::encryptString($validatedData['email']);
+                        $userFieldsToUpdate[] = 'hashed_email = ?';
+                        $userBindings[] = hash('sha256', $validatedData['email']);
+                        $userFieldsToUpdate[] = 'email_verified_at = ?'; // ADDED: Un-verify email
+                        $userBindings[] = null;                             // ADDED
+                        $emailChanged = true;                               // ADDED
+                    }
                 }
 
                 if (!empty($userFieldsToUpdate)) {
                     $userBindings[] = $id;
                     $sql = 'UPDATE users SET ' . implode(', ', $userFieldsToUpdate) . ' WHERE id = ?';
                     DB::update($sql, $userBindings);
+                }
+
+                // ADDED: If email changed, re-send verification
+                if ($emailChanged) {
+                    $updatedViewer = User::find($id); // Re-fetch the user to use the model method
+                    try {
+                        $hash = sha1($updatedViewer->getEmailForVerification());
+                        $backendVerificationUrl = URL::temporarySignedRoute(
+                            'verification.verify',
+                            now()->addMinutes(config('auth.verification.expire', 60)),
+                            ['id' => $updatedViewer->id, 'hash' => $hash]
+                        );
+                        $parts = parse_url($backendVerificationUrl);
+                        parse_str($parts['query'], $query);
+                        SendVerificationEmailJob::dispatch(
+                            $validatedData['email'],
+                            (string) $updatedViewer->id,
+                            $hash,
+                            $query['expires'],
+                            $query['signature']
+                        );
+                    } catch (\Exception $e) {
+                        Log::error("Failed to re-send verification email for user {$id} (admin update): " . $e->getMessage());
+                    }
                 }
 
                 // --- Update or Create 'user_details' record ---
