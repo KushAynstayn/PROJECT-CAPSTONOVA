@@ -1,11 +1,12 @@
 import React from "react";
 
-// ✅ Added "Restricted" as a valid role
+// ✅ Added "Super Admin" as a valid role
 export type Role =
   | "Viewer"
   | "Proponents"
   | "Advisers"
   | "Admin"
+  | "Super Admin"
   | "Restricted";
 
 interface NavigationBarProps {
@@ -19,8 +20,15 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   activeRole,
   onSelectRole,
 }) => {
-  // ✅ Added Restricted to the list of roles
-  const roles: Role[] = ["Viewer", "Proponents", "Advisers", "Admin", "Restricted"];
+  // ✅ Added Super Admin to the list of roles
+  const roles: Role[] = [
+    "Viewer",
+    "Proponents",
+    "Advisers",
+    "Admin",
+    "Super Admin",
+    "Restricted",
+  ];
 
   const navStyles: React.CSSProperties = {
     padding: "12px 20px",

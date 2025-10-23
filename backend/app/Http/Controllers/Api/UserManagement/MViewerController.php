@@ -18,6 +18,8 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use App\Models\ActionType;
 use App\Models\UserLog;
+use App\Jobs\SendVerificationEmailJob;
+use Illuminate\Support\Facades\URL;
 
 
 class MViewerController extends Controller
@@ -123,6 +125,41 @@ class MViewerController extends Controller
             return $newUser;
         });
 
+        // --- ADDED: Send Verification Email ---
+        // This logic is copied from your RegisterController
+        try {
+            $plainTextEmail = $validatedData['email'];
+
+            // Create the signed API-only URL
+            // The getEmailForVerification() method correctly decrypts the email
+            $hash = sha1($user->getEmailForVerification());
+            $backendVerificationUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(config('auth.verification.expire', 60)),
+                [
+                    'id' => $user->id,
+                    'hash' => $hash,
+                ]
+            );
+
+            // Parse the backend URL to extract query parameters
+            $parts = parse_url($backendVerificationUrl);
+            parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+
+            // Dispatch the job, passing the plain-text email and individual URL parts
+            SendVerificationEmailJob::dispatch(
+                $plainTextEmail,
+                (string) $user->id,
+                $hash,
+                $query['expires'],
+                $query['signature']
+            );
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch verification email for new user {$user->id} (created by admin): " . $e->getMessage());
+            // We don't fail the whole request, just log the error.
+        }
+        // --- END: Send Verification Email ---
+
         $adminIds = User::whereIn('role', ['Super Admin', 'Admin'])->pluck('id')->toArray();
         $newViewerName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Viewer account has been created for {$newViewerName}.";
@@ -171,9 +208,6 @@ class MViewerController extends Controller
 
     /**
      * Update the specified viewer in storage.
-     */
-    /**
-     * Update the specified viewer in storage using raw SQL.
      * Creates a user detail record if one does not exist.
      */
     public function update(Request $request, $id)
@@ -207,60 +241,66 @@ class MViewerController extends Controller
                 ],
             ]);
 
-            DB::transaction(function () use ($validatedData, $id) {
-                // --- Update the 'users' table ---
-                $userFieldsToUpdate = [];
-                $userBindings = [];
+            // --- REWRITTEN: Use Eloquent for cleaner updates ---
+            DB::transaction(function () use ($validatedData, $viewer) {
 
-                if (isset($validatedData['first_name'])) {
-                    $userFieldsToUpdate[] = 'first_name = ?';
-                    $userBindings[] = $validatedData['first_name'];
-                }
-                if (isset($validatedData['last_name'])) {
-                    $userFieldsToUpdate[] = 'last_name = ?';
-                    $userBindings[] = $validatedData['last_name'];
-                }
+                // --- 1. Update the 'users' table ---
+                $userUpdateData = array_intersect_key($validatedData, array_flip(['first_name', 'last_name']));
+                $emailChanged = false;
+
                 if (isset($validatedData['email'])) {
-                    $userFieldsToUpdate[] = 'encrypted_email = ?';
-                    $userBindings[] = Crypt::encryptString($validatedData['email']);
-                    $userFieldsToUpdate[] = 'hashed_email = ?';
-                    $userBindings[] = hash('sha256', $validatedData['email']);
+                    // Check if the email is actually different
+                    if ($validatedData['email'] !== $viewer->getEmailForVerification()) {
+                        $userUpdateData['encrypted_email'] = Crypt::encryptString($validatedData['email']);
+                        $userUpdateData['hashed_email'] = hash('sha256', $validatedData['email']);
+                        $userUpdateData['email_verified_at'] = null; // Un-verify email
+                        $emailChanged = true;
+                    }
                 }
 
-                if (!empty($userFieldsToUpdate)) {
-                    $userBindings[] = $id;
-                    $sql = 'UPDATE users SET ' . implode(', ', $userFieldsToUpdate) . ' WHERE id = ?';
-                    DB::update($sql, $userBindings);
+                // Only update the user model if there is data
+                if (!empty($userUpdateData)) {
+                    $viewer->update($userUpdateData);
                 }
 
-                // --- Update or Create 'user_details' record ---
+                // --- 2. If email changed, re-send verification ---
+                if ($emailChanged) {
+                    try {
+                        $hash = sha1($viewer->getEmailForVerification()); // Get new email
+                        $backendVerificationUrl = URL::temporarySignedRoute(
+                            'verification.verify',
+                            now()->addMinutes(config('auth.verification.expire', 60)),
+                            ['id' => $viewer->id, 'hash' => $hash]
+                        );
+                        $parts = parse_url($backendVerificationUrl);
+                        parse_str($parts['query'], $query);
+                        SendVerificationEmailJob::dispatch(
+                            $validatedData['email'],
+                            (string) $viewer->id,
+                            $hash,
+                            $query['expires'],
+                            $query['signature']
+                        );
+                    } catch (\Exception $e) {
+                        Log::error("Failed to re-send verification email for user {$viewer->id} (admin update): " . $e->getMessage());
+                    }
+                }
+
+                // --- 3. Update or Create 'user_details' record ---
                 $userDetailData = array_intersect_key($validatedData, array_flip(['student_id', 'department', 'program', 'adviser_id']));
 
                 if (!empty($userDetailData)) {
-                    $existingDetail = DB::table('user_details')->where('user_id', $id)->first();
-
-                    if ($existingDetail) {
-                        // THE FIX: Manually add the 'updated_at' timestamp to the update data.
-                        $userDetailData['updated_at'] = now();
-
-                        $bindings = array_values($userDetailData);
-                        $fieldsToUpdate = array_map(fn($key) => "$key = ?", array_keys($userDetailData));
-                        $bindings[] = $id;
-                        $sql = 'UPDATE user_details SET ' . implode(', ', $fieldsToUpdate) . ' WHERE user_id = ?';
-                        DB::update($sql, $bindings);
-                    } else {
-                        // The INSERT logic already correctly includes timestamps.
-                        $userDetailData['user_id'] = $id;
-                        $userDetailData['created_at'] = now();
-                        $userDetailData['updated_at'] = now();
-                        $columns = implode(', ', array_keys($userDetailData));
-                        $placeholders = implode(', ', array_fill(0, count($userDetailData), '?'));
-                        $bindings = array_values($userDetailData);
-                        $sql = "INSERT INTO user_details ($columns) VALUES ($placeholders)";
-                        DB::insert($sql, $bindings);
-                    }
+                    // This is the fix:
+                    // It finds a user_detail with this user_id and updates it,
+                    // OR it creates a new user_detail record if one doesn't exist.
+                    // Eloquent handles the created_at/updated_at timestamps automatically.
+                    $viewer->userDetail()->updateOrCreate(
+                        ['user_id' => $viewer->id], // Find by this
+                        $userDetailData              // Update with this
+                    );
                 }
             });
+            // --- END: Eloquent Rewrite ---
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'update_viewer']);
             UserLog::create([
@@ -269,7 +309,8 @@ class MViewerController extends Controller
                 'details' => "Updated details for Viewer (ID: {$id})."
             ]);
 
-            $updatedViewer = User::with('userDetail')->find($id);
+            // We must reload the userDetail relationship after the update
+            $updatedViewer = $viewer->load('userDetail');
 
             $updatedViewer->email = $updatedViewer->encrypted_email;
             $updatedViewer->makeHidden(['encrypted_email', 'hashed_email']);
@@ -291,7 +332,6 @@ class MViewerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An unexpected server error occurred.',
-                // This 'error' key will contain the specific database message.
                 'error' => $e->getMessage(),
             ], 500);
         }

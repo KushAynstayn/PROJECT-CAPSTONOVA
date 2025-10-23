@@ -12,13 +12,17 @@ interface User {
   email: string;
 }
 
-interface EditAdminViewProps {
+interface EditSuperAdminViewProps {
   user: User;
   onSave: (updatedUser: User) => void;
   onCancel: () => void;
 }
 
-const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
+const EditSuperAdminView = ({
+  user,
+  onSave,
+  onCancel,
+}: EditSuperAdminViewProps) => {
   // State to manage the form data
   const [formData, setFormData] = useState<User>(user);
 
@@ -49,7 +53,7 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
         {/* Centered title with a line underneath */}
         <div className="mb-8">
           <h2 className="text-center font-serif text-2xl uppercase tracking-widest text-gray-700">
-            Edit Admin Information
+            Edit Super Admin Information
           </h2>
           <hr className="mx-auto mt-2 w-1/3 border-t border-gray-300" />
         </div>
@@ -153,4 +157,4 @@ const EditAdminView = ({ user, onSave, onCancel }: EditAdminViewProps) => {
   );
 };
 
-export default EditAdminView;
+export default EditSuperAdminView;

@@ -13,16 +13,18 @@ use Illuminate\Validation\Rules\Password;
 use App\Models\ActionType;
 use App\Models\UserLog;
 use Illuminate\Support\Facades\Auth;
-use App\Jobs\SendVerificationEmailJob; // ADDED
-use Illuminate\Support\Facades\URL;    // ADDED
-use Illuminate\Support\Facades\Log;    // ADDED
+use App\Jobs\SendVerificationEmailJob;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 
-class MAdminController extends Controller
+class MSuperAdminController extends Controller
 {
+    /**
+     * Display a listing of active Super Admins.
+     */
     public function index(Request $request)
     {
-        // MODIFIED: Added where('status', 'active') to filter results
-        $query = User::where('role', 'Admin')->where('status', 'active');
+        $query = User::where('role', 'Super Admin')->where('status', 'active');
 
         if ($request->has('name') && $request->query('name') !== '') {
             $name = $request->query('name');
@@ -32,24 +34,26 @@ class MAdminController extends Controller
             });
         }
 
-        $admins = $query->paginate(15)->withQueryString();
+        $superAdmins = $query->paginate(15)->withQueryString();
 
-        // Add email attribute to each admin for frontend
-        $admins->getCollection()->transform(function ($admin) {
-            $admin->email = $admin->encrypted_email; // This will use the accessor to decrypt
-            return $admin;
+        // Add email attribute to each user for frontend
+        $superAdmins->getCollection()->transform(function ($user) {
+            $user->email = $user->encrypted_email; // This will use the accessor to decrypt
+            return $user;
         });
 
-        return response()->json($admins);
+        return response()->json($superAdmins);
     }
 
+    /**
+     * Store a newly created Super Admin in storage.
+     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
-            // MODIFIED: Changed to a closure to match your MViewerController for consistency
             'email' => [
                 'required',
                 'string',
@@ -67,14 +71,14 @@ class MAdminController extends Controller
 
         $email = $validatedData['email'];
 
-        $admin = User::create([
+        $superAdmin = User::create([
             'first_name' => $validatedData['first_name'],
             'last_name' => $validatedData['last_name'],
             'middle_name' => $validatedData['middle_name'] ?? null,
             'encrypted_email' => Crypt::encryptString($email),
             'hashed_email' => hash('sha256', $email),
             'password' => Hash::make($validatedData['password']),
-            'role' => 'Admin',
+            'role' => 'Super Admin',
             'status' => 'active',
             // email_verified_at will be null by default
         ]);
@@ -84,71 +88,82 @@ class MAdminController extends Controller
             $plainTextEmail = $validatedData['email'];
 
             // Create the signed API-only URL
-            // The getEmailForVerification() method correctly decrypts the email
-            $hash = sha1($admin->getEmailForVerification());
+            $hash = sha1($superAdmin->getEmailForVerification());
             $backendVerificationUrl = URL::temporarySignedRoute(
                 'verification.verify',
                 now()->addMinutes(config('auth.verification.expire', 60)),
                 [
-                    'id' => $admin->id,
+                    'id' => $superAdmin->id,
                     'hash' => $hash,
                 ]
             );
 
             // Parse the backend URL to extract query parameters
             $parts = parse_url($backendVerificationUrl);
-            parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+            parse_str($parts['query'], $query);
 
             // Dispatch the job
             SendVerificationEmailJob::dispatch(
                 $plainTextEmail,
-                (string) $admin->id,
+                (string) $superAdmin->id,
                 $hash,
                 $query['expires'],
                 $query['signature']
             );
         } catch (\Exception $e) {
-            Log::error("Failed to dispatch verification email for new admin {$admin->id} (created by superadmin): " . $e->getMessage());
-            // We don't fail the whole request, just log the error.
+            Log::error("Failed to dispatch verification email for new super admin {$superAdmin->id}: " . $e->getMessage());
         }
         // --- END: Send Verification Email ---
 
-        $superAdminIds = User::where('role', 'Super Admin')->pluck('id')->toArray();
+        // Notify all *other* Super Admins
+        $otherSuperAdminIds = User::where('role', 'Super Admin')
+            ->where('id', '!=', $superAdmin->id)
+            ->pluck('id')
+            ->toArray();
+
         $newAdminName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
-        $notificationMessage = "A new Admin account has been created for {$newAdminName}.";
+        $notificationMessage = "A new Super Admin account has been created for {$newAdminName}.";
 
-        // MODIFIED: Added a title to the notification dispatch.
-        SendNotification::dispatch('New Admin Account', $notificationMessage, null, $superAdminIds);
+        if (!empty($otherSuperAdminIds)) {
+            SendNotification::dispatch('New Super Admin Account', $notificationMessage, null, $otherSuperAdminIds);
+        }
 
-        $actionType = ActionType::firstOrCreate(['action_name' => 'create_admin']);
+        $actionType = ActionType::firstOrCreate(['action_name' => 'create_super_admin']);
         UserLog::create([
             'user_id' => Auth::id(),
             'action_type_id' => $actionType->id,
-            'details' => "Created a new Admin account for {$newAdminName}."
+            'details' => "Created a new Super Admin account for {$newAdminName}."
         ]);
 
         // Add email attribute for the response
-        $admin->email = $email;
+        $superAdmin->email = $email;
 
-        return response()->json($admin, 201);
+        return response()->json($superAdmin, 201);
     }
 
-    public function show(User $admin)
+    /**
+     * Display the specified Super Admin.
+     * Note: We use {superAdmin} in the route to match the variable name.
+     */
+    public function show(User $superAdmin)
     {
-        if ($admin->role !== 'Admin') {
-            return response()->json(['message' => 'Admin user not found.'], 404);
+        if ($superAdmin->role !== 'Super Admin') {
+            return response()->json(['message' => 'Super Admin user not found.'], 404);
         }
 
         // Add email attribute for the response
-        $admin->email = $admin->encrypted_email; // This will use the accessor to decrypt
+        $superAdmin->email = $superAdmin->encrypted_email; // This will use the accessor to decrypt
 
-        return response()->json($admin);
+        return response()->json($superAdmin);
     }
 
-    public function update(Request $request, User $admin)
+    /**
+     * Update the specified Super Admin in storage.
+     */
+    public function update(Request $request, User $superAdmin)
     {
-        if ($admin->role !== 'Admin') {
-            return response()->json(['message' => 'Admin user not found.'], 404);
+        if ($superAdmin->role !== 'Super Admin') {
+            return response()->json(['message' => 'Super Admin user not found.'], 404);
         }
 
         $validatedData = $request->validate([
@@ -161,89 +176,97 @@ class MAdminController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'hashed_email')->ignore($admin->id),
+                Rule::unique('users', 'hashed_email')->ignore($superAdmin->id),
             ],
         ]);
 
-        $emailChanged = false; // ADDED: Flag to track email change
+        $emailChanged = false; // Flag to track email change
 
         // If email is being updated, update both encrypted and hashed versions
         if (isset($validatedData['email'])) {
             // Check if the email is actually different from the current one
-            if ($validatedData['email'] !== $admin->getEmailForVerification()) {
+            if ($validatedData['email'] !== $superAdmin->getEmailForVerification()) {
                 $email = $validatedData['email'];
-                $admin->encrypted_email = Crypt::encryptString($email);
-                $admin->hashed_email = hash('sha256', $email);
-                $admin->email_verified_at = null; // ADDED: Reset verification status
-                $emailChanged = true;             // ADDED: Set flag to true
+                $superAdmin->encrypted_email = Crypt::encryptString($email);
+                $superAdmin->hashed_email = hash('sha256', $email);
+                $superAdmin->email_verified_at = null; // Reset verification status
+                $emailChanged = true;             // Set flag to true
             }
             unset($validatedData['email']); // Unset to avoid mass assignment error
         }
 
-        $admin->update($validatedData);
+        $superAdmin->update($validatedData);
 
         // --- ADDED: Re-send Verification Email if it was changed ---
         if ($emailChanged) {
             try {
                 // Get the newly set, decrypted email
-                $plainTextEmail = $admin->getEmailForVerification();
+                $plainTextEmail = $superAdmin->getEmailForVerification();
                 $hash = sha1($plainTextEmail);
                 $backendVerificationUrl = URL::temporarySignedRoute(
                     'verification.verify',
                     now()->addMinutes(config('auth.verification.expire', 60)),
-                    ['id' => $admin->id, 'hash' => $hash]
+                    ['id' => $superAdmin->id, 'hash' => $hash]
                 );
                 $parts = parse_url($backendVerificationUrl);
                 parse_str($parts['query'], $query);
                 SendVerificationEmailJob::dispatch(
                     $plainTextEmail,
-                    (string) $admin->id,
+                    (string) $superAdmin->id,
                     $hash,
                     $query['expires'],
                     $query['signature']
                 );
             } catch (\Exception $e) {
-                Log::error("Failed to re-send verification email for admin {$admin->id} (superadmin update): " . $e->getMessage());
+                Log::error("Failed to re-send verification email for super admin {$superAdmin->id}: " . $e->getMessage());
             }
         }
         // --- END: Re-send Verification Email ---
 
-        $actionType = ActionType::firstOrCreate(['action_name' => 'update_admin']);
+        $actionType = ActionType::firstOrCreate(['action_name' => 'update_super_admin']);
         UserLog::create([
             'user_id' => Auth::id(),
             'action_type_id' => $actionType->id,
-            'details' => "Updated details for Admin (ID: {$admin->id})."
+            'details' => "Updated details for Super Admin (ID: {$superAdmin->id})."
         ]);
 
         // Refresh the model and add email attribute for response
-        $admin->refresh();
-        $admin->email = $admin->encrypted_email; // This will use the accessor to decrypt
+        $superAdmin->refresh();
+        $superAdmin->email = $superAdmin->encrypted_email; // This will use the accessor to decrypt
 
-        return response()->json($admin);
+        return response()->json($superAdmin);
     }
 
-    public function setStatusToRestricted(User $admin)
+    /**
+     * Set the Super Admin's status to 'restricted'.
+     */
+    public function setStatusToRestricted(User $superAdmin)
     {
-        if ($admin->role !== 'Admin') {
-            return response()->json(['message' => 'Admin user not found.'], 404);
+        if ($superAdmin->role !== 'Super Admin') {
+            return response()->json(['message' => 'Super Admin user not found.'], 404);
         }
 
-        $admin->status = 'restricted';
-        $admin->save();
+        // Add guard clause to prevent self-restriction
+        if ($superAdmin->id === Auth::id()) {
+            return response()->json(['message' => 'You cannot restrict your own account.'], 403);
+        }
 
-        $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_admin']);
+        $superAdmin->status = 'restricted';
+        $superAdmin->save();
+
+        $actionType = ActionType::firstOrCreate(['action_name' => 'restrict_super_admin']);
         UserLog::create([
             'user_id' => Auth::id(),
             'action_type_id' => $actionType->id,
-            'details' => "Restricted Admin account for {$admin->first_name} {$admin->last_name} (ID: {$admin->id})."
+            'details' => "Restricted Super Admin account for {$superAdmin->first_name} {$superAdmin->last_name} (ID: {$superAdmin->id})."
         ]);
 
         // Add email attribute for the response
-        $admin->email = $admin->encrypted_email; // This will use the accessor to decrypt
+        $superAdmin->email = $superAdmin->encrypted_email; // This will use the accessor to decrypt
 
         return response()->json([
-            'message' => "Admin status successfully updated to restricted.",
-            'user' => $admin
+            'message' => "Super Admin status successfully updated to restricted.",
+            'user' => $superAdmin
         ]);
     }
 }

@@ -57,6 +57,7 @@ use App\Http\Controllers\Api\UserManagement\MWhitelistController;
 use App\Http\Controllers\Api\Viewer\SuggestionInterestController;
 use App\Http\Controllers\Api\Proponent\SubmitSourceCodeController;
 use App\Http\Controllers\Api\SuperAdmin\DocumentRequestController;
+use App\Http\Controllers\Api\UserManagement\MSuperAdminController;
 use App\Http\Controllers\Api\Proponent\ProjectAttachmentController;
 use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
@@ -453,6 +454,24 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
     // ============================
     // End Admin Management Routes
     // ============================
+
+
+    // ============================
+    // Super Admin Management Routes (Super Admin)
+    // These routes allow Super Admins to manage other Super Admins.
+    // ============================
+    Route::get('super-admin/', [MSuperAdminController::class, 'index'])->name('super-admins.index');
+    Route::post('super-admin/', [MSuperAdminController::class, 'store'])->name('super-admins.store');
+    Route::get('super-admin/{superAdmin}', [MSuperAdminController::class, 'show'])->name('super-admins.show');
+    Route::put('super-admin/{superAdmin}', [MSuperAdminController::class, 'update'])->name('super-admins.update');
+    Route::patch(
+        'super-admin/{superAdmin}/restrict',
+        [MSuperAdminController::class, 'setStatusToRestricted']
+    )->name('super-admins.restrict');
+    // ============================
+    // End Super Admin Management Routes
+    // ============================
+
 
     //Restrcted users routes
     Route::get(

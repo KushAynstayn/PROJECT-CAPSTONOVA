@@ -32,30 +32,62 @@ interface EditViewerViewProps {
 const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
   const [formData, setFormData] = useState<User>(user);
 
+  // ✅ RE-FIXED: This handler now correctly and explicitly sets 'student_id'
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name in (formData.user_detail || {})) {
+
+    // Check if the field is a user_detail field
+    if (name === "student_id") {
       setFormData((prev) => ({
         ...prev,
-        user_detail: { ...prev.user_detail!, [name]: value },
+        user_detail: {
+          // Initialize with existing values (or defaults if null)
+          department: prev.user_detail?.department || "",
+          program: prev.user_detail?.program || "",
+          // ✅ THE FIX: Explicitly set 'student_id' instead of using [name]
+          student_id: value,
+        },
       }));
     } else {
+      // This handles first_name, last_name (email is disabled)
       setFormData((prev) => ({ ...prev, [name]: value as never }));
     }
   };
 
+  // ✅ This handler remains correct and null-safe
   const handleSelectChange = (
     fieldName: keyof NonNullable<User["user_detail"]>,
     value: string
   ) => {
     setFormData((prev) => ({
       ...prev,
-      user_detail: { ...prev.user_detail!, [fieldName]: value },
+      user_detail: {
+        // Initialize with existing values (or defaults if null)
+        student_id: prev.user_detail?.student_id || "",
+        department: prev.user_detail?.department || "",
+        program: prev.user_detail?.program || "",
+        // This is correct because 'fieldName' is strongly typed
+        [fieldName]: value,
+      },
     }));
   };
 
-  const handleClear = (field: string) =>
-    setFormData((prev) => ({ ...prev, [field]: "" }));
+  // ✅ This handler remains correct and null-safe
+  const handleClear = (field: string) => {
+    if (field === "student_id") {
+      setFormData((prev) => ({
+        ...prev,
+        user_detail: {
+          student_id: "", // Set this field to empty
+          department: prev.user_detail?.department || "", // Keep others
+          program: prev.user_detail?.program || "", // Keep others
+        },
+      }));
+    } else {
+      // This handles first_name, last_name
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
 
   const handleSave = () => {
     onSave(formData);
@@ -123,9 +155,8 @@ const EditViewerView = ({ user, onSave, onCancel }: EditViewerViewProps) => {
               type="email"
               name="email"
               value={formData.email}
-              onChange={handleInputChange}
-              onClear={() => handleClear("email")}
-              className="rounded-md border-gray-300 shadow-md"
+              disabled // Email field is disabled
+              className="rounded-md border-gray-300 bg-gray-100 shadow-md"
             />
           </div>
           <div>

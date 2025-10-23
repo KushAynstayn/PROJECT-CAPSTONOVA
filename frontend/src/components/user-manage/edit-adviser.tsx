@@ -9,6 +9,7 @@ interface User {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  email: string; // Added email to the interface
 }
 
 interface EditAdviserViewProps {
@@ -97,6 +98,23 @@ const EditAdviserView = ({ user, onSave, onCancel }: EditAdviserViewProps) => {
               onChange={handleChange}
               onClear={() => handleClear("last_name")}
               className="rounded-md border-gray-300 shadow-md"
+            />
+          </div>
+          {/* Added disabled email field */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-gray-600"
+            >
+              CTU Email
+            </label>
+            <InputWithClear
+              id="email"
+              type="email"
+              name="email"
+              value={formData.email}
+              disabled // Field is now disabled
+              className="rounded-md border-gray-300 bg-gray-100 shadow-md" // Added bg-gray-100
             />
           </div>
         </div>
