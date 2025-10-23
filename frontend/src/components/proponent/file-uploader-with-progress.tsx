@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { apiCall, ApiError } from "../../lib/api";
+import { CheckCircle } from "lucide-react";
 
 interface FileUploaderWithProgressProps {
   id: string;
   label: string;
-  // --- MODIFIED: Made originalFilename optional for backward compatibility ---
   onUploadComplete: (path: string, originalFilename?: string) => void;
   onUploadStart: () => void;
   onUploadError: (error: string) => void;
@@ -39,13 +39,11 @@ export const FileUploaderWithProgress: React.FC<
     const file = e.target.files?.[0] || null;
     if (!file) return;
 
-    // Reset state for new upload
     setError(null);
     setUploadProgress(0);
     setFileName(file.name);
     onUploadStart();
 
-    // --- File Validation ---
     if (file.size > maxSizeMB * 1024 * 1024) {
       const errorMsg = `File must be less than ${maxSizeMB}MB.`;
       setError(errorMsg);
@@ -54,7 +52,6 @@ export const FileUploaderWithProgress: React.FC<
       return;
     }
 
-    // --- MODIFIED: More robust accept check ---
     if (accept) {
       const acceptedTypes = accept.split(",").map((t) => t.trim());
       const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
@@ -62,10 +59,8 @@ export const FileUploaderWithProgress: React.FC<
 
       const isValid = acceptedTypes.some((type) => {
         if (type.startsWith(".")) {
-          // Check extension
           return type === fileExtension;
         }
-        // Check MIME type
         return type === fileType;
       });
 
@@ -83,14 +78,12 @@ export const FileUploaderWithProgress: React.FC<
     try {
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
-      // 1. Start the chunked upload
       const startResponse = await apiCall("/proponent/chunk/start", "POST", {
         original_filename: file.name,
         total_chunks: totalChunks,
       });
       const uploadId = startResponse.upload_id;
 
-      // 2. Upload each chunk
       for (let i = 0; i < totalChunks; i++) {
         const start = i * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
@@ -107,17 +100,14 @@ export const FileUploaderWithProgress: React.FC<
           true
         );
 
-        // Update progress
         setUploadProgress(((i + 1) / totalChunks) * 100);
       }
 
-      // 3. Finish the upload
       const finishResponse = await apiCall(
         `/proponent/chunk/finish/${uploadId}`,
         "POST"
       );
 
-      // --- MODIFIED: Pass back path and original filename ---
       onUploadComplete(finishResponse.path, file.name);
     } catch (err: any) {
       const errorMsg =
@@ -141,20 +131,36 @@ export const FileUploaderWithProgress: React.FC<
         onChange={handleFileChange}
         accept={accept}
         disabled={isUploading}
+        // --- MODIFIED: Changed file button text and hover color ---
+        className="file:font-medium file:text-[#800000] hover:file:bg-red-50 file:transition-colors"
       />
+
       {isUploading && (
-        <div className="flex items-center gap-2 mt-2">
-          <Progress value={uploadProgress} className="w-full" />
-          <span className="text-sm text-muted-foreground">{`${Math.round(
-            uploadProgress
-          )}%`}</span>
+        <div className="w-full mt-2 space-y-1">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-medium text-gray-700 truncate pr-4">
+              Uploading {fileName}...
+            </span>
+            {/* --- MODIFIED: Changed percentage text color --- */}
+            <span className="text-sm font-medium text-[#800000]">{`${Math.round(
+              uploadProgress
+            )}%`}</span>
+          </div>
+          <Progress
+            value={uploadProgress}
+            // --- MODIFIED: Changed progress bar fill color ---
+            className="w-full h-2 [&>div]:bg-[#800000]"
+          />
         </div>
       )}
+
       {uploadProgress === 100 && !isUploading && !error && (
-        <p className="text-sm text-green-600 mt-1">
-          Successfully uploaded {fileName}.
-        </p>
+        <div className="flex items-center gap-2 text-sm text-green-600 mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+          <CheckCircle className="h-4 w-4 flex-shrink-0" />
+          <p className="font-medium">Successfully uploaded {fileName}.</p>
+        </div>
       )}
+
       {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
     </div>
   );
