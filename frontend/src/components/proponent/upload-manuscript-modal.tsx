@@ -94,6 +94,9 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
   onOpenChange,
   onSuccess,
 }) => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 4;
+
   const [formData, setFormData] = useState({
     title: "",
     abstract: "",
@@ -173,9 +176,50 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
     !manuscriptPath ||
     !acmPath;
 
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleNext = () => {
+    setErrors({}); // Clear old errors
+    let stepErrors: FormErrors = {};
+
+    // Validate current step before proceeding
+    switch (currentStep) {
+      case 1: // Project Details
+        if (!formData.title) stepErrors.title = ["Title is required."];
+        if (!formData.abstract) stepErrors.abstract = ["Abstract is required."];
+        if (!formData.platform_type)
+          stepErrors.platform_type = ["Platform type is required."];
+        if (formData.keywords.length === 0)
+          stepErrors.keywords = ["At least one keyword is required."];
+        break;
+      case 2: // Team Members
+        if (!formData.member_hacker)
+          stepErrors.member_hacker = ["Hacker is required."];
+        if (!formData.member_hipster1)
+          stepErrors.member_hipster1 = ["Hipster 1 is required."];
+        break;
+      case 3: // Panel Members
+        if (!formData.panel_member_1)
+          stepErrors.panel_member_1 = ["Panel Member 1 is required."];
+        break;
+      // No validation for step 4, as it's the file upload step
+    }
+
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors(stepErrors);
+    } else {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      }
+    }
+  };
+
   return (
     <Dialog
-      className="border-1 border-gray-300 rounded-md shadow-md"
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
@@ -185,254 +229,374 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
           setAcmPath(null);
           setIsManuscriptUploading(false);
           setIsAcmUploading(false);
+          setCurrentStep(1); // Reset to first step on close
         }
       }}
     >
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Upload Manuscript</DialogTitle>
-          <DialogDescription>
-            Fill in the details and upload your manuscript files. All fields are
-            required unless marked optional.
+      <DialogContent className="sm:max-w-3xl p-0">
+        {/* --- MODIFIED: Header color changed to maroon-like --- */}
+        <DialogHeader className="bg-[#800000] text-white p-6 rounded-t-lg">
+          <DialogTitle className="text-2xl">Upload Manuscript</DialogTitle>
+          <DialogDescription className="text-gray-300">
+            Fill in the details and upload your manuscript files.
           </DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-6"
-        >
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
-              Title
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-              />
-              <ErrorMessage field="title" />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="abstract" className="text-right pt-2">
-              Abstract
-            </Label>
-            <div className="col-span-3">
-              <Textarea
-                id="abstract"
-                value={formData.abstract}
-                onChange={(e) =>
-                  setFormData({ ...formData, abstract: e.target.value })
-                }
-              />
-              <ErrorMessage field="abstract" />
-            </div>
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            {["Details", "Team", "Panel", "Uploads"].map((step, index) => (
+              <React.Fragment key={step}>
+                <div className="flex flex-col items-center">
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center font-bold",
+                      currentStep > index + 1
+                        ? "bg-green-600 text-white"
+                        : currentStep === index + 1
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-500"
+                    )}
+                  >
+                    {currentStep > index + 1 ? "✓" : index + 1}
+                  </div>
+                  <p
+                    className={cn(
+                      "text-sm mt-1",
+                      currentStep === index + 1
+                        ? "font-bold text-blue-600"
+                        : "text-gray-500"
+                    )}
+                  >
+                    {step}
+                  </p>
+                </div>
+                {index < totalSteps - 1 && (
+                  <div
+                    className={cn(
+                      "flex-1 h-1 mx-2",
+                      currentStep > index + 1 ? "bg-green-600" : "bg-gray-200"
+                    )}
+                  />
+                )}
+              </React.Fragment>
+            ))}
           </div>
+        </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="platform_type" className="text-right">
-              Platform Type
-            </Label>
-            <div className="col-span-3">
-              <PlatformTypeInput
-                id="platform_type"
-                value={formData.platform_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, platform_type: value })
-                }
-              />
-              <ErrorMessage field="platform_type" />
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="overflow-y-auto">
+          <div className="space-y-4 p-6 max-h-[60vh] overflow-y-auto">
+            {/* --- STEP 1: Project Details --- */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="title" className="text-right">
+                    Title
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                    />
+                    <ErrorMessage field="title" />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="keywords" className="text-right pt-2">
-              Keywords
-            </Label>
-            <div className="col-span-3">
-              <KeywordInput
-                fetchUrl="/util/keywords"
-                value={formData.keywords}
-                onValueChange={(values) =>
-                  setFormData({ ...formData, keywords: values })
-                }
-                placeholder="Type and press Enter or comma..."
-              />
-              <ErrorMessage field="keywords" />
-            </div>
-          </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="abstract" className="text-right pt-2">
+                    Abstract
+                  </Label>
+                  <div className="col-span-3">
+                    <Textarea
+                      id="abstract"
+                      value={formData.abstract}
+                      onChange={(e) =>
+                        setFormData({ ...formData, abstract: e.target.value })
+                      }
+                      rows={5}
+                    />
+                    <ErrorMessage field="abstract" />
+                  </div>
+                </div>
 
-          {/* --- MODIFIED MEMBER LABELS --- */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="member_hacker" className="text-right">
-              Hacker
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="member_hacker"
-                value={formData.member_hacker}
-                onChange={(e) =>
-                  setFormData({ ...formData, member_hacker: e.target.value })
-                }
-              />
-              <ErrorMessage field="member_hacker" />
-            </div>
-          </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="platform_type" className="text-right">
+                    Platform Type
+                  </Label>
+                  <div className="col-span-3">
+                    <PlatformTypeInput
+                      id="platform_type"
+                      value={formData.platform_type}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, platform_type: value })
+                      }
+                    />
+                    <ErrorMessage field="platform_type" />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="member_hipster1" className="text-right">
-              Hipster 1
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="member_hipster1"
-                value={formData.member_hipster1}
-                onChange={(e) =>
-                  setFormData({ ...formData, member_hipster1: e.target.value })
-                }
-              />
-              <ErrorMessage field="member_hipster1" />
-            </div>
-          </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="keywords" className="text-right pt-2">
+                    Keywords
+                  </Label>
+                  <div className="col-span-3">
+                    <KeywordInput
+                      fetchUrl="/util/keywords"
+                      value={formData.keywords}
+                      onValueChange={(values) =>
+                        setFormData({ ...formData, keywords: values })
+                      }
+                      placeholder="Type and press Enter or comma..."
+                    />
+                    <ErrorMessage field="keywords" />
+                  </div>
+                </div>
+              </div>
+            )}
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label
-              htmlFor="member_hipster2"
-              className="text-right whitespace-nowrap text-xs"
-            >
-              Hipster 2 (Optional)
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="member_hipster2"
-                value={formData.member_hipster2}
-                onChange={(e) =>
-                  setFormData({ ...formData, member_hipster2: e.target.value })
-                }
-              />
-              <ErrorMessage field="member_hipster2" />
-            </div>
-          </div>
+            {/* --- STEP 2: Team Members --- */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {/* --- MODIFIED: Label text size standardized --- */}
+                  <Label htmlFor="member_hacker" className="text-right text-sm">
+                    Hacker
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="member_hacker"
+                      value={formData.member_hacker}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          member_hacker: e.target.value,
+                        })
+                      }
+                    />
+                    <ErrorMessage field="member_hacker" />
+                  </div>
+                </div>
 
-          {/* --- MODIFIED PANEL MEMBER LABELS AND STYLING --- */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="panel_member_1" className="text-right">
-              Panel Member 1
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="panel_member_1"
-                value={formData.panel_member_1}
-                onChange={(e) =>
-                  setFormData({ ...formData, panel_member_1: e.target.value })
-                }
-              />
-              <ErrorMessage field="panel_member_1" />
-            </div>
-          </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {/* --- MODIFIED: Label text size standardized --- */}
+                  <Label
+                    htmlFor="member_hipster1"
+                    className="text-right text-sm"
+                  >
+                    Hipster 1
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="member_hipster1"
+                      value={formData.member_hipster1}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          member_hipster1: e.target.value,
+                        })
+                      }
+                    />
+                    <ErrorMessage field="member_hipster1" />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label
-              htmlFor="panel_member_2"
-              className="text-right whitespace-nowrap text-xs"
-            >
-              Panel Member 2 (Optional)
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="panel_member_2"
-                value={formData.panel_member_2}
-                onChange={(e) =>
-                  setFormData({ ...formData, panel_member_2: e.target.value })
-                }
-              />
-              <ErrorMessage field="panel_member_2" />
-            </div>
-          </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {/* --- MODIFIED: Label text size standardized, Optional kept --- */}
+                  <Label
+                    htmlFor="member_hipster2"
+                    className="text-right whitespace-nowrap text-sm"
+                  >
+                    Hipster 2 (Optional)
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="member_hipster2"
+                      value={formData.member_hipster2}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          member_hipster2: e.target.value,
+                        })
+                      }
+                    />
+                    <ErrorMessage field="member_hipster2" />
+                  </div>
+                </div>
+              </div>
+            )}
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label
-              htmlFor="panel_member_3"
-              className="text-right whitespace-nowrap text-xs"
-            >
-              Panel Member 3 (Optional)
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="panel_member_3"
-                value={formData.panel_member_3}
-                onChange={(e) =>
-                  setFormData({ ...formData, panel_member_3: e.target.value })
-                }
-              />
-              <ErrorMessage field="panel_member_3" />
-            </div>
-          </div>
+            {/* --- STEP 3: Panel Members --- */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {/* --- MODIFIED: Label text size standardized, Optional removed --- */}
+                  <Label
+                    htmlFor="panel_member_1"
+                    className="text-right text-sm"
+                  >
+                    Panel Member 1
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="panel_member_1"
+                      value={formData.panel_member_1}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          panel_member_1: e.target.value,
+                        })
+                      }
+                    />
+                    <ErrorMessage field="panel_member_1" />
+                  </div>
+                </div>
 
-          <div className="space-y-4">
-            <FileUploaderWithProgress
-              id="manuscript_pdf"
-              label="Manuscript (PDF)"
-              maxSizeMB={60}
-              accept=".pdf"
-              onUploadStart={() => {
-                setIsManuscriptUploading(true);
-                setManuscriptPath(null);
-                setErrors((prev) => ({ ...prev, manuscript_path: undefined }));
-              }}
-              onUploadComplete={(path) => {
-                setManuscriptPath(path);
-                setIsManuscriptUploading(false);
-              }}
-              onUploadError={(error) => {
-                setErrors((prev) => ({ ...prev, manuscript_path: [error] }));
-                setIsManuscriptUploading(false);
-              }}
-            />
-            <ErrorMessage field="manuscript_path" />
-          </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {/* --- MODIFIED: Label text size standardized, Optional kept --- */}
+                  <Label
+                    htmlFor="panel_member_2"
+                    className="text-right whitespace-nowrap text-sm"
+                  >
+                    Panel Member 2
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="panel_member_2"
+                      value={formData.panel_member_2}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          panel_member_2: e.target.value,
+                        })
+                      }
+                    />
+                    <ErrorMessage field="panel_member_2" />
+                  </div>
+                </div>
 
-          <div className="space-y-4">
-            <FileUploaderWithProgress
-              id="acm_pdf"
-              label="ACM (PDF)"
-              maxSizeMB={60}
-              accept=".pdf"
-              onUploadStart={() => {
-                setIsAcmUploading(true);
-                setAcmPath(null);
-                setErrors((prev) => ({ ...prev, acm_path: undefined }));
-              }}
-              onUploadComplete={(path) => {
-                setAcmPath(path);
-                setIsAcmUploading(false);
-              }}
-              onUploadError={(error) => {
-                setErrors((prev) => ({ ...prev, acm_path: [error] }));
-                setIsAcmUploading(false);
-              }}
-            />
-            <ErrorMessage field="acm_path" />
+                <div className="grid grid-cols-4 items-center gap-4">
+                  {/* --- MODIFIED: Label text size standardized, Optional kept --- */}
+                  <Label
+                    htmlFor="panel_member_3"
+                    className="text-right whitespace-nowrap text-sm"
+                  >
+                    Panel Member 3
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="panel_member_3"
+                      value={formData.panel_member_3}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          panel_member_3: e.target.value,
+                        })
+                      }
+                    />
+                    <ErrorMessage field="panel_member_3" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- STEP 4: File Uploads --- */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <FileUploaderWithProgress
+                    id="manuscript_pdf"
+                    label="Manuscript (PDF)"
+                    maxSizeMB={60}
+                    accept=".pdf"
+                    onUploadStart={() => {
+                      setIsManuscriptUploading(true);
+                      setManuscriptPath(null);
+                      setErrors((prev) => ({
+                        ...prev,
+                        manuscript_path: undefined,
+                      }));
+                    }}
+                    onUploadComplete={(path) => {
+                      setManuscriptPath(path);
+                      setIsManuscriptUploading(false);
+                    }}
+                    onUploadError={(error) => {
+                      setErrors((prev) => ({
+                        ...prev,
+                        manuscript_path: [error],
+                      }));
+                      setIsManuscriptUploading(false);
+                    }}
+                  />
+                  <ErrorMessage field="manuscript_path" />
+                </div>
+
+                <div className="space-y-2">
+                  <FileUploaderWithProgress
+                    id="acm_pdf"
+                    label="ACM (PDF)"
+                    maxSizeMB={60}
+                    accept=".pdf"
+                    onUploadStart={() => {
+                      setIsAcmUploading(true);
+                      setAcmPath(null);
+                      setErrors((prev) => ({ ...prev, acm_path: undefined }));
+                    }}
+                    onUploadComplete={(path) => {
+                      setAcmPath(path);
+                      setIsAcmUploading(false);
+                    }}
+                    onUploadError={(error) => {
+                      setErrors((prev) => ({ ...prev, acm_path: [error] }));
+                      setIsAcmUploading(false);
+                    }}
+                  />
+                  <ErrorMessage field="acm_path" />
+                </div>
+              </div>
+            )}
           </div>
         </form>
-        <DialogFooter>
-          {errors.general && (
-            <p className="text-sm text-red-500">{errors.general[0]}</p>
-          )}
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={isSubmitDisabled}
-          >
-            {isLoading
-              ? "Submitting..."
-              : isManuscriptUploading || isAcmUploading
-              ? "Uploading Files..."
-              : "Submit"}
-          </Button>
+
+        <DialogFooter className="flex flex-row justify-between items-center bg-gray-100 border-t p-6 rounded-b-lg">
+          <div>
+            {errors.general && (
+              <p className="text-sm text-red-500">{errors.general[0]}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevStep}
+              className={currentStep === 1 ? "hidden" : ""}
+            >
+              Previous
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleNext}
+              className={currentStep === totalSteps ? "hidden" : ""}
+            >
+              Next
+            </Button>
+
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isSubmitDisabled}
+              className={currentStep !== totalSteps ? "hidden" : ""}
+            >
+              {isLoading
+                ? "Submitting..."
+                : isManuscriptUploading || isAcmUploading
+                ? "Uploading Files..."
+                : "Submit"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

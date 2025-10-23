@@ -145,8 +145,12 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-8 mx-10 bg-black text-gray-200 p-8 mb-20">
-      <h1 className="mt-28 text-3xl text-[#E0A800] mb-6"
-          style={{ fontFamily: "'Black Ops One', sans-serif" }}>Manage Account</h1>
+      <h1
+        className="mt-28 text-3xl text-[#E0A800] mb-6"
+        style={{ fontFamily: "'Black Ops One', sans-serif" }}
+      >
+        Manage Account
+      </h1>
       <Card className="bg-neutral-950 border-2 border-[#E0A800] rounded-lg text-gray-200">
         <CardHeader>
           <CardTitle className="text-gray-50">Manage Information</CardTitle>
@@ -193,7 +197,8 @@ export default function AccountPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-neutral-900 border-2 border-[#E0A800]"
+                className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800 disabled:text-neutral-400"
+                disabled
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

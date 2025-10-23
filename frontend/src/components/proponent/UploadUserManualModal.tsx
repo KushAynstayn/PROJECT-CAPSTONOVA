@@ -28,16 +28,19 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
   onOpenChange,
   onSuccess,
 }) => {
+  // --- ORIGINAL STATE (Unchanged) ---
   const [userManualPath, setUserManualPath] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // --- ORIGINAL COMPONENT (Unchanged) ---
   const ErrorMessage = ({ field }: { field: string }) => {
     if (!errors[field]) return null;
     return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
+  // --- ORIGINAL SUBMIT LOGIC (Unchanged) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userManualPath) {
@@ -71,6 +74,7 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
     }
   };
 
+  // --- ORIGINAL DISABLED LOGIC (Unchanged) ---
   const isSubmitDisabled = isLoading || isUploading || !userManualPath;
 
   return (
@@ -78,6 +82,7 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
+        // --- ORIGINAL RESET LOGIC (Unchanged) ---
         if (!open) {
           setErrors({});
           setUserManualPath(null);
@@ -85,17 +90,21 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Upload System Manual</DialogTitle>
-          <DialogDescription>
+      {/* --- MODIFIED: Larger modal, p-0 --- */}
+      <DialogContent className="sm:max-w-lg p-0">
+        {/* --- MODIFIED: Styled Header --- */}
+        <DialogHeader className="bg-[#800000] text-white p-6 rounded-t-lg">
+          <DialogTitle className="text-2xl">Upload System Manual</DialogTitle>
+          <DialogDescription className="text-gray-300">
             Upload the system manual for your project.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+
+        {/* --- MODIFIED: Content Padding --- */}
+        <div className="p-6">
           <FileUploaderWithProgress
             id="user_manual"
-            label="User Manual (PDF)"
+            label="System Manual (PDF)" // --- MODIFIED: Label to match title ---
             maxSizeMB={20} // Example size
             accept=".pdf"
             onUploadStart={() => {
@@ -113,11 +122,15 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
             }}
           />
           <ErrorMessage field="user_manual_path" />
-          {errors.general && (
-            <p className="text-sm text-red-500 mt-1">{errors.general[0]}</p>
-          )}
         </div>
-        <DialogFooter>
+
+        {/* --- MODIFIED: Styled Footer --- */}
+        <DialogFooter className="flex flex-row justify-between items-center bg-gray-100 border-t p-6 rounded-b-lg">
+          <div>
+            {errors.general && (
+              <p className="text-sm text-red-500">{errors.general[0]}</p>
+            )}
+          </div>
           <Button
             type="submit"
             onClick={handleSubmit}

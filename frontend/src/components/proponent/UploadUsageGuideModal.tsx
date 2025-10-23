@@ -28,16 +28,19 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
   onOpenChange,
   onSuccess,
 }) => {
+  // --- ORIGINAL STATE (Unchanged) ---
   const [usageGuidePath, setUsageGuidePath] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // --- ORIGINAL COMPONENT (Unchanged) ---
   const ErrorMessage = ({ field }: { field: string }) => {
     if (!errors[field]) return null;
     return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
+  // --- ORIGINAL SUBMIT LOGIC (Unchanged) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usageGuidePath) {
@@ -71,6 +74,7 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
     }
   };
 
+  // --- ORIGINAL DISABLED LOGIC (Unchanged) ---
   const isSubmitDisabled = isLoading || isUploading || !usageGuidePath;
 
   return (
@@ -78,6 +82,7 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
+        // --- ORIGINAL RESET LOGIC (Unchanged) ---
         if (!open) {
           setErrors({});
           setUsageGuidePath(null);
@@ -85,14 +90,18 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Upload User Guide</DialogTitle>
-          <DialogDescription>
+      {/* --- MODIFIED: Larger modal, p-0 --- */}
+      <DialogContent className="sm:max-w-lg p-0">
+        {/* --- MODIFIED: Styled Header --- */}
+        <DialogHeader className="bg-[#800000] text-white p-6 rounded-t-lg">
+          <DialogTitle className="text-2xl">Upload User Guide</DialogTitle>
+          <DialogDescription className="text-gray-300">
             Upload the user guide for your project.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+
+        {/* --- MODIFIED: Content Padding --- */}
+        <div className="p-6">
           <FileUploaderWithProgress
             id="usage_guide"
             label="User Guide (PDF)"
@@ -113,11 +122,15 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
             }}
           />
           <ErrorMessage field="usage_guide_path" />
-          {errors.general && (
-            <p className="text-sm text-red-500 mt-1">{errors.general[0]}</p>
-          )}
         </div>
-        <DialogFooter>
+
+        {/* --- MODIFIED: Styled Footer --- */}
+        <DialogFooter className="flex flex-row justify-between items-center bg-gray-100 border-t p-6 rounded-b-lg">
+          <div>
+            {errors.general && (
+              <p className="text-sm text-red-500">{errors.general[0]}</p>
+            )}
+          </div>
           <Button
             type="submit"
             onClick={handleSubmit}
