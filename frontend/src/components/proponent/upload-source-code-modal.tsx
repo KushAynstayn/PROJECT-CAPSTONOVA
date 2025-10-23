@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label";
 import KeywordInput from "../ui/keyword-input";
 import { apiCall, ApiError } from "../../lib/api";
 import { FileUploaderWithProgress } from "./file-uploader-with-progress";
-import { Github, Archive } from "lucide-react"; // --- NEW IMPORTS ---
-import { cn } from "@/lib/utils"; // --- NEW IMPORT ---
+import { Github, Archive } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SourceCodeUploadModalProps {
   isOpen: boolean;
@@ -33,27 +33,35 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
   onOpenChange,
   onSuccess,
 }) => {
-  // --- ORIGINAL STATE (Unchanged) ---
-  const [uploadType, setUploadType] = useState<"github" | "tar">("github");
+  const [uploadType, setUploadType] = useState<"github" | "tar" | "compressed">(
+    "github"
+  );
   const [githubUrl, setGithubUrl] = useState("");
   const [githubToken, setGithubToken] = useState("");
   const [sourceCodeTarPath, setSourceCodeTarPath] = useState<string | null>(
     null
   );
   const [isTarUploading, setIsTarUploading] = useState(false);
+
+  const [sourceCodeCompressedPath, setSourceCodeCompressedPath] = useState<
+    string | null
+  >(null);
+  const [originalCompressedFilename, setOriginalCompressedFilename] = useState<
+    string | null
+  >(null);
+  const [isCompressedUploading, setIsCompressedUploading] = useState(false);
+
   const [programmingLanguages, setProgrammingLanguages] = useState<string[]>(
     []
   );
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // --- ORIGINAL COMPONENT (Unchanged) ---
   const ErrorMessage = ({ field }: { field: string }) => {
     if (!errors[field]) return null;
     return <p className="text-sm text-red-500 mt-1">{errors[field]?.[0]}</p>;
   };
 
-  // --- ORIGINAL SUBMIT LOGIC (Unchanged) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -67,8 +75,15 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
       if (githubToken) {
         data.append("github_token", githubToken);
       }
-    } else if (sourceCodeTarPath) {
+    } else if (uploadType === "tar" && sourceCodeTarPath) {
       data.append("source_code_tar_path", sourceCodeTarPath);
+    } else if (
+      uploadType === "compressed" &&
+      sourceCodeCompressedPath &&
+      originalCompressedFilename
+    ) {
+      data.append("source_code_compressed_path", sourceCodeCompressedPath);
+      data.append("original_filename", originalCompressedFilename);
     }
 
     programmingLanguages.forEach((lang) =>
@@ -95,30 +110,33 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
     }
   };
 
-  // --- ORIGINAL DISABLED LOGIC (Unchanged) ---
   const isSubmitDisabled =
-    isLoading || isTarUploading || (uploadType === "tar" && !sourceCodeTarPath);
+    isLoading ||
+    isTarUploading ||
+    isCompressedUploading ||
+    (uploadType === "tar" && !sourceCodeTarPath) ||
+    (uploadType === "compressed" && !sourceCodeCompressedPath);
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
-        // --- ORIGINAL RESET LOGIC (Unchanged) ---
         if (!open) {
           setErrors({});
           setGithubUrl("");
           setGithubToken("");
           setSourceCodeTarPath(null);
           setIsTarUploading(false);
+          setSourceCodeCompressedPath(null);
+          setOriginalCompressedFilename(null);
+          setIsCompressedUploading(false);
           setProgrammingLanguages([]);
-          setUploadType("github"); // Reset to default
+          setUploadType("github");
         }
       }}
     >
-      {/* --- MODIFIED: Larger modal, p-0 --- */}
       <DialogContent className="sm:max-w-3xl p-0">
-        {/* --- MODIFIED: Styled Header --- */}
         <DialogHeader className="bg-[#800000] text-white p-6 rounded-t-lg">
           <DialogTitle className="text-2xl">Upload Source Code</DialogTitle>
           <DialogDescription className="text-gray-300">
@@ -126,9 +144,7 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* --- NEW: Two-column layout --- */}
         <div className="grid grid-cols-12 min-h-[40vh]">
-          {/* --- NEW: Left Menu --- */}
           <div className="col-span-3 bg-gray-50 border-r border-gray-200 p-4">
             <nav className="flex flex-col space-y-2">
               <Button
@@ -157,12 +173,23 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
                 <Archive className="mr-2 h-4 w-4" />
                 .tar file
               </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setUploadType("compressed")}
+                className={cn(
+                  "justify-start text-sm",
+                  uploadType === "compressed"
+                    ? "bg-gray-200 font-semibold"
+                    : "font-normal"
+                )}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Compressed file
+              </Button>
             </nav>
           </div>
 
-          {/* --- NEW: Right Content Area --- */}
           <div className="col-span-9 p-6 overflow-y-auto">
-            {/* --- ORIGINAL: Form with original onSubmit --- */}
             <form onSubmit={handleSubmit} className="space-y-6">
               {uploadType === "github" && (
                 <div className="space-y-4">
@@ -209,7 +236,7 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
                   <FileUploaderWithProgress
                     id="source_code_tar"
                     label=".tar file"
-                    maxSizeMB={2048}
+                    maxSizeMB={2048} // 2GB
                     accept=".tar"
                     onUploadStart={() => {
                       setIsTarUploading(true);
@@ -235,7 +262,39 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
                 </div>
               )}
 
-              {/* --- Common "Languages" input --- */}
+              {uploadType === "compressed" && (
+                <div className="space-y-4">
+                  <FileUploaderWithProgress
+                    id="source_code_compressed"
+                    label="Compressed file (.zip, .rar, .7z)"
+                    maxSizeMB={2048} // 2GB
+                    accept=".zip,.rar,.7z"
+                    onUploadStart={() => {
+                      setIsCompressedUploading(true);
+                      setSourceCodeCompressedPath(null);
+                      setOriginalCompressedFilename(null);
+                      setErrors((prev) => ({
+                        ...prev,
+                        source_code_compressed_path: undefined,
+                      }));
+                    }}
+                    onUploadComplete={(path, originalFilename) => {
+                      setSourceCodeCompressedPath(path);
+                      setOriginalCompressedFilename(originalFilename || null);
+                      setIsCompressedUploading(false);
+                    }}
+                    onUploadError={(error) => {
+                      setErrors((prev) => ({
+                        ...prev,
+                        source_code_compressed_path: [error],
+                      }));
+                      setIsCompressedUploading(false);
+                    }}
+                  />
+                  <ErrorMessage field="source_code_compressed_path" />
+                </div>
+              )}
+
               <div className="grid grid-cols-4 items-start gap-4 pt-6 border-t border-gray-200">
                 <Label
                   htmlFor="programming_languages"
@@ -257,7 +316,6 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           </div>
         </div>
 
-        {/* --- MODIFIED: Styled Footer --- */}
         <DialogFooter className="flex flex-row justify-between items-center bg-gray-100 border-t p-6 rounded-b-lg">
           <div>
             {errors.general && (
@@ -271,7 +329,7 @@ export const SourceCodeUploadModal: React.FC<SourceCodeUploadModalProps> = ({
           >
             {isLoading
               ? "Submitting..."
-              : isTarUploading
+              : isTarUploading || isCompressedUploading
               ? "Uploading File..."
               : "Submit"}
           </Button>

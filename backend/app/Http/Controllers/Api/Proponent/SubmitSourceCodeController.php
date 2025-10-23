@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Proponent;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessCompressedSourceCode; // Import new job
 use App\Jobs\ProcessGithubSourceCode;
 use App\Jobs\ProcessTarSourceCode;
 use App\Models\ActionType;
@@ -31,14 +32,22 @@ class SubmitSourceCodeController extends Controller
             abort(403, 'Unauthorized - Proponent access required');
         }
 
-        // --- MODIFIED VALIDATION ---
-        // The 'source_code_tar' rule is changed to 'source_code_tar_path'
-        // and now expects a string path instead of a file.
+        // --- MODIFIED VALIDATION (Backward Compatible) ---
+        // 1. Added 'compressed' to the upload_type rule.
+        // 2. Kept 'source_code_tar_path' for 'tar' type.
+        // 3. Added 'source_code_compressed_path' for 'compressed' type.
+        // 4. Added 'original_filename' for 'compressed' type.
         $validator = Validator::make($request->all(), [
-            'upload_type' => ['required', 'string', Rule::in(['github', 'tar'])],
+            'upload_type' => ['required', 'string', Rule::in(['github', 'tar', 'compressed'])],
             'github_url' => ['required_if:upload_type,github', 'nullable', 'url'],
             'github_token' => ['nullable', 'string'],
-            'source_code_tar_path' => ['required_if:upload_type,tar', 'nullable', 'string'],
+            'source_code_tar_path' => ['required_if:upload_type,tar', 'nullable', 'string'], // Original field
+            'source_code_compressed_path' => ['required_if:upload_type,compressed', 'nullable', 'string'], // New field
+            'original_filename' => [ // New field, required for compressed type
+                'required_if:upload_type,compressed',
+                'nullable',
+                'string'
+            ],
             'programming_languages' => ['required', 'array'],
             'programming_languages.*' => ['required', 'string', 'max:50'],
         ]);
@@ -68,10 +77,8 @@ class SubmitSourceCodeController extends Controller
                 $validated['github_url'],
                 $validated['github_token'] ?? null
             );
-        } else {
-            // --- MODIFIED FILE HANDLING ---
-            // Removed direct file storage. We now get the path from the request
-            // and verify that the file exists before dispatching the job.
+        } else if ($validated['upload_type'] === 'tar') {
+            // --- UNCHANGED TAR HANDLING ---
             $tempTarPath = $validated['source_code_tar_path'];
 
             if (!Storage::exists($tempTarPath)) {
@@ -83,6 +90,22 @@ class SubmitSourceCodeController extends Controller
                 $projectId,
                 $validated['programming_languages'],
                 $tempTarPath
+            );
+        } else if ($validated['upload_type'] === 'compressed') {
+            // --- NEW DISPATCH LOGIC for COMPRESSED ---
+            $tempCompressedPath = $validated['source_code_compressed_path'];
+            $originalFilename = $validated['original_filename'];
+
+            if (!Storage::exists($tempCompressedPath)) {
+                return response()->json(['message' => 'The provided compressed file path is invalid.'], 404);
+            }
+
+            ProcessCompressedSourceCode::dispatch(
+                $user,
+                $projectId,
+                $validated['programming_languages'],
+                $tempCompressedPath,
+                $originalFilename
             );
         }
 

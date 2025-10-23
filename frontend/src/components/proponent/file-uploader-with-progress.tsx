@@ -9,7 +9,8 @@ import { apiCall, ApiError } from "../../lib/api";
 interface FileUploaderWithProgressProps {
   id: string;
   label: string;
-  onUploadComplete: (path: string) => void;
+  // --- MODIFIED: Made originalFilename optional for backward compatibility ---
+  onUploadComplete: (path: string, originalFilename?: string) => void;
   onUploadStart: () => void;
   onUploadError: (error: string) => void;
   maxSizeMB: number;
@@ -53,12 +54,28 @@ export const FileUploaderWithProgress: React.FC<
       return;
     }
 
-    if (accept === ".pdf" && file.type !== "application/pdf") {
-      const errorMsg = "File must be a PDF.";
-      setError(errorMsg);
-      onUploadError(errorMsg);
-      e.target.value = "";
-      return;
+    // --- MODIFIED: More robust accept check ---
+    if (accept) {
+      const acceptedTypes = accept.split(",").map((t) => t.trim());
+      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+      const fileType = file.type;
+
+      const isValid = acceptedTypes.some((type) => {
+        if (type.startsWith(".")) {
+          // Check extension
+          return type === fileExtension;
+        }
+        // Check MIME type
+        return type === fileType;
+      });
+
+      if (!isValid) {
+        const errorMsg = `Invalid file type. Please upload: ${accept}`;
+        setError(errorMsg);
+        onUploadError(errorMsg);
+        e.target.value = "";
+        return;
+      }
     }
 
     setIsUploading(true);
@@ -100,7 +117,8 @@ export const FileUploaderWithProgress: React.FC<
         "POST"
       );
 
-      onUploadComplete(finishResponse.path);
+      // --- MODIFIED: Pass back path and original filename ---
+      onUploadComplete(finishResponse.path, file.name);
     } catch (err: any) {
       const errorMsg =
         err instanceof ApiError
