@@ -22,8 +22,7 @@ class CapstoneProjectSeeder extends Seeder
     public function run(): void
     {
         $faker = Faker::create();
-        $faker->seed(1234); // Seed for deterministic results
-
+        $faker->seed(1234); // Seed for deterministic results [cite: 2196]
         $adviserIds = User::where('role', 'Adviser')->pluck('id');
         $keywordIds = Keyword::pluck('id');
         $languageIds = ProgrammingLanguage::pluck('id');
@@ -36,19 +35,18 @@ class CapstoneProjectSeeder extends Seeder
         $proponentIds = collect();
 
         DB::transaction(function () use ($faker, $adviserIds, $keywordIds, $languageIds, &$proponentIds) {
-            for ($year = 2010; $year <= 2025; $year++) {
+            // MODIFIED: Changed start year from 2010 to 2000
+            for ($year = 2000; $year <= 2025; $year++) {
                 $projectsPerYear = $faker->numberBetween(5, 25);
-
                 for ($i = 0; $i < $projectsPerYear; $i++) {
                     // Create or reuse a proponent
                     $proponent = $this->getOrCreateProponent($faker, $adviserIds, $proponentIds);
-
                     $submissionDate = $faker->dateTimeBetween("$year-01-01", "$year-12-31");
 
                     $project = CapstoneProject::factory()->create([
                         'adviser_id' => $adviserIds->random(),
-                        'submission_year' => $year,
-                        'submission_date' => $submissionDate,
+                        'submission_year' => $year, // This is the loop year
+                        'submission_date' => $submissionDate, // This date is generated within that year
                         'platform_type' => $faker->randomElement(['Web', 'Mobile', 'IoT', 'Desktop']),
                         'is_archived' => $faker->boolean(10), // ~10% chance of being archived
                     ]);
@@ -68,10 +66,10 @@ class CapstoneProjectSeeder extends Seeder
                     // Create a single ProjectResearcher entry with random names for other members
                     ProjectResearcher::create([
                         'project_id' => $project->id,
-                        'user_id' => $proponent->id, // The real proponent user
+                        'user_id' => $proponent->id, // The real proponent user [cite: 2232]
                         'member_hacker' => $proponent->first_name . ' ' . $proponent->last_name,
-                        'member_hipster1' => $faker->name(), // Random placeholder name
-                        'member_hipster2' => $faker->boolean(75) ? $faker->name() : null, // Optional random placeholder name
+                        'member_hipster1' => $faker->name(), // Random placeholder name [cite: 2234]
+                        'member_hipster2' => $faker->boolean(75) ? $faker->name() : null, // Optional random placeholder name [cite: 2235]
                     ]);
                 }
             }
