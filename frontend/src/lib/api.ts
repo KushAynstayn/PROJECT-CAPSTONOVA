@@ -3,6 +3,7 @@ import { authStore } from "./auth";
 
 const ROOT_URL = "http://localhost:8000"; // Use localhost to match the server
 const API_BASE = `${ROOT_URL}/api`;
+const ML_ROOT_URL = "http://127.0.0.1:8001"; // Address for ML Service
 
 export class ApiError extends Error {
   public status: number;
@@ -136,4 +137,53 @@ export const apiCallForBlob = async (path: string): Promise<Blob> => {
   }
 
   return await response.blob();
+};
+
+// --- New Function for ML Service ---
+
+const mlDefaultHeaders = {
+  "Content-Type": "application/json",
+  Accept: "application/json",
+};
+
+/**
+ * Wrapper for making API calls to the ML service.
+ * Assumes a simple JSON API without CSRF or credentials.
+ */
+export const mlApiCall = async (
+  path: string,
+  method: string = "GET",
+  body?: any
+) => {
+  const headers: { [key: string]: string } = {
+    ...mlDefaultHeaders,
+  };
+
+  const options: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${ML_ROOT_URL}${path}`, options);
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: response.statusText }));
+    throw new ApiError(
+      errorData.message || "An error occurred",
+      response.status,
+      errorData
+    );
+  }
+
+  if (response.status === 204) {
+    return;
+  }
+
+  return await response.json();
 };

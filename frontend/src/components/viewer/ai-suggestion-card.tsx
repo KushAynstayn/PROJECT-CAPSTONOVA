@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiCall, ApiError } from "@/lib/api";
+import { mlApiCall, ApiError } from "@/lib/api"; // Updated import
 import { BrainCircuit } from "lucide-react";
 
 interface AiSuggestionCardProps {
@@ -20,9 +20,12 @@ export function AiSuggestionCard({ prompt, category }: AiSuggestionCardProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await apiCall("/ml-service/get-suggestion", "POST", {
+        // Switched to mlApiCall and updated the endpoint
+        const response = await mlApiCall("/cohere/suggest", "POST", {
           query_text: prompt,
         });
+
+        // Assuming the response structure from the ML service is the same
         setSuggestionText(response.ai_response);
       } catch (err) {
         if (err instanceof ApiError) {
