@@ -100,24 +100,39 @@ class AdminDashboardUtilController extends Controller
      */
     public function latestSubmission(): JsonResponse
     {
+        // Query for the latest project BY CREATION DATE, ensuring relationships exist
         $latestProject = CapstoneProject::with(['adviser', 'projectResearcher.user'])
-            ->latest()
+            ->whereHas('projectResearcher.user') // Ensures the user who submitted exists
+            ->whereHas('adviser')               // Ensures the adviser exists
+            ->latest()                          // <-- Sorts by 'created_at' (newest first)
             ->first();
 
+        // If no valid project is found, return null with a 200 OK status.
         if (!$latestProject) {
-            return response()->json(['message' => 'No projects found.'], 404);
+            return response()->json(null, 200);
         }
+
+        // Safely access related data
+        $submittedByUser = optional($latestProject->projectResearcher)->user;
+        $adviser = $latestProject->adviser;
 
         $responseData = [
             'title' => $latestProject->title,
-            'submitted_by' => $latestProject->projectResearcher->user->first_name . ' ' . $latestProject->projectResearcher->user->last_name,
-            'adviser' => $latestProject->adviser->first_name . ' ' . $latestProject->adviser->last_name,
+
+            'submitted_by' => trim(
+                optional($submittedByUser)->first_name . ' ' . optional($submittedByUser)->last_name
+            ) ?: 'N/A',
+
+            'adviser' => trim(
+                optional($adviser)->first_name . ' ' . optional($adviser)->last_name
+            ) ?: 'N/A',
+
+            // Use the submission_date from the project we found
             'date_submitted' => $latestProject->submission_date,
         ];
 
         return response()->json($responseData);
     }
-
     /**
      * Get the latest suggestion from an adviser.
      *
