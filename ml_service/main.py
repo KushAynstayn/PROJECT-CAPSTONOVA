@@ -6,6 +6,10 @@ from fastapi.staticfiles import StaticFiles
 from app.routes import project_size_regression, tech_stack_association, suggestion
 from app.config import STATIC_DIR
 import os
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+
 
 # Ensure the static directory for saving artifacts exists upon startup
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -14,6 +18,19 @@ app = FastAPI(
     title="Modular Machine Learning Microservice",
     description="A scalable API for training and using various ML models.",
     version="2.0.0"
+)
+
+origins_str = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+
+# Split the comma-separated string into a list of origins
+allowed_origins = origins_str.split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,  # Use the dynamic list from the .env file
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Mount the static directory to serve generated plots and reports.
