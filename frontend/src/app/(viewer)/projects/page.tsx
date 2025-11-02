@@ -11,15 +11,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/ui/header";
 import { apiCall, ApiError } from "@/lib/api";
-import { SearchX, ChevronLeft, ChevronRight } from "lucide-react";
+import { SearchX, ChevronLeft, ChevronRight, Search } from "lucide-react"; // Added Search
 import { cn } from "@/lib/utils";
+import { AdvancedSearchModal } from "@/components/ui/advanced-search-modal"; // Added modal import
 
 // Define the structure of a project and pagination
 interface Project {
   id: number;
   title: string;
   abstract_snippet: string;
-  submission_year: number;
+  submission_year: string;
   platform_type: string;
   adviser_name: string | null;
   keyword_tags: string[];
@@ -137,7 +138,7 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-// [NEW] Pagination Component
+// Pagination Component (no changes)
 function PaginationControls({
   pagination,
   onPageChange,
@@ -145,7 +146,7 @@ function PaginationControls({
   pagination: PaginationInfo;
   onPageChange: (page: number) => void;
 }) {
-  const { current_page, last_page } = pagination;
+  const { current_page, last_page, from, to, total } = pagination;
 
   const handlePrev = () => {
     if (current_page > 1) {
@@ -159,37 +160,50 @@ function PaginationControls({
     }
   };
 
-  if (last_page <= 1) return null;
+  // Don't show anything if there are no results
+  if (total === 0) return null;
 
   return (
-    <div className="flex items-center justify-center gap-4 mt-8">
-      <button
-        onClick={handlePrev}
-        disabled={current_page === 1}
-        className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-md bg-neutral-800 text-white border border-yellow-500/50",
-          "hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        )}
-      >
-        <ChevronLeft size={16} />
-        Previous
-      </button>
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8">
+      {/* "Showing X to Y of Z results" label */}
+      <div className="text-sm text-gray-400">
+        Showing <span className="font-medium text-yellow-200">{from}</span> to{" "}
+        <span className="font-medium text-yellow-200">{to}</span> of{" "}
+        <span className="font-medium text-yellow-200">{total}</span> results
+      </div>
 
-      <span className="text-sm text-gray-300">
-        Page {current_page} of {last_page}
-      </span>
+      {/* Pagination buttons - only show if there's more than one page */}
+      {last_page > 1 && (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={handlePrev}
+            disabled={current_page === 1}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-md bg-neutral-800 text-white border border-yellow-500/50",
+              "hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            )}
+          >
+            <ChevronLeft size={16} />
+            Previous
+          </button>
 
-      <button
-        onClick={handleNext}
-        disabled={current_page === last_page}
-        className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-md bg-neutral-800 text-white border border-yellow-500/50",
-          "hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        )}
-      >
-        Next
-        <ChevronRight size={16} />
-      </button>
+          <span className="text-sm text-gray-300">
+            Page {current_page} of {last_page}
+          </span>
+
+          <button
+            onClick={handleNext}
+            disabled={current_page === last_page}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-md bg-neutral-800 text-white border border-yellow-500/50",
+              "hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            )}
+          >
+            Next
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -202,6 +216,14 @@ function SearchResults() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // [NEW] State for the simple search bar
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+
+  // [NEW] Effect to sync search bar with URL 'q' param
+  useEffect(() => {
+    setSearchTerm(searchParams.get("q") || "");
+  }, [searchParams]);
+
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
@@ -210,12 +232,34 @@ function SearchResults() {
         const result = await apiCall(
           `/public/search?${searchParams.toString()}`
         );
-        setProjects(result.data);
-        setPagination(result.meta); // Store pagination metadata
+        setProjects(result.data || []);
+        const paginationData: PaginationInfo = {
+          current_page: result.current_page,
+          last_page: result.last_page,
+          total: result.total,
+          from: result.from,
+          to: result.to,
+        };
+        if (paginationData.total !== undefined && paginationData.total > 0) {
+          setPagination(paginationData);
+        } else if (result.data && result.data.length > 0) {
+          const total = result.data.length;
+          setPagination({
+            current_page: 1,
+            last_page: 1,
+            total: total,
+            from: 1,
+            to: total,
+          });
+        } else {
+          setPagination(null);
+        }
       } catch (e) {
         setError(
           e instanceof ApiError ? e.message : "An unexpected error occurred."
         );
+        setProjects([]);
+        setPagination(null);
         console.error(e);
       } finally {
         setLoading(false);
@@ -227,6 +271,23 @@ function SearchResults() {
   const handlePageChange = (page: number) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("page", page.toString());
+    window.scrollTo(0, 0);
+    router.push(`?${newParams.toString()}`);
+  };
+
+  // [NEW] Handle simple search submission
+  const handleSimpleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newParams = new URLSearchParams(searchParams.toString());
+    const trimmedSearch = searchTerm.trim();
+
+    if (trimmedSearch) {
+      newParams.set("q", trimmedSearch);
+    } else {
+      newParams.delete("q"); // Remove 'q' if search is cleared
+    }
+
+    newParams.delete("page"); // Reset to page 1
     router.push(`?${newParams.toString()}`);
   };
 
@@ -235,6 +296,39 @@ function SearchResults() {
       <h1 className="text-3xl font-bold text-yellow-400 mb-4">
         Search Results
       </h1>
+
+      {/* [NEW] Search Bar and Advanced Search Button */}
+      <div className="mb-6 p-4 border border-yellow-500/30 rounded-lg bg-neutral-900/50">
+        <form onSubmit={handleSimpleSearch} className="w-full">
+          <div className="relative search-wrapper">
+            <input
+              type="text"
+              placeholder="Enter title or abstract phrase to search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full py-2 pl-6 pr-16 text-lg text-gray-900 bg-white placeholder:text-gray-500 rounded-full focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-700 hover:text-yellow-800"
+              aria-label="Search"
+            >
+              <Search size={24} />
+            </button>
+          </div>
+        </form>
+        <div className="mt-4 flex justify-center">
+          <AdvancedSearchModal>
+            <button
+              type="button"
+              className="text-yellow-400 hover:text-yellow-300 transition-colors"
+            >
+              Advanced Search
+            </button>
+          </AdvancedSearchModal>
+        </div>
+      </div>
+
       <ActiveFiltersDisplay params={searchParams} />
 
       {loading && (
