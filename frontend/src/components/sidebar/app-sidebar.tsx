@@ -151,6 +151,11 @@ const sidebarData = {
         icon: "/images/configuration_icon.png",
       },
       {
+        href: "/super-admin/activity-logs",
+        label: "Activity Logs",
+        icon: "/images/activity_log.png",
+      },
+      {
         href: "/super-admin/settings",
         label: "Account Settings",
         icon: "/images/account_icon.png",
@@ -256,7 +261,7 @@ export function AppSidebar({
 
       <div className="my-2 h-px w-full bg-white/20" />
 
-      <SidebarContent>
+      <SidebarContent className="flex-1 overflow-y-auto">
         <NavMain items={data.navMain} />
       </SidebarContent>
 
