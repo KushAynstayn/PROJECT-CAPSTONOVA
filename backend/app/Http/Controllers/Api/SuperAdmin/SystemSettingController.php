@@ -10,12 +10,39 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class SystemSettingController extends Controller
 {
     /**
+     * 
+     * Accessible only by Super Admins.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function all(Request $request): JsonResponse
+    {
+        // 1. Authorization: Only Super Admins can see all settings.
+        if (Auth::user()->role !== 'Super Admin') {
+            return response()->json(['message' => 'Unauthorized. This action requires Super Admin privileges.'], 403);
+        }
+
+        // 2. Use a single cache key for all settings
+        $cacheKey = 'settings:all';
+
+        // 3. Get all settings, caching forever (or until toggled)
+        $settings = Cache::rememberForever($cacheKey, function () {
+            return SystemSetting::all()
+                ->pluck('is_enabled', 'setting_name');
+        });
+
+        return response()->json($settings);
+    }
+
+    /**
      * Check the status of a specific system setting.
-     * This endpoint is public and can be used by the frontend to conditionally show/hide UI elements.
+     * (This is the public-facing route for gate-keeping)
      *
      * @param Request $request
      * @return JsonResponse
@@ -30,7 +57,7 @@ class SystemSettingController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $settingName = $request->query('setting_name');
+        $settingName = $request->input('setting_name');
 
         // Use cache to improve performance for frequent checks.
         $isEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
@@ -47,14 +74,13 @@ class SystemSettingController extends Controller
 
     /**
      * Toggle a system setting on or off.
-     * This is a protected endpoint, accessible only by Super Admins.
      *
      * @param Request $request
      * @return JsonResponse
      */
     public function toggle(Request $request): JsonResponse
     {
-        // 1. Authorization: Only Super Admins can toggle settings.
+        // 1. Authorization
         if (Auth::user()->role !== 'Super Admin') {
             return response()->json(['message' => 'Unauthorized. This action requires Super Admin privileges.'], 403);
         }
@@ -77,8 +103,13 @@ class SystemSettingController extends Controller
         $setting = SystemSetting::where('setting_name', $settingName)->first();
         $setting->update(['is_enabled' => $isEnabled]);
 
-        // 4. Important: Clear the specific cache entry for this setting to reflect immediate changes.
+        // 4. Important: Clear BOTH cache entries.
+
+        // (a) Clear the individual setting cache (from your 'check' method)
         Cache::forget($settingName);
+
+        // (b) CRITICAL: Clear the new 'settings:all' cache
+        Cache::forget('settings:all');
 
         // 5. Return the updated setting
         return response()->json([

@@ -257,6 +257,7 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
     Route::get('document-requests/approval-history', [DocumentRequestController::class, 'approvalHistory']);
 
     Route::post('system-settings/toggle', [SystemSettingController::class, 'toggle']);
+    Route::get('/system-settings/all', [SystemSettingController::class, 'all']);
 
     Route::get('user-logs', [UserLogController::class, 'index']);
 });
