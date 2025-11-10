@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// Import a suitable icon, e.g., from lucide-react
+import { Lock } from "lucide-react";
 
 interface UserProfile {
   first_name: string;
@@ -51,9 +53,23 @@ const cleanEmail = (apiEmail: string): string => {
   return match ? match[0] : apiEmail;
 };
 
+// A small, theme-matching warning component
+const FeatureWarning = ({ message }: { message: string }) => (
+  <div className="flex items-center gap-3 rounded-md border border-[#E0A800]/50 bg-yellow-900/20 p-3 text-yellow-300/90">
+    <Lock className="h-5 w-5 flex-shrink-0" />
+    <span className="text-sm">{message}</span>
+  </div>
+);
+
 export default function AccountPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // --- Settings State ---
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [canUpdateProfile, setCanUpdateProfile] = useState(false);
+  const [canChangePassword, setCanChangePassword] = useState(false);
+  // --- End Settings State ---
 
   // Form state
   const [firstName, setFirstName] = useState("");
@@ -68,6 +84,9 @@ export default function AccountPage() {
   // UI state
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Combined loading state
+  const isLoading = profileLoading || settingsLoading;
 
   useEffect(() => {
     const user = authStore.getUser();
@@ -88,17 +107,51 @@ export default function AccountPage() {
       } catch (err) {
         setError("Failed to fetch profile data.");
       } finally {
-        setLoading(false);
+        setProfileLoading(false);
+      }
+    };
+
+    // Fetch system settings
+    const fetchSettings = async () => {
+      setSettingsLoading(true);
+      try {
+        // Fetch both settings concurrently
+        const [profileSetting, passSetting] = await Promise.all([
+          apiCall(
+            "/public/system-settings/check?setting_name=viewer_updateProfile"
+          ),
+          apiCall(
+            "/public/system-settings/check?setting_name=viewer_changePassword"
+          ),
+        ]);
+
+        setCanUpdateProfile(profileSetting?.is_enabled === true);
+        setCanChangePassword(passSetting?.is_enabled === true);
+      } catch (err: any) {
+        console.error("Failed to fetch system settings:", err);
+        // Default to false (disabled) if the API fails
+        setCanUpdateProfile(false);
+        setCanChangePassword(false);
+        setError("Could not load system permissions. " + err.message);
+      } finally {
+        setSettingsLoading(false);
       }
     };
 
     fetchProfile();
+    fetchSettings();
   }, [router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccess(null);
     setError(null);
+
+    // Prevent submission if feature is disabled
+    if (!canUpdateProfile) {
+      setError("Cannot save changes: Profile updates are disabled.");
+      return;
+    }
 
     const payload: any = {
       first_name: firstName,
@@ -109,7 +162,8 @@ export default function AccountPage() {
       program,
     };
 
-    if (password) {
+    // Only include password if the feature is enabled and field is not empty
+    if (canChangePassword && password) {
       payload.password = password;
       payload.password_confirmation = passwordConfirmation;
     }
@@ -134,11 +188,11 @@ export default function AccountPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="pt-8 border-2 border-[#E0A800]/50 bg-black text-gray-200 rounded-lg p-8">
         <h1 className="text-2xl font-bold text-[#E0A800] mb-6">Account</h1>
-        <div>Loading...</div>
+        <div>Loading settings and profile...</div>
       </div>
     );
   }
@@ -161,6 +215,11 @@ export default function AccountPage() {
             {error && <p className="text-red-500 text-center">{error}</p>}
             {success && <p className="text-green-500 text-center">{success}</p>}
 
+            {/* --- UPDATE PROFILE DISABLED MESSAGE --- */}
+            {!canUpdateProfile && (
+              <FeatureWarning message="Updating your profile is currently disabled by the system administrator." />
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first-name">First Name</Label>
@@ -168,7 +227,8 @@ export default function AccountPage() {
                   id="first-name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="bg-neutral-900 border-2 border-[#E0A800]"
+                  className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30"
+                  disabled={!canUpdateProfile}
                 />
               </div>
               <div className="space-y-2">
@@ -177,7 +237,8 @@ export default function AccountPage() {
                   id="last-name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="bg-neutral-900 border-2 border-[#E0A800]"
+                  className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30"
+                  disabled={!canUpdateProfile}
                 />
               </div>
             </div>
@@ -187,7 +248,8 @@ export default function AccountPage() {
                 id="middle-name"
                 value={middleName}
                 onChange={(e) => setMiddleName(e.target.value)}
-                className="bg-neutral-900 border-2 border-[#E0A800]"
+                className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30"
+                disabled={!canUpdateProfile}
               />
             </div>
             <div className="space-y-2">
@@ -197,15 +259,19 @@ export default function AccountPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800 disabled:text-neutral-400"
+                className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-400 disabled:border-[#E0A800]/30"
                 disabled
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger className="bg-neutral-900 border-2 border-[#E0A800]">
+                <Select
+                  value={department}
+                  onValueChange={setDepartment}
+                  disabled={!canUpdateProfile}
+                >
+                  <SelectTrigger className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent className="bg-neutral-900 border-2 border-[#E0A800] text-gray-200">
@@ -217,8 +283,12 @@ export default function AccountPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="program">Program</Label>
-                <Select value={program} onValueChange={setProgram}>
-                  <SelectTrigger className="bg-neutral-900 border-2 border-[#E0A800]">
+                <Select
+                  value={program}
+                  onValueChange={setProgram}
+                  disabled={!canUpdateProfile}
+                >
+                  <SelectTrigger className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30">
                     <SelectValue placeholder="Select program" />
                   </SelectTrigger>
                   <SelectContent className="bg-neutral-900 border-2 border-[#E0A800] text-gray-200">
@@ -230,6 +300,8 @@ export default function AccountPage() {
                 </Select>
               </div>
             </div>
+
+            {/* --- CHANGE PASSWORD FIELDS --- */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password">New Password</Label>
@@ -238,8 +310,13 @@ export default function AccountPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Leave blank to keep current"
-                  className="bg-neutral-900 border-2 border-[#E0A800]"
+                  placeholder={
+                    canChangePassword
+                      ? "Leave blank to keep current"
+                      : "Disabled"
+                  }
+                  className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30"
+                  disabled={!canChangePassword}
                 />
               </div>
               <div className="space-y-2">
@@ -249,10 +326,17 @@ export default function AccountPage() {
                   type="password"
                   value={passwordConfirmation}
                   onChange={(e) => setPasswordConfirmation(e.target.value)}
-                  className="bg-neutral-900 border-2 border-[#E0A800]"
+                  placeholder={canChangePassword ? "" : "Disabled"}
+                  className="bg-neutral-900 border-2 border-[#E0A800] disabled:bg-neutral-800/50 disabled:text-neutral-500 disabled:border-[#E0A800]/30"
+                  disabled={!canChangePassword}
                 />
               </div>
             </div>
+
+            {/* --- CHANGE PASSWORD DISABLED MESSAGE --- */}
+            {!canChangePassword && (
+              <FeatureWarning message="Changing your password is currently disabled by the system administrator." />
+            )}
           </CardContent>
           <CardFooter className="mt-6 flex justify-between">
             <Button type="button" variant="destructive" onClick={handleLogout}>
@@ -261,7 +345,8 @@ export default function AccountPage() {
             <Button
               type="submit"
               variant="ghost"
-              className="border border-[#E0A800] hover:bg-[#E0A800]/10 hover:text-white"
+              className="border border-[#E0A800] hover:bg-[#E0A800]/10 hover:text-white disabled:border-gray-600/50 disabled:text-gray-500 disabled:hover:bg-transparent"
+              disabled={!canUpdateProfile}
             >
               Save Changes
             </Button>
