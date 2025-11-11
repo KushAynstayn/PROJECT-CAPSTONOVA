@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiCall, ApiError } from "@/lib/api";
-import { TopLoader } from "@/components/ui/top-loader";
+// import { TopLoader } from "@/components/ui/top-loader"; // <-- REMOVED
 import {
   Table,
   TableBody,
@@ -113,7 +113,8 @@ export default function UserLogsPage() {
 
   return (
     <>
-      {loading && <TopLoader />}
+      {/* {loading && <TopLoader />} <-- REMOVED */}
+      {/* The loading state is handled by the table body below */}
 
       <div className="container mx-auto p-6 space-y-6">
         <h1 className="text-3xl font-bold text-[#5E0B0B]">
