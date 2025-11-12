@@ -47,6 +47,7 @@ use App\Http\Controllers\Api\MlService\MLSuggestionController;
 
 
 use App\Http\Controllers\Api\UserManagement\MViewerController;
+use App\Http\Controllers\Api\Viewer\FeaturedProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
 use App\Http\Controllers\Api\Proponent\ChunkedUploadController;
 use App\Http\Controllers\Api\User\DownloadSourceCodeController;
@@ -161,6 +162,9 @@ Route::prefix('public')->group(function () {
         ->name('search');
 
     Route::get('system-settings/check', [SystemSettingController::class, 'check']);
+
+    Route::get('/featured-projects', [FeaturedProjectController::class, 'getFeaturedProjects'])
+        ->name('featured-projects');
 });
 
 
