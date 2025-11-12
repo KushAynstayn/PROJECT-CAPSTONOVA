@@ -1,18 +1,25 @@
 // components/ProjectDetailsContent.tsx
-// New file: Add "use client" here for the client-side logic
-
 "use client";
 
-import React, { useState, useEffect } from "react"; // Removed Suspense
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { apiCall, ApiError } from "@/lib/api";
 import { authStore } from "@/lib/auth";
-import { User, Tag, Code, Info, Users, Shield } from "lucide-react";
+import {
+  User,
+  Tag,
+  Code,
+  Info,
+  Users,
+  Shield,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 import PdfViewer from "@/components/ui/pdf-viewer-dynamic";
 import RelatedStudies from "@/components/viewer/RelatedStudies";
 
-// Define the detailed project structure based on the controller's response
+// (Interface and Skeleton component are unchanged)
 interface ProjectDetails {
   id: number;
   title: string;
@@ -38,7 +45,6 @@ interface ProjectDetails {
   manuscript_id: number | null;
 }
 
-// Loading Skeleton Component
 function ProjectDetailSkeleton() {
   return (
     <div className="container mx-auto px-4 py-12 animate-pulse">
@@ -63,17 +69,28 @@ function ProjectDetailSkeleton() {
   );
 }
 
-// Main component to fetch and display project details
+// Main component
 export default function ProjectDetailsContent({ id }: { id: string }) {
   const router = useRouter();
   const [project, setProject] = useState<ProjectDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // For main project data
   const [error, setError] = useState<string | null>(null);
   const [requestStatus, setRequestStatus] = useState<
     "idle" | "pending" | "success" | "error"
   >("idle");
   const [showPdf, setShowPdf] = useState(false);
 
+  // State for abstract permission
+  const [abstractPermission, setAbstractPermission] = useState<
+    "checking" | "allowed" | "denied"
+  >("checking");
+
+  // State for request access permission
+  const [requestPermission, setRequestPermission] = useState<
+    "checking" | "allowed" | "denied"
+  >("checking");
+
+  // This useEffect fetches the main project data
   useEffect(() => {
     if (!id) return;
     const fetchProjectDetails = async () => {
@@ -96,7 +113,56 @@ export default function ProjectDetailsContent({ id }: { id: string }) {
     fetchProjectDetails();
   }, [id]);
 
+  // This useEffect checks BOTH permissions in parallel
+  useEffect(() => {
+    const checkPermissions = async () => {
+      setAbstractPermission("checking");
+      setRequestPermission("checking");
+
+      try {
+        // Run both API calls in parallel for efficiency
+        const [abstractSetting, requestSetting] = await Promise.all([
+          apiCall(
+            "/public/system-settings/check?setting_name=viewer_viewAbstract",
+            "GET"
+          ),
+          apiCall(
+            "/public/system-settings/check?setting_name=viewer_requestFullAccess",
+            "GET"
+          ),
+        ]);
+
+        // Set abstract permission
+        if (abstractSetting && abstractSetting.is_enabled === true) {
+          setAbstractPermission("allowed");
+        } else {
+          setAbstractPermission("denied");
+        }
+
+        // Set request permission
+        if (requestSetting && requestSetting.is_enabled === true) {
+          setRequestPermission("allowed");
+        } else {
+          setRequestPermission("denied");
+        }
+      } catch (settingError) {
+        console.error("Failed to check settings:", settingError);
+        // Fail-safe: deny both if API call fails
+        setAbstractPermission("denied");
+        setRequestPermission("denied");
+      }
+    };
+
+    checkPermissions();
+  }, []); // Runs once on component mount
+
   const handleRequestAccess = async () => {
+    // Guard clause: Check permission before doing anything
+    if (requestPermission !== "allowed") {
+      console.warn("Request access attempted but permission is denied.");
+      return;
+    }
+
     if (!authStore.isAuthenticated()) {
       router.push("/login");
       return;
@@ -132,9 +198,12 @@ export default function ProjectDetailsContent({ id }: { id: string }) {
     };
   }, [showPdf]);
 
+  // Main page loading skeleton
   if (loading) return <ProjectDetailSkeleton />;
+  // Main page error
   if (error)
     return <div className="text-center py-20 text-red-500">{error}</div>;
+  // Main page not found
   if (!project)
     return (
       <div className="text-center py-20 text-gray-400">Project not found.</div>
@@ -160,15 +229,41 @@ export default function ProjectDetailsContent({ id }: { id: string }) {
               Submitted in {project.submission_year}
             </p>
 
+            {/* Abstract Section (modified) */}
             <div className="mb-8">
               <h2 className="text-2xl font-semibold text-white mb-4 border-b-2 border-yellow-500/30 pb-2">
                 Abstract
               </h2>
-              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                {project.abstract}
-              </p>
+
+              {abstractPermission === "checking" && (
+                <div className="flex items-center justify-center h-20 text-gray-400">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              )}
+
+              {abstractPermission === "denied" && (
+                <div className="rounded-md border border-yellow-700 bg-yellow-900/30 p-4 text-center">
+                  <div className="flex justify-center gap-2">
+                    <AlertCircle className="h-6 w-6 text-yellow-400" />
+                    <h3 className="text-lg font-bold text-yellow-300">
+                      Feature Disabled
+                    </h3>
+                  </div>
+                  <p className="mt-2 text-sm text-yellow-500">
+                    Viewing abstracts is currently disabled by the
+                    administrator.
+                  </p>
+                </div>
+              )}
+
+              {abstractPermission === "allowed" && (
+                <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                  {project.abstract}
+                </p>
+              )}
             </div>
 
+            {/* (Rest of <main> is unchanged) */}
             <div className="mt-8 pt-6 border-t border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <Tag size={20} /> Keywords
@@ -203,19 +298,34 @@ export default function ProjectDetailsContent({ id }: { id: string }) {
           </main>
 
           <aside className="space-y-8">
+            {/* --- MODIFIED: Request Access Button --- */}
             <button
               onClick={handleRequestAccess}
               disabled={
-                requestStatus === "pending" || requestStatus === "success"
+                requestPermission !== "allowed" || // Disabled if checking or denied
+                requestStatus === "pending" ||
+                requestStatus === "success"
               }
               className="w-full bg-yellow-600 text-black font-bold h-12 py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed"
             >
-              {requestStatus === "idle" && "VIEW FULL DOCUMENT"}
-              {requestStatus === "pending" && "SUBMITTING REQUEST..."}
-              {requestStatus === "success" && "REQUEST SUBMITTED!"}
-              {requestStatus === "error" && "REQUEST FAILED, TRY AGAIN"}
+              {requestPermission === "checking" && "CHECKING PERMISSIONS..."}
+              {requestPermission === "denied" && "REQUESTS DISABLED"}
+              {requestPermission === "allowed" &&
+                requestStatus === "idle" &&
+                "VIEW FULL DOCUMENT"}
+              {requestPermission === "allowed" &&
+                requestStatus === "pending" &&
+                "SUBMITTING REQUEST..."}
+              {requestPermission === "allowed" &&
+                requestStatus === "success" &&
+                "REQUEST SUBMITTED!"}
+              {requestPermission === "allowed" &&
+                requestStatus === "error" &&
+                "REQUEST FAILED, TRY AGAIN"}
             </button>
+            {/* --- END OF MODIFICATION --- */}
 
+            {/* (Rest of <aside> is unchanged) */}
             <div className="bg-stone-900/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <Users size={20} /> Team Members
@@ -237,7 +347,6 @@ export default function ProjectDetailsContent({ id }: { id: string }) {
               <p className="text-gray-300">{project.adviser || "N/A"}</p>
             </div>
 
-            {/* Panel Members Section */}
             {panelMembers.length > 0 && (
               <div className="bg-stone-900/50 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
@@ -272,6 +381,7 @@ export default function ProjectDetailsContent({ id }: { id: string }) {
         </div>
       </div>
 
+      {/* (PDF Modal is unchanged) */}
       {showPdf && project.manuscript_id && (
         <div
           className="fixed inset-0 flex justify-center items-center z-50 p-4"

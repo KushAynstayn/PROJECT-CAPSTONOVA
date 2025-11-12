@@ -57,6 +57,22 @@ export function RegisterForm() {
     setSuccessMessage(null);
 
     try {
+      if (formData.role === "Viewer") {
+        const settingStatus = await apiCall(
+          "/public/system-settings/check?setting_name=viewer_registerAccount",
+          "GET"
+        );
+
+        if (settingStatus && settingStatus.is_enabled === false) {
+          setErrors({
+            server:
+              "Viewer registration is currently disabled by the administrator.",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const response = await apiCall("/auth/register", "POST", formData);
 
       setSuccessMessage(response.message || "Registration successful!");
@@ -68,9 +84,10 @@ export function RegisterForm() {
         const newErrors: Record<string, string[] | string> = {};
         const details = error.details || {};
 
-        if (details.error) {
-          newErrors.server = details.error;
-        } else if (details.message && typeof details.message === "string") {
+        if (
+          error.status === 404 ||
+          (details.message && typeof details.message === "string")
+        ) {
           newErrors.server = details.message;
         } else if (
           typeof details === "object" &&
@@ -124,6 +141,8 @@ export function RegisterForm() {
             </div>
           ) : (
             <>
+              {/* ... (all other form fields are correct) ... */}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name</Label>
@@ -292,14 +311,14 @@ export function RegisterForm() {
                       Evening Program
                     </SelectItem>
                   </SelectContent>
-                </Select>
+                </Select>{" "}
+                {/* <-- THIS IS THE FIX (was </This>) */}
                 {renderErrors("program")}
               </div>
 
-              {/* --- SERVER ERROR MESSAGE MOVED HERE --- */}
               {errors.server && (
                 <p className="text-red-500 text-sm font-medium text-center">
-                  {errors.server}
+                  {errors.server as string}
                 </p>
               )}
 

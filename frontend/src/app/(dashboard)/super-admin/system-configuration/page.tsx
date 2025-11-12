@@ -13,6 +13,8 @@ const SystemConfigurationPage = () => {
   const [settings, setSettings] = useState<AllSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // This object is still used to map the flat API response
+  // into the nested state object.
   const settingKeys: { [key: string]: string[] } = {
     admin: [
       "updateProfile",
@@ -67,19 +69,23 @@ const SystemConfigurationPage = () => {
     const fetchAllSettings = async () => {
       setIsLoading(true);
       try {
+        // Create the shell for our nested settings state
         const allSettingsData: any = {
           admin: {},
           adviser: {},
           proponent: {},
           viewer: {},
         };
+
+        const flatSettings = await apiCall("/super-admin/system-settings/all");
+
+        // Now, map the flat response (e.g., "admin_updateProfile": true)
+        // to the nested state object (e.g., settings.admin.updateProfile = true)
         for (const role in settingKeys) {
           for (const key of settingKeys[role]) {
             const settingName = `${role}_${key}`;
-            const response = await apiCall(
-              `/public/system-settings/check?setting_name=${settingName}`
-            );
-            allSettingsData[role][key] = response?.is_enabled ?? false;
+            // Look up the value from the flat object, default to false if not found
+            allSettingsData[role][key] = flatSettings[settingName] ?? false;
           }
         }
         setSettings(allSettingsData as AllSettings);
@@ -107,6 +113,7 @@ const SystemConfigurationPage = () => {
     setSettings(newSettings);
 
     try {
+      // This function remains unchanged, it already calls the correct endpoint.
       await apiCall("/super-admin/system-settings/toggle", "POST", {
         setting_name: `${role}_${String(key)}`,
         is_enabled: !originalState,
