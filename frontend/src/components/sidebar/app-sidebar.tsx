@@ -42,11 +42,7 @@ const sidebarData = {
         label: "Data Analytics",
         icon: "/images/data_analytics_icon.png",
       },
-      {
-        href: "/adviser/notifications",
-        label: "Notifications",
-        icon: "/images/notification_icon.png",
-      },
+      // REMOVED: Notifications (Now in Header)
       {
         href: "/adviser/settings",
         label: "Account Settings",
@@ -91,11 +87,7 @@ const sidebarData = {
         label: "Reports",
         icon: "/images/report_icon.png",
       },
-      {
-        href: "/admin/notifications",
-        label: "Notifications",
-        icon: "/images/notification_icon.png",
-      },
+      // REMOVED: Notifications (Now in Header)
       {
         href: "/admin/settings",
         label: "Account Settings",
@@ -140,11 +132,7 @@ const sidebarData = {
         label: "Reports",
         icon: "/images/report_icon.png",
       },
-      {
-        href: "/super-admin/notifications",
-        label: "Notifications",
-        icon: "/images/notification_icon.png",
-      },
+      // REMOVED: Notifications (Now in Header)
       {
         href: "/super-admin/system-configuration",
         label: "System Configuration",
@@ -174,11 +162,7 @@ const sidebarData = {
         label: "Upload Capstone Project",
         icon: "/images/upload_icon.png",
       },
-      {
-        href: "/proponent/notifications",
-        label: "Notifications",
-        icon: "/images/notification_icon.png",
-      },
+      // REMOVED: Notifications (Now in Header)
     ],
   },
 };
