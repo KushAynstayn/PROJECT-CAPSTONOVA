@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Exception; // MODIFIED: Corrected namespace
+use Exception;
 use App\Models\ActionType;
 use App\Models\UserLog;
-use Illuminate\support\Facades\Auth;
-use App\Jobs\SendVerificationEmailJob; // ADDED
-use Illuminate\Support\Facades\URL;    // ADDED
-use Illuminate\Support\Facades\Log;    // ADDED
+use Illuminate\Support\Facades\Auth;
+use App\Jobs\SendVerificationEmailJob;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 
 class MProponentController extends Controller
 {
@@ -33,11 +33,11 @@ class MProponentController extends Controller
 
         // Base query to select active Proponents and their advisers.
         $baseSql = "
-     FROM users u
-     LEFT JOIN user_details ud ON u.id = ud.user_id
-     LEFT JOIN users adv ON ud.adviser_id = adv.id
-     WHERE u.role = 'Proponent' AND u.status = 'active'
-";
+            FROM users u
+            LEFT JOIN user_details ud ON u.id = ud.user_id
+            LEFT JOIN users adv ON ud.adviser_id = adv.id
+            WHERE u.role = 'Proponent' AND u.status = 'active'
+        ";
 
         $bindings = [];
         $searchSql = '';
@@ -52,12 +52,12 @@ class MProponentController extends Controller
             // The search query now checks 'u.hashed_email' for exact matches.
             // Other fields continue to use a LIKE comparison.
             $searchSql = "
-         AND (
-             u.first_name LIKE ? OR u.last_name LIKE ? OR u.hashed_email = ? OR
-             ud.student_id LIKE ? OR ud.department LIKE ? OR ud.program LIKE ? OR
-             adv.first_name LIKE ? OR adv.last_name LIKE ?
-         )
-     ";
+                AND (
+                    u.first_name LIKE ? OR u.last_name LIKE ? OR u.hashed_email = ? OR
+                    ud.student_id LIKE ? OR ud.department LIKE ? OR ud.program LIKE ? OR
+                    adv.first_name LIKE ? OR adv.last_name LIKE ?
+                )
+            ";
 
             // The bindings array is updated to include the hashed search term.
             $bindings = [
@@ -77,17 +77,17 @@ class MProponentController extends Controller
 
         // The SELECT statement now fetches 'u.encrypted_email' instead of a plain email.
         $results = DB::select("
-     SELECT
-         u.id,
-         CONCAT(u.first_name, ' ', u.last_name) as name,
-         u.encrypted_email,
-         ud.student_id as id_number,
-         ud.department,
-         ud.program,
-         CONCAT(adv.first_name, ' ', adv.last_name) as adviser
-     " . $baseSql . $searchSql . "
-     ORDER BY u.created_at DESC LIMIT ? OFFSET ?
-", [...$bindings, $perPage, $offset]);
+            SELECT
+                u.id,
+                CONCAT(u.first_name, ' ', u.last_name) as name,
+                u.encrypted_email,
+                ud.student_id as id_number,
+                ud.department,
+                ud.program,
+                CONCAT(adv.first_name, ' ', adv.last_name) as adviser
+            " . $baseSql . $searchSql . "
+            ORDER BY u.created_at DESC LIMIT ? OFFSET ?
+        ", [...$bindings, $perPage, $offset]);
 
         // Transform the raw database results to show encrypted email with ellipsis
         $transformedResults = array_map(function ($item) {
@@ -122,7 +122,18 @@ class MProponentController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'middle_name' => 'nullable|string|max:100',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'hashed_email')], // Check uniqueness against hashed_email
+            // MODIFIED: Custom closure to check uniqueness against the HASH of the email
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if (User::where('hashed_email', hash('sha256', $value))->exists()) {
+                        $fail('The email has already been taken.');
+                    }
+                },
+            ],
             'password' => ['required', 'confirmed', Password::defaults()],
             'student_id' => 'required|string|max:50',
             'department' => 'required|string|max:50',
@@ -140,9 +151,9 @@ class MProponentController extends Controller
             $hashedEmail = hash('sha256', $email);
 
             DB::insert('
-             INSERT INTO users (first_name, last_name, middle_name, encrypted_email, hashed_email, password, role, status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ', [
+                INSERT INTO users (first_name, last_name, middle_name, encrypted_email, hashed_email, password, role, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ', [
                 $validatedData['first_name'],
                 $validatedData['last_name'],
                 $validatedData['middle_name'] ?? null,
@@ -159,9 +170,9 @@ class MProponentController extends Controller
             $newUserId = DB::getPdo()->lastInsertId();
 
             DB::insert('
-             INSERT INTO user_details (user_id, student_id, department, program, adviser_id, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
-         ', [
+                INSERT INTO user_details (user_id, student_id, department, program, adviser_id, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ', [
                 $newUserId,
                 $validatedData['student_id'],
                 $validatedData['department'],
@@ -173,13 +184,10 @@ class MProponentController extends Controller
         });
 
         // --- ADDED: Send Verification Email ---
-        // We must fetch the user model to call getEmailForVerification()
         $user = User::find($newUserId);
         if ($user) {
             try {
                 $plainTextEmail = $validatedData['email'];
-
-                // Create the signed API-only URL
                 $hash = sha1($user->getEmailForVerification());
                 $backendVerificationUrl = URL::temporarySignedRoute(
                     'verification.verify',
@@ -190,11 +198,9 @@ class MProponentController extends Controller
                     ]
                 );
 
-                // Parse the backend URL to extract query parameters
                 $parts = parse_url($backendVerificationUrl);
-                parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+                parse_str($parts['query'], $query);
 
-                // Dispatch the job
                 SendVerificationEmailJob::dispatch(
                     $plainTextEmail,
                     (string) $user->id,
@@ -204,7 +210,6 @@ class MProponentController extends Controller
                 );
             } catch (\Exception $e) {
                 Log::error("Failed to dispatch verification email for new proponent {$user->id} (created by admin): " . $e->getMessage());
-                // We don't fail the whole request, just log the error.
             }
         }
         // --- END: Send Verification Email ---
@@ -213,7 +218,6 @@ class MProponentController extends Controller
         $newProponentName = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
         $notificationMessage = "A new Proponent account has been created for {$newProponentName}.";
 
-        // MODIFIED: Added a title to the notification dispatch.
         SendNotification::dispatch('New Proponent Account', $notificationMessage, null, $adminIds);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'create_proponent']);
@@ -231,36 +235,32 @@ class MProponentController extends Controller
      */
     public function show($id)
     {
-        // Selects only the necessary fields for the edit form based on your schema
         $proponent = DB::selectOne("
-         SELECT
-             u.id, u.first_name, u.last_name, u.middle_name,
-             u.encrypted_email, u.hashed_email, -- Select the encrypted/hashed fields
-             ud.student_id, ud.department, ud.program, ud.adviser_id
-         FROM users u
-         LEFT JOIN user_details ud ON u.id = ud.user_id
-         WHERE u.id = ? AND u.role = 'Proponent'
-     ", [$id]);
+            SELECT
+                u.id, u.first_name, u.last_name, u.middle_name,
+                u.encrypted_email, u.hashed_email,
+                ud.student_id, ud.department, ud.program, ud.adviser_id
+            FROM users u
+            LEFT JOIN user_details ud ON u.id = ud.user_id
+            WHERE u.id = ? AND u.role = 'Proponent'
+        ", [$id]);
 
         if (!$proponent) {
             return response()->json(['message' => 'Proponent not found.'], 404);
         }
 
-        // Decrypt the email for the frontend response (maintains same JSON structure)
         try {
             $decryptedEmail = Crypt::decryptString($proponent->encrypted_email);
         } catch (Exception $e) {
-            // Fallback in case decryption fails
             $decryptedEmail = 'Email not available';
         }
 
-        // Reconstruct the response object with the decrypted email
         $response = [
             'id' => $proponent->id,
             'first_name' => $proponent->first_name,
             'last_name' => $proponent->last_name,
             'middle_name' => $proponent->middle_name,
-            'email' => $decryptedEmail, // Return as 'email' for frontend compatibility
+            'email' => $decryptedEmail,
             'student_id' => $proponent->student_id,
             'department' => $proponent->department,
             'program' => $proponent->program,
@@ -275,22 +275,32 @@ class MProponentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // MODIFIED: Fetch user model to check email
         $user = User::where('id', $id)->where('role', 'Proponent')->first();
         if (!$user) {
             return response()->json(['message' => 'Proponent not found.'], 404);
         }
 
-        // Get current email for comparison
         $currentEmail = $user->getEmailForVerification();
         $emailChanged = false;
 
-        // Validation does NOT include a profile_image field
         $validatedData = $request->validate([
             'first_name' => 'sometimes|required|string|max:100',
             'last_name' => 'sometimes|required|string|max:100',
             'middle_name' => 'sometimes|nullable|string|max:100',
-            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users', 'hashed_email')->ignore($id)], // Check uniqueness against hashed_email
+            // MODIFIED: Custom closure to ignore the current user's ID
+            'email' => [
+                'sometimes',
+                'required',
+                'string',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) use ($id) {
+                    $hashedValue = hash('sha256', $value);
+                    if (User::where('hashed_email', $hashedValue)->where('id', '!=', $id)->exists()) {
+                        $fail('The email has already been taken.');
+                    }
+                },
+            ],
             'student_id' => 'sometimes|required|string|max:50',
             'department' => 'sometimes|required|string|max:50',
             'program' => 'sometimes|required|string|max:50',
@@ -306,16 +316,14 @@ class MProponentController extends Controller
 
                 foreach ($userFields as $key => $value) {
                     if ($key === 'email') {
-                        // Check if email is actually different
                         if ($value !== $currentEmail) {
-                            // Handle email encryption and hashing
                             $updateClauses[] = 'encrypted_email = ?';
                             $updateClauses[] = 'hashed_email = ?';
-                            $updateClauses[] = 'email_verified_at = ?'; // ADDED: Reset verification
+                            $updateClauses[] = 'email_verified_at = ?';
                             $bindings[] = Crypt::encryptString($value);
                             $bindings[] = hash('sha256', $value);
-                            $bindings[] = null; // ADDED
-                            $emailChanged = true; // ADDED
+                            $bindings[] = null;
+                            $emailChanged = true;
                         }
                     } else {
                         $updateClauses[] = "$key = ?";
@@ -323,7 +331,6 @@ class MProponentController extends Controller
                     }
                 }
 
-                // Only run update if there are fields to update
                 if (!empty($bindings)) {
                     $bindings[] = $id;
                     DB::update('UPDATE users SET ' . implode(', ', $updateClauses) . ' WHERE id = ?', $bindings);
@@ -353,9 +360,9 @@ class MProponentController extends Controller
 
         // --- ADDED: Re-send Verification Email if it was changed ---
         if ($emailChanged) {
-            $user = User::find($id); // Re-fetch the user
+            $user = User::find($id);
             try {
-                $plainTextEmail = $user->getEmailForVerification(); // Gets the new email
+                $plainTextEmail = $user->getEmailForVerification();
                 $hash = sha1($plainTextEmail);
                 $backendVerificationUrl = URL::temporarySignedRoute(
                     'verification.verify',
