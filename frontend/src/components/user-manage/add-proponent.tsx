@@ -36,7 +36,6 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
   const [advisers, setAdvisers] = useState<Adviser[]>([]);
   const [error, setError] = useState("");
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-  // --- CORRECT PLACEMENT for State ---
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -65,8 +64,15 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
 
   const handleClearAll = () => {
     setFormData({
-      first_name: "", last_name: "", email: "", password: "", password_confirmation: "",
-      student_id: "", department: "", program: "", adviser_id: "",
+      first_name: "",
+      last_name: "",
+      email: "",
+      password: "",
+      password_confirmation: "",
+      student_id: "",
+      department: "",
+      program: "",
+      adviser_id: "",
     });
     setError("");
   };
@@ -92,6 +98,18 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
   const handleConfirmSave = () => {
     onAdd(formData);
   };
+
+  // ✅ Check if all fields are filled (including adviser_id)
+  const isFormValid =
+    formData.first_name.trim() !== "" &&
+    formData.last_name.trim() !== "" &&
+    formData.email.trim() !== "" &&
+    formData.student_id.trim() !== "" &&
+    formData.password.trim() !== "" &&
+    formData.password_confirmation.trim() !== "" &&
+    formData.department.trim() !== "" &&
+    formData.program.trim() !== "" &&
+    formData.adviser_id !== "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -145,8 +163,7 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
                 className="rounded-md border-gray-300 shadow-md"
                 required
               />
-              
-              {/* --- CORRECT PLACEMENT for Password field --- */}
+
               <div className="relative">
                 <Input
                   id="password"
@@ -170,7 +187,6 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
                 </button>
               </div>
 
-              {/* --- CORRECT PLACEMENT for Confirm Password field --- */}
               <div className="relative">
                 <Input
                   id="password_confirmation"
@@ -181,7 +197,7 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
                   className="rounded-md border-gray-300 shadow-md pr-10"
                   required
                 />
-                 <button
+                <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
@@ -232,9 +248,15 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
             )}
 
             <div className="flex justify-center gap-4 mt-4">
+              {/* ✅ MODIFIED: Button is disabled and grayed out if form is invalid */}
               <Button
                 type="submit"
-                className="bg-[#660000] hover:bg-[#630808] text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out hover:scale-105"
+                disabled={!isFormValid}
+                className={`text-white font-semibold px-6 py-2 rounded-full shadow transition-transform duration-200 ease-in-out ${
+                  isFormValid
+                    ? "bg-[#660000] hover:bg-[#630808] hover:scale-105"
+                    : "bg-gray-400 cursor-not-allowed opacity-50 hover:scale-100"
+                }`}
               >
                 Save
               </Button>
@@ -265,4 +287,3 @@ const AddProponent: React.FC<AddProponentProps> = ({ onClose, onAdd }) => {
 };
 
 export default AddProponent;
-
