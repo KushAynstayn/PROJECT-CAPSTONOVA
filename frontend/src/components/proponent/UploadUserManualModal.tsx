@@ -105,7 +105,7 @@ export const UploadUserManualModal: React.FC<UploadUserManualModalProps> = ({
           <FileUploaderWithProgress
             id="user_manual"
             label="System Manual (PDF)" // --- MODIFIED: Label to match title ---
-            maxSizeMB={20} // Example size
+            maxSizeMB={100} // Example size
             accept=".pdf"
             onUploadStart={() => {
               setIsUploading(true);

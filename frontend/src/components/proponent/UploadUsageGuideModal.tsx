@@ -105,7 +105,7 @@ export const UploadUsageGuideModal: React.FC<UploadUsageGuideModalProps> = ({
           <FileUploaderWithProgress
             id="usage_guide"
             label="User Guide (PDF)"
-            maxSizeMB={20} // Example size
+            maxSizeMB={100} // Example size
             accept=".pdf"
             onUploadStart={() => {
               setIsUploading(true);
