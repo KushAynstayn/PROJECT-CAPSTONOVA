@@ -31,15 +31,23 @@ class RegisterController extends Controller
      */
     public function __invoke(Request $request)
     {
-        // Define custom messages for validation
-        $messages = [
-            'email.regex' => 'The email must be a valid @ctu.edu.ph address.',
-        ];
+        // Check env variable, default to true for security if missing
+        $useCtuEmail = filter_var(env('USE_CTU_EMAIL', true), FILTER_VALIDATE_BOOLEAN);
+
+        // Define base email rules
+        $emailRules = ['required', 'string', 'email', 'max:255'];
+        $messages = [];
+
+        // Conditionally add regex restriction and message
+        if ($useCtuEmail) {
+            $emailRules[] = 'regex:/^.+@ctu\.edu\.ph$/i';
+            $messages['email.regex'] = 'The email must be a valid @ctu.edu.ph address.';
+        }
 
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'email', 'max:255', 'regex:/^.+@ctu\.edu\.ph$/i'],
+            'email' => $emailRules,
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])],
             'student_id' => ['required_if:role,Proponent', 'nullable', 'string', 'max:50'],
@@ -128,7 +136,7 @@ class RegisterController extends Controller
                     ]
                 );
 
-                // MODIFIED: Parse the backend URL to extract query parameters
+                // Parse the backend URL to extract query parameters
                 $parts = parse_url($backendVerificationUrl);
                 parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
 
@@ -145,7 +153,6 @@ class RegisterController extends Controller
             }
 
             if ($user->role === 'Proponent' && !is_null($adviserId)) {
-                // MODIFIED: Added a title to the notification dispatch.
                 SendNotification::dispatch(
                     'New Proponent Registration', // title
                     "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement.", // message
