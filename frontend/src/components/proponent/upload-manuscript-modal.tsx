@@ -508,7 +508,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                   <FileUploaderWithProgress
                     id="manuscript_pdf"
                     label="Manuscript (PDF)"
-                    maxSizeMB={60}
+                    maxSizeMB={150}
                     accept=".pdf"
                     onUploadStart={() => {
                       setIsManuscriptUploading(true);
