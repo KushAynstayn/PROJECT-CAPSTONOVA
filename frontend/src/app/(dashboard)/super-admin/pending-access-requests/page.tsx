@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import PendingRequestNavbar, {
   PendingRequestRole,
 } from "@/components/ui/pending-request-navbar";
 import AccessRequestView from "../../../../components/access-request/view-access-request";
 import ApprovalHistoryView from "../../../../components/access-request/view-approval-history";
 import { apiCall } from "@/lib/api";
-import Pagination from "@/components/ui/pagination";
 
 // Interface for the pending requests from the 'index' method
 interface DocumentRequest {
@@ -40,6 +41,9 @@ const PendingAccessRequestsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Hydration fix: Ensure we only render client-specific UI after mount
+  const [isMounted, setIsMounted] = useState(false);
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -67,6 +71,7 @@ const PendingAccessRequestsPage = () => {
           const response = await apiCall(
             `/super-admin/document-requests?${params.toString()}`
           );
+
           setPendingRequests(response.data || []);
           setPagination({
             currentPage: response.current_page,
@@ -76,6 +81,7 @@ const PendingAccessRequestsPage = () => {
           const response = await apiCall(
             `/super-admin/document-requests/approval-history?${params.toString()}`
           );
+
           setApprovalHistory(response.data || []);
           setPagination({
             currentPage: response.current_page,
@@ -86,6 +92,7 @@ const PendingAccessRequestsPage = () => {
         setError(err.message || "Failed to fetch data.");
         setPendingRequests([]);
         setApprovalHistory([]);
+        setPagination({ currentPage: 1, totalPages: 1 });
       } finally {
         setIsLoading(false);
       }
@@ -94,14 +101,17 @@ const PendingAccessRequestsPage = () => {
   );
 
   useEffect(() => {
+    setIsMounted(true); // Mark as mounted to allow client-only rendering
     const debounce = setTimeout(() => {
       fetchAndSetData(1);
-    }, 500); // 500ms debounce delay
+    }, 500);
     return () => clearTimeout(debounce);
   }, [fetchAndSetData]);
 
-  const handlePageChange = (page: number) => {
-    fetchAndSetData(page);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchAndSetData(newPage);
+    }
   };
 
   const handleApprove = async (
@@ -109,20 +119,31 @@ const PendingAccessRequestsPage = () => {
     grantDate: Date,
     expiryDate: Date
   ) => {
-    await apiCall(
-      `/super-admin/document-requests/${requestId}/approve`,
-      "POST",
-      {
-        grant_date: format(grantDate, "yyyy-MM-dd"),
-        expiry_date: format(expiryDate, "yyyy-MM-dd"),
-      }
-    );
-    fetchAndSetData(pagination.currentPage);
+    try {
+      await apiCall(
+        `/super-admin/document-requests/${requestId}/approve`,
+        "POST",
+        {
+          grant_date: format(grantDate, "yyyy-MM-dd"),
+          expiry_date: format(expiryDate, "yyyy-MM-dd"),
+        }
+      );
+      fetchAndSetData(pagination.currentPage);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const handleDecline = async (requestId: number) => {
-    await apiCall(`/super-admin/document-requests/${requestId}/reject`, "POST");
-    fetchAndSetData(pagination.currentPage);
+    try {
+      await apiCall(
+        `/super-admin/document-requests/${requestId}/reject`,
+        "POST"
+      );
+      fetchAndSetData(pagination.currentPage);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const renderContent = () => {
@@ -176,14 +197,37 @@ const PendingAccessRequestsPage = () => {
         }}
       />
       <div className="mt-6 p-1">
-        {error && <p className="text-red-500 text-center">{error}</p>}
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
         {renderContent()}
-        {!isLoading && pagination.totalPages > 1 && (
-          <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-          />
+
+        {/* HYDRATION FIX: Use isMounted to ensure this only renders on client */}
+        {isMounted && !isLoading && (
+          <div className="flex items-center justify-center space-x-4 mt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
+              className="h-8 w-8"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Previous page</span>
+            </Button>
+            <span className="text-sm font-medium text-gray-700">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}
+              className="h-8 w-8"
+            >
+              <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Next page</span>
+            </Button>
+          </div>
         )}
       </div>
     </main>
