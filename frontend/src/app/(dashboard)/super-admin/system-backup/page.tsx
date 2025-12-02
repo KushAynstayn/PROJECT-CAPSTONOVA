@@ -19,18 +19,90 @@ import {
   Upload,
   RotateCw,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { apiCall, apiCallForBlob } from "@/lib/api";
+
+const CHUNK_SIZE = 1024 * 1024 * 10; // 10MB chunks
 
 const SystemBackupPage = () => {
   const [loadingType, setLoadingType] = useState<
     "database" | "files" | "restore_db" | "restore_files" | null
   >(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Refs for hidden file inputs
   const dbInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);
+
+  // --- HELPER: Chunked Upload & Restore Logic ---
+  const performChunkedRestore = async (file: File, restoreEndpoint: string) => {
+    try {
+      setUploadProgress(0);
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+      // 1. Start Session
+      // FIXED: parameter name must be 'original_filename' to match backend validator
+      const startResponse = await apiCall(
+        "/super-admin/backup/chunk/start",
+        "POST",
+        {
+          original_filename: file.name,
+          total_chunks: totalChunks,
+        }
+      );
+
+      const { upload_id } = startResponse; // Backend returns 'upload_id' (uuid)
+      if (!upload_id) throw new Error("Failed to initialize upload session.");
+
+      // 2. Upload Chunks
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append("chunk_file", chunk); // Backend expects 'chunk_file'
+        formData.append("chunk_number", (i + 1).toString()); // Backend expects 1-based index
+
+        await apiCall(
+          `/super-admin/backup/chunk/${upload_id}`,
+          "POST",
+          formData,
+          true // isForm = true
+        );
+
+        // Update Progress
+        const percent = Math.round(((i + 1) / totalChunks) * 100);
+        setUploadProgress(percent);
+      }
+
+      // 3. Finish Assembly
+      // This assembles the file and returns the temporary path
+      const finishResponse = await apiCall(
+        `/super-admin/backup/chunk/${upload_id}/finish`,
+        "POST",
+        {}
+      );
+
+      const assembledPath = finishResponse.path;
+      if (!assembledPath)
+        throw new Error("File assembly failed, no path returned.");
+
+      // 4. Trigger Actual Restoration
+      // We pass the path of the assembled file to the specific restore endpoint
+      await apiCall(restoreEndpoint, "POST", {
+        file_path: assembledPath,
+      });
+
+      return true;
+    } catch (err) {
+      throw err;
+    } finally {
+      setUploadProgress(0);
+    }
+  };
 
   // --- 1. BACKUP DATABASE ---
   const handleBackupDatabase = async () => {
@@ -39,11 +111,8 @@ const SystemBackupPage = () => {
     setSuccess(null);
     try {
       const timestamp = new Date().toISOString().slice(0, 10);
-
-      // Matches Route::post('/backup/database', ...)
       const blob = await apiCallForBlob("/super-admin/backup/database", "POST");
 
-      // Trigger browser download
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -69,11 +138,8 @@ const SystemBackupPage = () => {
     setSuccess(null);
     try {
       const timestamp = new Date().toISOString().slice(0, 10);
-
-      // Matches Route::post('/backup/files', ...)
       const blob = await apiCallForBlob("/super-admin/backup/files", "POST");
 
-      // Trigger browser download
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -92,15 +158,14 @@ const SystemBackupPage = () => {
     }
   };
 
-  // --- 3. RESTORE DATABASE ---
+  // --- 3. RESTORE DATABASE (Chunked) ---
   const handleRestoreDatabase = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reset input so same file can be selected again if needed
-    e.target.value = "";
+    e.target.value = ""; // Reset input
 
     if (
       !window.confirm(
@@ -115,17 +180,8 @@ const SystemBackupPage = () => {
     setSuccess(null);
 
     try {
-      const formData = new FormData();
-      // 'backup_file' matches $request->validate(['backup_file' => ...])
-      formData.append("backup_file", file);
-
-      // Matches Route::post('/backup/restore-database', ...)
-      await apiCall(
-        "/super-admin/backup/restore-database",
-        "POST",
-        formData,
-        true
-      );
+      // Pass the specific endpoint for database restoration
+      await performChunkedRestore(file, "/super-admin/backup/restore-database");
       setSuccess("Database restored successfully.");
     } catch (err: any) {
       console.error("Database restore failed", err);
@@ -135,12 +191,12 @@ const SystemBackupPage = () => {
     }
   };
 
-  // --- 4. RESTORE FILES ---
+  // --- 4. RESTORE FILES (Chunked) ---
   const handleRestoreFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    e.target.value = "";
+    e.target.value = ""; // Reset input
 
     if (
       !window.confirm(
@@ -155,17 +211,8 @@ const SystemBackupPage = () => {
     setSuccess(null);
 
     try {
-      const formData = new FormData();
-      // 'backup_file' matches $request->validate(['backup_file' => ...])
-      formData.append("backup_file", file);
-
-      // Matches Route::post('/backup/restore-files', ...)
-      await apiCall(
-        "/super-admin/backup/restore-files",
-        "POST",
-        formData,
-        true
-      );
+      // Pass the specific endpoint for file restoration
+      await performChunkedRestore(file, "/super-admin/backup/restore-files");
       setSuccess("System files restored successfully.");
     } catch (err: any) {
       console.error("File restore failed", err);
@@ -174,6 +221,9 @@ const SystemBackupPage = () => {
       setLoadingType(null);
     }
   };
+
+  const isRestoring =
+    loadingType === "restore_db" || loadingType === "restore_files";
 
   return (
     <main className="flex min-h-screen flex-col p-4 sm:p-8 space-y-8">
@@ -206,6 +256,17 @@ const SystemBackupPage = () => {
             <h5 className="font-medium leading-none tracking-tight">Success</h5>
             <div className="text-sm opacity-90">{success}</div>
           </div>
+        </div>
+      )}
+
+      {/* Progress Bar for Restoration */}
+      {isRestoring && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm font-medium text-gray-500">
+            <span>Uploading & Restoring...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2 w-full" />
         </div>
       )}
 
