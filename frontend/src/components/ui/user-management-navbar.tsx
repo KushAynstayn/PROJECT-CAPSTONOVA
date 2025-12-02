@@ -1,13 +1,14 @@
 import React from "react";
 
-// ✅ Added "Super Admin" as a valid role
+// ✅ RENAMED "Whitelist" to "Faculty Whitelist"
 export type Role =
   | "Viewer"
   | "Proponents"
   | "Advisers"
   | "Admin"
   | "Super Admin"
-  | "Restricted";
+  | "Restricted"
+  | "Faculty Whitelist"; // <-- CHANGED
 
 interface NavigationBarProps {
   /** The currently active role */
@@ -20,7 +21,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   activeRole,
   onSelectRole,
 }) => {
-  // ✅ Added Super Admin to the list of roles
+  // ✅ RENAMED in the list as well
   const roles: Role[] = [
     "Viewer",
     "Proponents",
@@ -28,6 +29,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     "Admin",
     "Super Admin",
     "Restricted",
+    "Faculty Whitelist", // <-- CHANGED
   ];
 
   const navStyles: React.CSSProperties = {
@@ -37,10 +39,11 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 
   const listStyles: React.CSSProperties = {
     display: "flex",
-    gap: "10px", // Spacing between tabs
+    gap: "10px",
     listStyle: "none",
     margin: 0,
     padding: 0,
+    flexWrap: "wrap",
   };
 
   const getButtonStyles = (role: Role): React.CSSProperties => ({
