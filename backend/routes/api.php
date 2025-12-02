@@ -67,6 +67,7 @@ use App\Http\Controllers\Api\UserManagement\RestrictedUsersController;
 use App\Http\Controllers\Api\MlService\ProjectSizeRegressionController;
 use App\Http\Controllers\Api\UserManagement\FacultyWhitelistController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
+use App\Http\Controllers\Api\System\SystemBackupController;
 
 
 // Authentication routes grouped under the 'auth' prefix.
@@ -265,6 +266,14 @@ Route::prefix('super-admin')->middleware('auth:sanctum')->group(function () {
     Route::get('/system-settings/all', [SystemSettingController::class, 'all']);
 
     Route::get('user-logs', [UserLogController::class, 'index']);
+
+    Route::post('/backup/files', [SystemBackupController::class, 'backupFiles']);
+    Route::post('/backup/database', [SystemBackupController::class, 'backupDatabase']);
+    Route::post('/backup/restore-files', [SystemBackupController::class, 'restoreFiles']);
+    Route::post('/backup/restore-database', [SystemBackupController::class, 'restoreDatabase']);
+    Route::post('/backup/chunk/start', [SystemBackupController::class, 'startChunkUpload']);
+    Route::post('/backup/chunk/{uuid}', [SystemBackupController::class, 'uploadChunk']);
+    Route::post('/backup/chunk/{uuid}/finish', [SystemBackupController::class, 'finishChunkUpload']);
 });
 
 
