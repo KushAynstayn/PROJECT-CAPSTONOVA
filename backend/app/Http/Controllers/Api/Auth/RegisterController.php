@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\UserDetail;
 use App\Models\UserLog;
 use App\Models\Whitelist;
+use App\Models\FacultyWhitelist;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -31,14 +32,11 @@ class RegisterController extends Controller
      */
     public function __invoke(Request $request)
     {
-        // Check env variable, default to true for security if missing
         $useCtuEmail = filter_var(env('USE_CTU_EMAIL', true), FILTER_VALIDATE_BOOLEAN);
 
-        // Define base email rules
         $emailRules = ['required', 'string', 'email', 'max:255'];
         $messages = [];
 
-        // Conditionally add regex restriction and message
         if ($useCtuEmail) {
             $emailRules[] = 'regex:/^.+@ctu\.edu\.ph$/i';
             $messages['email.regex'] = 'The email must be a valid @ctu.edu.ph address.';
@@ -46,101 +44,130 @@ class RegisterController extends Controller
 
         $validator = Validator::make($request->all(), [
             'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'email' => $emailRules,
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'string', Rule::in(['Proponent', 'Viewer'])],
-            'student_id' => ['required_if:role,Proponent', 'nullable', 'string', 'max:50'],
-            'department' => ['required', 'string', 'max:50'],
-            'program' => ['required', 'string', 'max:50'],
+            'last_name'  => ['required', 'string', 'max:100'],
+            'email'      => $emailRules,
+            'password'   => ['required', 'string', 'min:8', 'confirmed'],
+            'role'       => ['required', 'string', Rule::in(['Proponent', 'Viewer', 'Admin', 'Adviser'])],
+
+            'student_id' => ['required_if:role,Proponent,Admin,Adviser', 'nullable', 'string', 'max:50'],
+
+            'department' => [
+                Rule::requiredIf(fn() => in_array($request->role, ['Proponent', 'Viewer'])),
+                'nullable',
+                'string',
+                'max:50'
+            ],
+            'program' => [
+                Rule::requiredIf(fn() => in_array($request->role, ['Proponent', 'Viewer'])),
+                'nullable',
+                'string',
+                'max:50'
+            ],
         ], $messages);
 
         if ($validator->fails()) {
+            // Returns standard format: {"email": ["Error msg"], "password": ["Error msg"]}
             return response()->json($validator->errors(), 422);
         }
 
-        $validated = $validator->validated();
-        $email = $validated['email'];
+        $validated   = $validator->validated();
+        $email       = strtolower($validated['email']);
         $hashedEmail = hash('sha256', $email);
-        $adviserId = null;
+        $adviserId   = null;
 
-        // Check if the selected role is 'Viewer' and if registration for that role is enabled.
+        // --- 1. Viewer Check ---
         if ($validated['role'] === 'Viewer') {
             $settingName = 'viewer_registerAccount';
             $isFeatureEnabled = Cache::remember($settingName, 60, function () use ($settingName) {
                 $setting = SystemSetting::where('setting_name', $settingName)->first();
-                return $setting ? $setting->is_enabled : false; // Default to false
+                return $setting ? $setting->is_enabled : false;
             });
 
             if (!$isFeatureEnabled) {
-                return response()->json(
-                    ['error' => 'Viewer registration is currently disabled by an administrator.'],
-                    403
-                );
+                // CHANGED: Mapped to 'role' field so it appears under the Role dropdown
+                return response()->json([
+                    'role' => ['Viewer registration is currently disabled by an administrator.']
+                ], 403);
             }
         }
 
+        // --- Check for Existing Account ---
         if (User::where('hashed_email', $hashedEmail)->exists()) {
-            return response()->json(
-                ['email' => ['An account with this email address already exists.']],
-                409
-            );
+            return response()->json([
+                'email' => ['An account with this email address already exists.']
+            ], 409);
         }
 
+        // --- 2. Proponent Check (Student Whitelist) ---
         if ($validated['role'] === 'Proponent') {
             $whitelistEntry = Whitelist::where('student_id', $validated['student_id'])
                 ->where('hashed_email', $hashedEmail)
                 ->first();
 
             if (!$whitelistEntry) {
-                return response()->json(
-                    ['error' => 'Not authorized. The provided Student ID and Email are not whitelisted for Proponent registration.'],
-                    403
-                );
+                // CHANGED: Mapped to 'student_id' field so it appears under the ID input
+                return response()->json([
+                    'student_id' => ['Not authorized. The provided Student ID and Email are not whitelisted for Proponent registration.']
+                ], 403);
             }
             $adviserId = $whitelistEntry->adviser_id;
+        }
+
+        // --- 3. Admin/Adviser Check (Faculty Whitelist) ---
+        if (in_array($validated['role'], ['Admin', 'Adviser'])) {
+            $facultyEntry = FacultyWhitelist::where('faculty_id', $validated['student_id'])
+                ->where('hashed_email', $hashedEmail)
+                ->where('role', $validated['role'])
+                ->first();
+
+            if (!$facultyEntry) {
+                // CHANGED: Mapped to 'student_id' field so it appears under the ID input
+                return response()->json([
+                    'student_id' => ["Not authorized. The provided Faculty ID and Email are not whitelisted for {$validated['role']} registration."]
+                ], 403);
+            }
         }
 
         try {
             DB::beginTransaction();
 
             $user = User::create([
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
+                'first_name'      => $validated['first_name'],
+                'last_name'       => $validated['last_name'],
                 'encrypted_email' => Crypt::encryptString($email),
-                'hashed_email' => $hashedEmail,
-                'password' => Hash::make($validated['password']),
-                'role' => $validated['role'],
-                'status' => 'active',
+                'hashed_email'    => $hashedEmail,
+                'password'        => Hash::make($validated['password']),
+                'role'            => $validated['role'],
+                'status'          => 'active',
             ]);
 
-            UserDetail::create([
-                'user_id' => $user->id,
-                'student_id' => $validated['student_id'] ?? 'N/A',
-                'department' => $validated['department'],
-                'program' => $validated['program'],
-                'adviser_id' => $adviserId,
-            ]);
+            // Only create UserDetail for Students
+            if (in_array($validated['role'], ['Proponent', 'Viewer'])) {
+                UserDetail::create([
+                    'user_id'    => $user->id,
+                    'student_id' => $validated['student_id'] ?? 'N/A',
+                    'department' => $validated['department'],
+                    'program'    => $validated['program'],
+                    'adviser_id' => $adviserId,
+                ]);
+            }
 
             DB::commit();
 
             try {
-                // Create the signed API-only URL
                 $hash = sha1($user->getEmailForVerification());
                 $backendVerificationUrl = URL::temporarySignedRoute(
                     'verification.verify',
                     now()->addMinutes(config('auth.verification.expire', 60)),
                     [
-                        'id' => $user->id,
+                        'id'   => $user->id,
                         'hash' => $hash,
                     ]
                 );
 
-                // Parse the backend URL to extract query parameters
                 $parts = parse_url($backendVerificationUrl);
-                parse_str($parts['query'], $query); // $query will be ['expires' => '...', 'signature' => '...']
+                parse_str($parts['query'], $query);
 
-                // Dispatch the job, passing the plain-text email and individual URL parts
                 SendVerificationEmailJob::dispatch(
                     $email,
                     (string) $user->id,
@@ -154,17 +181,17 @@ class RegisterController extends Controller
 
             if ($user->role === 'Proponent' && !is_null($adviserId)) {
                 SendNotification::dispatch(
-                    'New Proponent Registration', // title
-                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement.", // message
-                    $adviserId // recipientId
+                    'New Proponent Registration',
+                    "A new Proponent ({$user->first_name} {$user->last_name}) has registered under your advisement.",
+                    $adviserId
                 );
             }
 
             $actionType = ActionType::firstOrCreate(['action_name' => 'register']);
             UserLog::create([
-                'user_id' => $user->id,
+                'user_id'        => $user->id,
                 'action_type_id' => $actionType->id,
-                'details' => "User registered as {$user->role}."
+                'details'        => "User registered as {$user->role}."
             ]);
 
             return response()->json([
@@ -173,6 +200,7 @@ class RegisterController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Registration Error: ' . $e->getMessage());
+            // CHANGED: Use 'message' key which is standard for general alerts
             return response()->json(['message' => 'An unexpected error occurred during registration.'], 500);
         }
     }

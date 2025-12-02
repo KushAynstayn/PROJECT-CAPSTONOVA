@@ -65,6 +65,7 @@ use App\Http\Controllers\Api\Util\ViewerReportsAnalyticsController;
 use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
 use App\Http\Controllers\Api\UserManagement\RestrictedUsersController;
 use App\Http\Controllers\Api\MlService\ProjectSizeRegressionController;
+use App\Http\Controllers\Api\UserManagement\FacultyWhitelistController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
 
 
@@ -479,6 +480,9 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
     // ============================
     // End Super Admin Management Routes
     // ============================
+
+    //Faculty Whitelist routes
+    Route::apiResource('faculty-whitelist', FacultyWhitelistController::class);
 
 
     //Restrcted users routes

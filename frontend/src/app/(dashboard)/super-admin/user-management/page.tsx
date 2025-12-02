@@ -18,23 +18,27 @@ import AddAdviser from "../../../../components/user-manage/add-adviser";
 import AddAdmin from "../../../../components/user-manage/add-admin";
 import { apiCall, ApiError } from "@/lib/api";
 
-// ✅ NEW IMPORT — your Restricted Accounts component
 import RestrictedAccounts from "../../../../components/user-manage/restricted-accounts";
 
-// ✅ NEW IMPORTS --- for Super Admin
 import SuperAdminView from "../../../../components/user-manage/view-super-admin";
 import EditSuperAdminView from "../../../../components/user-manage/edit-super-admin";
 import AddSuperAdmin from "../../../../components/user-manage/add-super-admin";
 
+import WhitelistView, {
+  WhitelistItem,
+} from "../../../../components/user-manage/view-whitelist";
+import AddWhitelist from "../../../../components/user-manage/add-whitelist";
+import EditWhitelist from "../../../../components/user-manage/edit-whitelist";
+
 // --- Type and Interface definitions ---
-// ✅ ADDED "Super Admin" to Role type
 type Role =
   | "Viewer"
   | "Proponents"
   | "Advisers"
   | "Admin"
   | "Super Admin"
-  | "Restricted";
+  | "Restricted"
+  | "Faculty Whitelist";
 
 interface BaseUser {
   id: number;
@@ -73,16 +77,14 @@ interface Adviser extends BaseUser {
   advisees_count: number;
 }
 
-// ✅ MODIFIED: Added email field here to match the prop type of EditAdviserView
 interface AdviserEditData {
   id: number;
   first_name: string;
   middle_name: string | null;
   last_name: string;
-  email: string; // <-- This was the missing field
+  email: string;
 }
 
-// ✅ This interface can be reused for Admin and Super Admin
 interface Admin extends BaseUser {
   name: string;
   first_name: string;
@@ -96,29 +98,35 @@ type User =
   | ProponentEditData
   | Adviser
   | AdviserEditData
-  | Admin;
+  | Admin
+  | WhitelistItem;
 
 const placeholderText = {
   Viewer: "Search Viewers Here",
   Proponents: "Search Proponents Here",
   Advisers: "Search Advisers Here",
   Admin: "Search Admins Here",
-  "Super Admin": "Search Super Admins Here", // ✅ ADDED
+  "Super Admin": "Search Super Admins Here",
   Restricted: "Search Restricted Accounts Here",
+  // ✅ CHANGED: Updated text to match new behavior
+  "Faculty Whitelist": "Search by Faculty ID...",
 };
 
 const SuperAdminUserManagementPage = () => {
   const [currentRole, setCurrentRole] = useState<Role>("Viewer");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
   const [users, setUsers] = useState<Record<Role, User[]>>({
     Viewer: [],
     Proponents: [],
     Advisers: [],
     Admin: [],
-    "Super Admin": [], // ✅ ADDED
+    "Super Admin": [],
     Restricted: [],
+    "Faculty Whitelist": [],
   });
+
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
     useState<Adviser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -182,15 +190,11 @@ const SuperAdminUserManagementPage = () => {
     }
   }, [searchQuery]);
 
-  // ✅ MODIFIED FUNCTION for fetching Super Admins (now uses API)
   const fetchSuperAdmins = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // ✅ Use the new endpoint
       const data = await apiCall(`/user-mgt/super-admin?name=${searchQuery}`);
-
-      // ✅ Format data as the view component expects a 'name' field
       const formattedData = data.data.map((admin: any) => ({
         ...admin,
         name: `${admin.first_name} ${admin.last_name}`,
@@ -198,6 +202,21 @@ const SuperAdminUserManagementPage = () => {
       setUsers((prev) => ({ ...prev, "Super Admin": formattedData }));
     } catch (err) {
       setError("Failed to fetch super admins.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
+
+  const fetchWhitelist = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiCall(
+        `/user-mgt/faculty-whitelist?search=${searchQuery}`
+      );
+      setUsers((prev) => ({ ...prev, "Faculty Whitelist": response.data }));
+    } catch (err) {
+      setError("Failed to fetch whitelist.");
     } finally {
       setIsLoading(false);
     }
@@ -220,11 +239,13 @@ const SuperAdminUserManagementPage = () => {
       case "Admin":
         fetchAdmins();
         break;
-      case "Super Admin": // ✅ ADDED
+      case "Super Admin":
         fetchSuperAdmins();
         break;
+      case "Faculty Whitelist":
+        fetchWhitelist();
+        break;
       case "Restricted":
-        // This component fetches its own data, so no call needed here.
         break;
     }
   }, [
@@ -234,10 +255,17 @@ const SuperAdminUserManagementPage = () => {
     fetchProponents,
     fetchAdvisers,
     fetchAdmins,
-    fetchSuperAdmins, // ✅ ADDED
+    fetchSuperAdmins,
+    fetchWhitelist,
   ]);
 
-  const handleEditUser = async (userId: number) => {
+  const handleEditUser = async (userIdOrItem: number | WhitelistItem) => {
+    if (currentRole === "Faculty Whitelist") {
+      setEditingUser(userIdOrItem as WhitelistItem);
+      return;
+    }
+
+    const userId = userIdOrItem as number;
     setError(null);
     setIsLoading(true);
     try {
@@ -248,10 +276,9 @@ const SuperAdminUserManagementPage = () => {
       if (currentRole === "Advisers") endpoint = `/user-mgt/advisers/${userId}`;
       if (currentRole === "Admin") endpoint = `/user-mgt/admin/${userId}`;
       if (currentRole === "Super Admin")
-        endpoint = `/user-mgt/super-admin/${userId}`; // ✅ ADDED
+        endpoint = `/user-mgt/super-admin/${userId}`;
 
       if (endpoint) {
-        // ✅ Removed mock logic, this now works for all roles
         const userToEdit = await apiCall(endpoint);
         setEditingUser({ id: userId, ...userToEdit });
       }
@@ -266,9 +293,14 @@ const SuperAdminUserManagementPage = () => {
     let endpoint = "";
     let fetchAction: (() => void) | null = null;
     let roleName = currentRole.slice(0, -1);
-    if (currentRole === "Super Admin") roleName = "Super Admin";
 
-    if (currentRole === "Viewer") {
+    if (currentRole === "Super Admin") roleName = "Super Admin";
+    if (currentRole === "Faculty Whitelist") roleName = "Whitelist Entry";
+
+    if (currentRole === "Faculty Whitelist") {
+      endpoint = `/user-mgt/faculty-whitelist/${userId}`;
+      fetchAction = fetchWhitelist;
+    } else if (currentRole === "Viewer") {
       endpoint = `/user-mgt/viewers/${userId}`;
       fetchAction = fetchViewers;
     } else if (currentRole === "Proponents") {
@@ -281,19 +313,17 @@ const SuperAdminUserManagementPage = () => {
       endpoint = `/user-mgt/admin/${userId}/restrict`;
       fetchAction = fetchAdmins;
     } else if (currentRole === "Super Admin") {
-      // ✅ ADDED
-      endpoint = `/user-mgt/super-admin/${userId}/restrict`; // ✅ Use new endpoint
+      endpoint = `/user-mgt/super-admin/${userId}/restrict`;
       fetchAction = fetchSuperAdmins;
     }
 
-    if (window.confirm(`Are you sure you want to restrict this ${roleName}?`)) {
+    if (window.confirm(`Are you sure you want to remove this ${roleName}?`)) {
       try {
         const method =
           currentRole === "Admin" || currentRole === "Super Admin"
             ? "PATCH"
             : "DELETE";
 
-        // ✅ Removed mock logic
         await apiCall(endpoint, method);
 
         if (fetchAction) fetchAction();
@@ -301,8 +331,7 @@ const SuperAdminUserManagementPage = () => {
         const message =
           err instanceof ApiError
             ? err.message
-            : `Failed to restrict ${roleName}.`;
-        // ✅ Display specific backend error if available (e.g., "You cannot restrict your own account.")
+            : `Failed to remove ${roleName}.`;
         setError(message);
       }
     }
@@ -324,15 +353,15 @@ const SuperAdminUserManagementPage = () => {
       endpoint = "/user-mgt/admin";
       fetchAction = fetchAdmins;
     } else if (currentRole === "Super Admin") {
-      // ✅ ADDED
-      endpoint = "/user-mgt/super-admin"; // ✅ Use new endpoint
+      endpoint = "/user-mgt/super-admin";
       fetchAction = fetchSuperAdmins;
+    } else if (currentRole === "Faculty Whitelist") {
+      endpoint = "/user-mgt/faculty-whitelist";
+      fetchAction = fetchWhitelist;
     }
 
     try {
-      // ✅ Removed mock logic
       await apiCall(endpoint, "POST", userData);
-
       setIsAddModalOpen(false);
       if (fetchAction) fetchAction();
     } catch (err: any) {
@@ -354,6 +383,7 @@ const SuperAdminUserManagementPage = () => {
     let endpoint = "";
     let payload: any = {};
     let fetchAction: (() => void) | null = null;
+    let method = "PUT";
 
     if (currentRole === "Viewer") {
       endpoint = `/user-mgt/viewers/${updatedUser.id}`;
@@ -378,19 +408,24 @@ const SuperAdminUserManagementPage = () => {
       payload = updatedUser as Admin;
       fetchAction = fetchAdmins;
     } else if (currentRole === "Super Admin") {
-      // ✅ ADDED
-      endpoint = `/user-mgt/super-admin/${updatedUser.id}`; // ✅ Use new endpoint
-      payload = updatedUser as Admin; // Can reuse Admin interface
+      endpoint = `/user-mgt/super-admin/${updatedUser.id}`;
+      payload = updatedUser as Admin;
       fetchAction = fetchSuperAdmins;
+    } else if (currentRole === "Faculty Whitelist") {
+      endpoint = `/user-mgt/faculty-whitelist/${updatedUser.id}`;
+      payload = updatedUser as WhitelistItem;
+      fetchAction = fetchWhitelist;
     }
 
     try {
-      // ✅ Removed mock logic
-      await apiCall(endpoint, "PUT", payload);
-
+      await apiCall(endpoint, method, payload);
       if (fetchAction) fetchAction();
-    } catch (err) {
-      setError(`Failed to update ${currentRole.slice(0, -1)}.`);
+    } catch (err: any) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : `Failed to update ${currentRole}.`;
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -451,7 +486,6 @@ const SuperAdminUserManagementPage = () => {
         onDeleteUser={handleDeleteUser}
       />
     ),
-    // ✅ NEW TAB: Super Admin
     "Super Admin": (
       <SuperAdminView
         searchQuery={searchQuery}
@@ -464,7 +498,18 @@ const SuperAdminUserManagementPage = () => {
         onDeleteUser={handleDeleteUser}
       />
     ),
-    // ✅ NEW TAB: Restricted
+    "Faculty Whitelist": (
+      <WhitelistView
+        searchQuery={searchQuery}
+        onSearchChange={(value) => setSearchQuery(value)}
+        onClear={() => setSearchQuery("")}
+        onAdd={() => setIsAddModalOpen(true)}
+        items={users["Faculty Whitelist"] as WhitelistItem[]}
+        onEdit={(item) => handleEditUser(item)}
+        onDelete={(id) => handleDeleteUser(id)}
+        isLoading={isLoading}
+      />
+    ),
     Restricted: <RestrictedAccounts />,
   };
 
@@ -503,9 +548,16 @@ const SuperAdminUserManagementPage = () => {
             />
           )}
 
-          {/* ✅ ADDED Modal for Super Admin */}
           {isAddModalOpen && currentRole === "Super Admin" && (
             <AddSuperAdmin
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddUser}
+            />
+          )}
+
+          {/* ✅ Whitelist Modal */}
+          {isAddModalOpen && currentRole === "Faculty Whitelist" && (
+            <AddWhitelist
               onClose={() => setIsAddModalOpen(false)}
               onAdd={handleAddUser}
             />
@@ -546,10 +598,17 @@ const SuperAdminUserManagementPage = () => {
                   onCancel={handleCancelEdit}
                 />
               )}
-              {/* ✅ ADDED Edit View for Super Admin */}
               {currentRole === "Super Admin" && (
                 <EditSuperAdminView
-                  user={editingUser as Admin} // Can reuse Admin interface
+                  user={editingUser as Admin}
+                  onSave={handleSaveUser}
+                  onCancel={handleCancelEdit}
+                />
+              )}
+              {/* ✅ Whitelist Edit View */}
+              {currentRole === "Faculty Whitelist" && (
+                <EditWhitelist
+                  item={editingUser as WhitelistItem}
                   onSave={handleSaveUser}
                   onCancel={handleCancelEdit}
                 />
