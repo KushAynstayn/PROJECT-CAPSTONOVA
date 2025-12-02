@@ -38,7 +38,7 @@ type Role =
   | "Admin"
   | "Super Admin"
   | "Restricted"
-  | "Faculty Whitelist"; // ✅ RENAMED
+  | "Faculty Whitelist";
 
 interface BaseUser {
   id: number;
@@ -108,13 +108,15 @@ const placeholderText = {
   Admin: "Search Admins Here",
   "Super Admin": "Search Super Admins Here",
   Restricted: "Search Restricted Accounts Here",
-  "Faculty Whitelist": "Search Faculty Whitelist Here", // ✅ RENAMED KEY & TEXT
+  // ✅ CHANGED: Updated text to match new behavior
+  "Faculty Whitelist": "Search by Faculty ID...",
 };
 
 const SuperAdminUserManagementPage = () => {
   const [currentRole, setCurrentRole] = useState<Role>("Viewer");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
   const [users, setUsers] = useState<Record<Role, User[]>>({
     Viewer: [],
     Proponents: [],
@@ -122,8 +124,9 @@ const SuperAdminUserManagementPage = () => {
     Admin: [],
     "Super Admin": [],
     Restricted: [],
-    "Faculty Whitelist": [], // ✅ RENAMED KEY
+    "Faculty Whitelist": [],
   });
+
   const [viewingSuggestionsFor, setViewingSuggestionsFor] =
     useState<Adviser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -205,9 +208,19 @@ const SuperAdminUserManagementPage = () => {
   }, [searchQuery]);
 
   const fetchWhitelist = useCallback(async () => {
-    console.log("Fetching whitelist (mock)...");
-    // Implementation ready for API integration
-  }, []);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiCall(
+        `/user-mgt/faculty-whitelist?search=${searchQuery}`
+      );
+      setUsers((prev) => ({ ...prev, "Faculty Whitelist": response.data }));
+    } catch (err) {
+      setError("Failed to fetch whitelist.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     setEditingUser(null);
@@ -229,7 +242,7 @@ const SuperAdminUserManagementPage = () => {
       case "Super Admin":
         fetchSuperAdmins();
         break;
-      case "Faculty Whitelist": // ✅ RENAMED CASE
+      case "Faculty Whitelist":
         fetchWhitelist();
         break;
       case "Restricted":
@@ -247,7 +260,6 @@ const SuperAdminUserManagementPage = () => {
   ]);
 
   const handleEditUser = async (userIdOrItem: number | WhitelistItem) => {
-    // ✅ RENAMED CHECK
     if (currentRole === "Faculty Whitelist") {
       setEditingUser(userIdOrItem as WhitelistItem);
       return;
@@ -278,18 +290,17 @@ const SuperAdminUserManagementPage = () => {
   };
 
   const handleDeleteUser = async (userId: number) => {
-    // ✅ RENAMED CHECK
-    if (currentRole === "Faculty Whitelist") {
-      alert(`Deleted whitelist entry ID: ${userId} (Mock Action)`);
-      return;
-    }
-
     let endpoint = "";
     let fetchAction: (() => void) | null = null;
     let roleName = currentRole.slice(0, -1);
-    if (currentRole === "Super Admin") roleName = "Super Admin";
 
-    if (currentRole === "Viewer") {
+    if (currentRole === "Super Admin") roleName = "Super Admin";
+    if (currentRole === "Faculty Whitelist") roleName = "Whitelist Entry";
+
+    if (currentRole === "Faculty Whitelist") {
+      endpoint = `/user-mgt/faculty-whitelist/${userId}`;
+      fetchAction = fetchWhitelist;
+    } else if (currentRole === "Viewer") {
       endpoint = `/user-mgt/viewers/${userId}`;
       fetchAction = fetchViewers;
     } else if (currentRole === "Proponents") {
@@ -306,7 +317,7 @@ const SuperAdminUserManagementPage = () => {
       fetchAction = fetchSuperAdmins;
     }
 
-    if (window.confirm(`Are you sure you want to restrict this ${roleName}?`)) {
+    if (window.confirm(`Are you sure you want to remove this ${roleName}?`)) {
       try {
         const method =
           currentRole === "Admin" || currentRole === "Super Admin"
@@ -320,21 +331,13 @@ const SuperAdminUserManagementPage = () => {
         const message =
           err instanceof ApiError
             ? err.message
-            : `Failed to restrict ${roleName}.`;
+            : `Failed to remove ${roleName}.`;
         setError(message);
       }
     }
   };
 
   const handleAddUser = async (userData: any) => {
-    // ✅ RENAMED CHECK
-    if (currentRole === "Faculty Whitelist") {
-      console.log("Mock Adding Whitelist:", userData);
-      setIsAddModalOpen(false);
-      alert("Added to whitelist (Mock Action)");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
     let endpoint = "";
@@ -352,6 +355,9 @@ const SuperAdminUserManagementPage = () => {
     } else if (currentRole === "Super Admin") {
       endpoint = "/user-mgt/super-admin";
       fetchAction = fetchSuperAdmins;
+    } else if (currentRole === "Faculty Whitelist") {
+      endpoint = "/user-mgt/faculty-whitelist";
+      fetchAction = fetchWhitelist;
     }
 
     try {
@@ -370,14 +376,6 @@ const SuperAdminUserManagementPage = () => {
   const handleCancelEdit = () => setEditingUser(null);
 
   const handleSaveUser = async (updatedUser: User) => {
-    // ✅ RENAMED CHECK
-    if (currentRole === "Faculty Whitelist") {
-      console.log("Mock Saving Whitelist:", updatedUser);
-      setEditingUser(null);
-      alert("Whitelist updated (Mock Action)");
-      return;
-    }
-
     setEditingUser(null);
     setError(null);
     setIsLoading(true);
@@ -385,6 +383,7 @@ const SuperAdminUserManagementPage = () => {
     let endpoint = "";
     let payload: any = {};
     let fetchAction: (() => void) | null = null;
+    let method = "PUT";
 
     if (currentRole === "Viewer") {
       endpoint = `/user-mgt/viewers/${updatedUser.id}`;
@@ -412,13 +411,21 @@ const SuperAdminUserManagementPage = () => {
       endpoint = `/user-mgt/super-admin/${updatedUser.id}`;
       payload = updatedUser as Admin;
       fetchAction = fetchSuperAdmins;
+    } else if (currentRole === "Faculty Whitelist") {
+      endpoint = `/user-mgt/faculty-whitelist/${updatedUser.id}`;
+      payload = updatedUser as WhitelistItem;
+      fetchAction = fetchWhitelist;
     }
 
     try {
-      await apiCall(endpoint, "PUT", payload);
+      await apiCall(endpoint, method, payload);
       if (fetchAction) fetchAction();
-    } catch (err) {
-      setError(`Failed to update ${currentRole.slice(0, -1)}.`);
+    } catch (err: any) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : `Failed to update ${currentRole}.`;
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -491,15 +498,16 @@ const SuperAdminUserManagementPage = () => {
         onDeleteUser={handleDeleteUser}
       />
     ),
-    // ✅ RENAMED KEY
     "Faculty Whitelist": (
       <WhitelistView
         searchQuery={searchQuery}
-        onSearchChange={(e) => setSearchQuery(e.target.value)}
+        onSearchChange={(value) => setSearchQuery(value)}
         onClear={() => setSearchQuery("")}
         onAdd={() => setIsAddModalOpen(true)}
+        items={users["Faculty Whitelist"] as WhitelistItem[]}
         onEdit={(item) => handleEditUser(item)}
         onDelete={(id) => handleDeleteUser(id)}
+        isLoading={isLoading}
       />
     ),
     Restricted: <RestrictedAccounts />,
@@ -547,7 +555,7 @@ const SuperAdminUserManagementPage = () => {
             />
           )}
 
-          {/* ✅ RENAMED CHECK for Whitelist Modal */}
+          {/* ✅ Whitelist Modal */}
           {isAddModalOpen && currentRole === "Faculty Whitelist" && (
             <AddWhitelist
               onClose={() => setIsAddModalOpen(false)}
@@ -597,7 +605,7 @@ const SuperAdminUserManagementPage = () => {
                   onCancel={handleCancelEdit}
                 />
               )}
-              {/* ✅ RENAMED CHECK for Whitelist Edit View */}
+              {/* ✅ Whitelist Edit View */}
               {currentRole === "Faculty Whitelist" && (
                 <EditWhitelist
                   item={editingUser as WhitelistItem}

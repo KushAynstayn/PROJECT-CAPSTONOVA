@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { InputWithClear } from "@/components/ui/inputWithClear";
@@ -14,7 +14,7 @@ import {
   TableCell,
 } from "@heroui/react";
 
-// Matches your backend model structure roughly
+// Matches the backend API response structure
 export interface WhitelistItem {
   id: number;
   faculty_id: string;
@@ -24,60 +24,48 @@ export interface WhitelistItem {
 
 interface WhitelistViewProps {
   searchQuery: string;
-  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchChange: (value: string) => void;
   onClear: () => void;
+  items: WhitelistItem[];
   onEdit: (item: WhitelistItem) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  isLoading: boolean;
 }
-
-// MOCK DATA for frontend demonstration
-const MOCK_WHITELIST: WhitelistItem[] = [
-  {
-    id: 1,
-    faculty_id: "FAC-001",
-    role: "Admin",
-    email: "admin.one@ctu.edu.ph",
-  },
-  {
-    id: 2,
-    faculty_id: "FAC-002",
-    role: "Adviser",
-    email: "adviser.jane@ctu.edu.ph",
-  },
-  {
-    id: 3,
-    faculty_id: "FAC-003",
-    role: "Adviser",
-    email: "adviser.mark@ctu.edu.ph",
-  },
-  {
-    id: 4,
-    faculty_id: "FAC-004",
-    role: "Admin",
-    email: "admin.sys@ctu.edu.ph",
-  },
-];
 
 const WhitelistView = ({
   searchQuery,
   onSearchChange,
   onClear,
+  items,
   onEdit,
   onDelete,
   onAdd,
+  isLoading,
 }: WhitelistViewProps) => {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState(searchQuery);
+
   const modalRef = React.useRef<HTMLDivElement>(null);
 
-  // Filter mock data based on search
-  const filteredData = MOCK_WHITELIST.filter(
-    (item) =>
-      item.faculty_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    setSearchTerm(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchTerm !== searchQuery) {
+        onSearchChange(searchTerm);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm, onSearchChange, searchQuery]);
 
   const handleRowClick = (item: WhitelistItem) => {
     setSelectedItemId(item.id);
@@ -98,15 +86,13 @@ const WhitelistView = ({
   };
 
   const handleActionClick = (action: "edit" | "delete") => {
-    const item = MOCK_WHITELIST.find((i) => i.id === selectedItemId);
+    const item = items.find((i) => i.id === selectedItemId);
     if (!item) return;
 
     if (action === "edit") {
       onEdit(item);
     } else {
-      if (confirm(`Are you sure you want to delete ${item.faculty_id}?`)) {
-        onDelete(item.id);
-      }
+      onDelete(item.id);
     }
     handleCloseModal();
   };
@@ -151,10 +137,14 @@ const WhitelistView = ({
           <InputWithClear
             className="ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
             type="search"
-            placeholder="Search Faculty ID or Email..."
-            value={searchQuery}
-            onChange={onSearchChange}
-            onClear={onClear}
+            // ✅ CHANGED: Placeholder now indicates only Faculty ID search
+            placeholder="Search by Faculty ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onClear={() => {
+              setSearchTerm("");
+              onClear();
+            }}
           />
         </div>
 
@@ -184,8 +174,13 @@ const WhitelistView = ({
               EMAIL
             </TableColumn>
           </TableHeader>
-          <TableBody emptyContent={"No whitelist entries found."}>
-            {filteredData.map((item) => (
+          <TableBody
+            emptyContent={
+              isLoading ? "Loading..." : "No whitelist entries found."
+            }
+            isLoading={isLoading}
+          >
+            {items.map((item) => (
               <TableRow
                 key={item.id}
                 className={cn(

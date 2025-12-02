@@ -483,6 +483,8 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
 
     //Faculty Whitelist routes
     Route::apiResource('faculty-whitelist', FacultyWhitelistController::class);
+
+
     //Restrcted users routes
     Route::get(
         '/restricted-users',
