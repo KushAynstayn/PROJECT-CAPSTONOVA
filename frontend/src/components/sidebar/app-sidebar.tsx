@@ -42,7 +42,6 @@ const sidebarData = {
         label: "Data Analytics",
         icon: "/images/data_analytics_icon.png",
       },
-      // REMOVED: Notifications (Now in Header)
       {
         href: "/adviser/settings",
         label: "Account Settings",
@@ -87,7 +86,6 @@ const sidebarData = {
         label: "Reports",
         icon: "/images/report_icon.png",
       },
-      // REMOVED: Notifications (Now in Header)
       {
         href: "/admin/settings",
         label: "Account Settings",
@@ -132,11 +130,15 @@ const sidebarData = {
         label: "Reports",
         icon: "/images/report_icon.png",
       },
-      // REMOVED: Notifications (Now in Header)
       {
         href: "/super-admin/system-configuration",
         label: "System Configuration",
         icon: "/images/configuration_icon.png",
+      },
+      {
+        href: "/super-admin/system-backup",
+        label: "System Backup",
+        icon: "/images/backup_icon.png",
       },
       {
         href: "/super-admin/activity-logs",
@@ -162,7 +164,6 @@ const sidebarData = {
         label: "Upload Capstone Project",
         icon: "/images/upload_icon.png",
       },
-      // REMOVED: Notifications (Now in Header)
     ],
   },
 };

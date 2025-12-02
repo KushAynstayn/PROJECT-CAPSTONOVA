@@ -101,8 +101,13 @@ export const apiCall = async (
   return await response.json();
 };
 
-// No changes needed for apiCallForBlob, the logic is the same.
-export const apiCallForBlob = async (path: string): Promise<Blob> => {
+// MODIFIED: Updated signature to support POST methods for backups while maintaining backward compatibility.
+// If called as apiCallForBlob(path), it defaults to GET and behaves exactly as before.
+export const apiCallForBlob = async (
+  path: string,
+  method: string = "GET",
+  body?: any
+): Promise<Blob> => {
   const headers: { [key: string]: string } = {};
 
   const csrfToken = getCookie("XSRF-TOKEN");
@@ -110,11 +115,20 @@ export const apiCallForBlob = async (path: string): Promise<Blob> => {
     headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
   }
 
+  // If a body is provided, we assume it is JSON (standard for non-Form blob requests like backups with params).
+  if (body) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const options: RequestInit = {
-    method: "GET",
+    method,
     headers,
     credentials: "include",
   };
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
 
   const response = await fetch(`${API_BASE}${path}`, options);
 
