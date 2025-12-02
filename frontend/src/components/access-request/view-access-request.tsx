@@ -24,7 +24,6 @@ import {
 import ActionApprovedRequest from "@/components/ui/action-approved-request";
 import { ApiError } from "@/lib/api";
 
-// Interface matches the structure from the DocumentRequestController index method
 interface DocumentRequest {
   request_id: number;
   viewer: {
@@ -76,7 +75,9 @@ const AccessRequestView = ({
   const [selectedRequest, setSelectedRequest] =
     useState<DocumentRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFadingOut, setIsFadingOut] = useState(false);
+  // Replaced "isFadingOut" manual animation state with simple conditional rendering
+  // or you can use a library like framer-motion if advanced animations are needed.
+  // For stability, we will use direct state, but kept variables for compatibility.
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -86,20 +87,12 @@ const AccessRequestView = ({
   const handleRowClick = (request: DocumentRequest) => {
     setSelectedRequest(request);
     setActionError(null);
-    setIsFadingOut(false);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsFadingOut(true);
-  };
-
-  const handleAnimationEnd = () => {
-    if (isFadingOut) {
-      setIsModalOpen(false);
-      setIsFadingOut(false);
-      setSelectedRequest(null);
-    }
+    setIsModalOpen(false);
+    setSelectedRequest(null);
   };
 
   const handleApproveClick = () => {
@@ -135,7 +128,6 @@ const AccessRequestView = ({
       } else {
         setActionError("An unexpected error occurred during approval.");
       }
-      // Re-open approve modal on error to show message
       setIsApproveModalOpen(true);
     } finally {
       setIsActionLoading(false);
@@ -144,34 +136,8 @@ const AccessRequestView = ({
 
   return (
     <div>
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        @keyframes fadeOut {
-          from {
-            opacity: 1;
-            transform: scale(1);
-          }
-          to {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.15s ease-out forwards;
-        }
-        .animate-fade-out {
-          animation: fadeOut 0.15s ease-in forwards;
-        }
-      `}</style>
+      {/* REMOVED style jsx to prevent hydration errors */}
+
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-300 shadow-md bg-background overflow-hidden">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -287,13 +253,11 @@ const AccessRequestView = ({
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
           <div
             ref={modalRef}
-            onAnimationEnd={handleAnimationEnd}
             className={cn(
-              "relative rounded-lg bg-white p-8 shadow-2xl ml-65",
-              isFadingOut ? "animate-fade-out" : "animate-fade-in"
+              "relative rounded-lg bg-white p-8 shadow-2xl ml-65 animate-in zoom-in-95 duration-200"
             )}
           >
             <div className="flex flex-col items-center justify-center gap-4">
@@ -301,7 +265,7 @@ const AccessRequestView = ({
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   onClick={handleApproveClick}
-                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-green-500 text-white shadow-md hover:bg-g-600"
+                  className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-md bg-green-500 text-white shadow-md hover:bg-green-600"
                 >
                   <img
                     src="/images/check.png"

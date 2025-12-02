@@ -8,7 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use App\Models\User; // Add this import
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\ActionType;
@@ -48,13 +48,16 @@ class DocumentRequestController extends Controller
             return $q->whereDate('document_requests.request_date', '<=', $date);
         });
 
+        // SORTING APPLIED: Newest requests first
+        $query->orderBy('document_requests.request_date', 'desc');
+
         $documentRequests = $query
             ->select(
                 'document_requests.request_id',
                 'viewer.id as viewer_id',
                 'viewer.first_name as viewer_first_name',
                 'viewer.last_name as viewer_last_name',
-                // Show only first 12 chars of decrypted email with ellipsis
+                // REVERTED: Using CONCAT/LEFT to prevent UI overflow as requested
                 DB::raw("CONCAT(LEFT(viewer.encrypted_email, 12), '...') as viewer_encrypted_email"),
                 'capstone_projects.id as project_id',
                 'capstone_projects.title as project_title',
@@ -66,15 +69,12 @@ class DocumentRequestController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function ($row) {
-                // Decrypt the email for the response
-                $viewerEmail = $this->decryptEmail($row->viewer_encrypted_email);
-
                 return [
                     'request_id' => $row->request_id,
                     'viewer' => [
                         'id' => $row->viewer_id,
                         'full_name' => trim($row->viewer_first_name . ' ' . $row->viewer_last_name),
-                        'email' => $viewerEmail, // Use decrypted email
+                        'email' => $row->viewer_encrypted_email, // Returns the truncated string
                     ],
                     'project' => [
                         'id' => $row->project_id,
@@ -148,7 +148,6 @@ class DocumentRequestController extends Controller
         $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
         $message = "Your request to access the document for the project '{$projectTitle}' has been approved.";
 
-        // MODIFIED: Added a title to the notification dispatch.
         SendNotification::dispatch('Request Approved', $message, $documentRequest->viewer_id);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'approve_request']);
@@ -159,18 +158,18 @@ class DocumentRequestController extends Controller
             'details' => "Approved document request #{$id} for project '{$projectTitle}'."
         ]);
 
-        // Refetch the updated request to return it with decrypted email
+        // Refetch with truncated email to maintain UI consistency
         $updatedRequest = DB::table('document_requests')
             ->join('users as viewer', 'document_requests.viewer_id', '=', 'viewer.id')
             ->where('document_requests.request_id', $id)
             ->select(
                 'document_requests.*',
-                'viewer.encrypted_email as viewer_encrypted_email'
+                DB::raw("CONCAT(LEFT(viewer.encrypted_email, 12), '...') as viewer_encrypted_email")
             )
             ->first();
 
         if ($updatedRequest) {
-            $updatedRequest->viewer_email = $this->decryptEmail($updatedRequest->viewer_encrypted_email);
+            $updatedRequest->viewer_email = $updatedRequest->viewer_encrypted_email;
         }
 
         return response()->json($updatedRequest);
@@ -201,7 +200,6 @@ class DocumentRequestController extends Controller
         $projectTitle = DB::table('capstone_projects')->where('id', $documentRequest->project_id)->value('title');
         $message = "Your request to access the document for the project '{$projectTitle}' has been rejected.";
 
-        // MODIFIED: Added a title to the notification dispatch.
         SendNotification::dispatch('Request Rejected', $message, $documentRequest->viewer_id);
 
         $actionType = ActionType::firstOrCreate(['action_name' => 'reject_request']);
@@ -212,18 +210,18 @@ class DocumentRequestController extends Controller
             'details' => "Rejected document request #{$id} for project '{$projectTitle}'."
         ]);
 
-        // Refetch the updated request to return it with decrypted email
+        // Refetch with truncated email to maintain UI consistency
         $updatedRequest = DB::table('document_requests')
             ->join('users as viewer', 'document_requests.viewer_id', '=', 'viewer.id')
             ->where('document_requests.request_id', $id)
             ->select(
                 'document_requests.*',
-                'viewer.encrypted_email as viewer_encrypted_email'
+                DB::raw("CONCAT(LEFT(viewer.encrypted_email, 12), '...') as viewer_encrypted_email")
             )
             ->first();
 
         if ($updatedRequest) {
-            $updatedRequest->viewer_email = $this->decryptEmail($updatedRequest->viewer_encrypted_email);
+            $updatedRequest->viewer_email = $updatedRequest->viewer_encrypted_email;
         }
 
         return response()->json($updatedRequest);
@@ -256,17 +254,20 @@ class DocumentRequestController extends Controller
             return $q->whereDate('approval_histories.approval_date', '<=', $date);
         });
 
+        // Sorting also applied here for consistency
+        $query->orderBy('approval_histories.approval_date', 'desc');
+
         $approvalHistories = $query
             ->select(
                 'approval_histories.history_id',
                 'viewer.id as viewer_id',
                 'viewer.first_name as viewer_first_name',
                 'viewer.last_name as viewer_last_name',
-                'viewer.encrypted_email as viewer_encrypted_email', // Changed from email to encrypted_email
+                DB::raw("CONCAT(LEFT(viewer.encrypted_email, 12), '...') as viewer_encrypted_email"),
                 'approver.id as approver_id',
                 'approver.first_name as approver_first_name',
                 'approver.last_name as approver_last_name',
-                'approver.encrypted_email as approver_encrypted_email', // Changed from email to encrypted_email
+                DB::raw("CONCAT(LEFT(approver.encrypted_email, 12), '...') as approver_encrypted_email"),
                 'capstone_projects.id as project_id',
                 'capstone_projects.title as project_title',
                 'approval_histories.request_date',
@@ -276,16 +277,12 @@ class DocumentRequestController extends Controller
             ->paginate(15)
             ->withQueryString()
             ->through(function ($row) {
-                // Decrypt emails for the response
-                $viewerEmail = $this->decryptEmail($row->viewer_encrypted_email);
-                $approverEmail = $this->decryptEmail($row->approver_encrypted_email);
-
                 return [
                     'history_id' => $row->history_id,
                     'viewer' => [
                         'id' => $row->viewer_id,
                         'full_name' => trim($row->viewer_first_name . ' ' . $row->viewer_last_name),
-                        'email' => $viewerEmail, // Use decrypted email
+                        'email' => $row->viewer_encrypted_email,
                     ],
                     'project' => [
                         'id' => $row->project_id,
@@ -294,7 +291,7 @@ class DocumentRequestController extends Controller
                     'approver' => [
                         'id' => $row->approver_id,
                         'full_name' => trim($row->approver_first_name . ' ' . $row->approver_last_name),
-                        'email' => $approverEmail, // Use decrypted email
+                        'email' => $row->approver_encrypted_email,
                     ],
                     'request_date' => $row->request_date,
                     'approval_date' => $row->approval_date,
@@ -303,18 +300,5 @@ class DocumentRequestController extends Controller
             });
 
         return response()->json($approvalHistories);
-    }
-
-    /**
-     * Helper method to decrypt email
-     */
-    private function decryptEmail($encryptedEmail)
-    {
-        try {
-            return decrypt($encryptedEmail);
-        } catch (\Exception $e) {
-            // If decryption fails, return the original value
-            return $encryptedEmail;
-        }
     }
 }
