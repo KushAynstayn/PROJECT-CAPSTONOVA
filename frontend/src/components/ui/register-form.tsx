@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,22 +24,49 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 export function RegisterForm() {
   const router = useRouter();
+
+  // Tab state: 'student' or 'faculty'
+  const [activeTab, setActiveTab] = useState<"student" | "faculty">("student");
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     email: "",
     password: "",
     password_confirmation: "",
-    role: "Viewer",
-    student_id: "",
+    role: "Viewer", // Default starting role
+    student_id: "", // Used for both Student ID and Faculty ID based on context
     department: "",
     program: "",
   });
+
   const [errors, setErrors] = useState<Record<string, string[] | string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Reset role and relevant fields when tab changes
+  useEffect(() => {
+    setErrors({});
+    if (activeTab === "student") {
+      setFormData((prev) => ({
+        ...prev,
+        role: "Viewer",
+        student_id: "",
+        department: "",
+        program: "",
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        role: "Adviser",
+        student_id: "",
+        department: "", // Optional for faculty
+        program: "", // Optional for faculty
+      }));
+    }
+  }, [activeTab]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -57,6 +84,7 @@ export function RegisterForm() {
     setSuccessMessage(null);
 
     try {
+      // Viewer Registration Check
       if (formData.role === "Viewer") {
         const settingStatus = await apiCall(
           "/public/system-settings/check?setting_name=viewer_registerAccount",
@@ -73,7 +101,13 @@ export function RegisterForm() {
         }
       }
 
-      const response = await apiCall("/auth/register", "POST", formData);
+      // Prepare payload - Clean up empty fields if necessary
+      const payload = { ...formData };
+
+      // If faculty, we don't strictly need department/program, but sending empty strings is fine
+      // as the backend rules say 'nullable'.
+
+      const response = await apiCall("/auth/register", "POST", payload);
 
       setSuccessMessage(response.message || "Registration successful!");
       setTimeout(() => {
@@ -94,6 +128,8 @@ export function RegisterForm() {
           Object.keys(details).length > 0
         ) {
           Object.keys(details).forEach((key) => {
+            // Map backend errors to frontend fields
+            // Ensure student_id errors show up on the ID field
             newErrors[key] = details[key];
           });
         } else {
@@ -131,6 +167,33 @@ export function RegisterForm() {
         <CardDescription>
           Fill in the details below to join the community.
         </CardDescription>
+
+        {/* --- CUSTOM TABS --- */}
+        <div className="flex w-full mt-4 border rounded-md overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setActiveTab("student")}
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              activeTab === "student"
+                ? "bg-[#660000] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            Student / Viewer
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("faculty")}
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              activeTab === "faculty"
+                ? "bg-[#660000] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            Faculty (Admin/Adviser)
+          </button>
+        </div>
+        {/* --- END CUSTOM TABS --- */}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,8 +204,6 @@ export function RegisterForm() {
             </div>
           ) : (
             <>
-              {/* ... (all other form fields are correct) ... */}
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name</Label>
@@ -237,6 +298,7 @@ export function RegisterForm() {
                 {renderErrors("password_confirmation")}
               </div>
 
+              {/* --- DYNAMIC ROLE SELECTION --- */}
               <div className="space-y-2">
                 <Label htmlFor="role">Register as</Label>
                 <Select
@@ -248,73 +310,96 @@ export function RegisterForm() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
-                    <SelectItem value="Viewer">Viewer</SelectItem>
-                    <SelectItem value="Proponent">Proponent</SelectItem>
+                    {activeTab === "student" ? (
+                      <>
+                        <SelectItem value="Viewer">Viewer</SelectItem>
+                        <SelectItem value="Proponent">Proponent</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="Adviser">Adviser</SelectItem>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
                 {renderErrors("role")}
               </div>
 
-              {formData.role === "Proponent" && (
+              {/* --- DYNAMIC ID FIELD --- */}
+              {/* Show for Proponent OR Faculty (Admin/Adviser) */}
+              {(formData.role === "Proponent" || activeTab === "faculty") && (
                 <div className="space-y-2">
-                  <Label htmlFor="student_id">Student ID</Label>
+                  <Label htmlFor="student_id">
+                    {activeTab === "faculty" ? "Faculty ID" : "Student ID"}
+                  </Label>
                   <Input
                     id="student_id"
                     name="student_id"
                     type="text"
                     value={formData.student_id}
                     onChange={handleChange}
-                    required={formData.role === "Proponent"}
+                    required
+                    placeholder={
+                      activeTab === "faculty"
+                        ? "Enter Faculty ID"
+                        : "Enter Student ID"
+                    }
                   />
+                  {/* Backend validates 'student_id', so errors come back under this key */}
                   {renderErrors("student_id")}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select
-                  name="department"
-                  value={formData.department}
-                  onValueChange={(value) =>
-                    handleSelectChange("department", value)
-                  }
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a department" />
-                  </SelectTrigger>
-                  <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
-                    <SelectItem value="BSIS">BSIS</SelectItem>
-                    <SelectItem value="BSIT">BSIT</SelectItem>
-                    <SelectItem value="BIT-CT">BIT-CT</SelectItem>
-                  </SelectContent>
-                </Select>
-                {renderErrors("department")}
-              </div>
+              {/* --- STUDENT SPECIFIC FIELDS (Department/Program) --- */}
+              {activeTab === "student" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select
+                      name="department"
+                      value={formData.department}
+                      onValueChange={(value) =>
+                        handleSelectChange("department", value)
+                      }
+                      required={activeTab === "student"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                      <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
+                        <SelectItem value="BSIS">BSIS</SelectItem>
+                        <SelectItem value="BSIT">BSIT</SelectItem>
+                        <SelectItem value="BIT-CT">BIT-CT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {renderErrors("department")}
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="program">Program</Label>
-                <Select
-                  name="program"
-                  value={formData.program}
-                  onValueChange={(value) =>
-                    handleSelectChange("program", value)
-                  }
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a program" />
-                  </SelectTrigger>
-                  <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
-                    <SelectItem value="Day Program">Day Program</SelectItem>
-                    <SelectItem value="Evening Program">
-                      Evening Program
-                    </SelectItem>
-                  </SelectContent>
-                </Select>{" "}
-                {/* <-- THIS IS THE FIX (was </This>) */}
-                {renderErrors("program")}
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="program">Program</Label>
+                    <Select
+                      name="program"
+                      value={formData.program}
+                      onValueChange={(value) =>
+                        handleSelectChange("program", value)
+                      }
+                      required={activeTab === "student"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a program" />
+                      </SelectTrigger>
+                      <SelectContent className="border border-gray-300 shadow-md rounded-md hover:bg-gray-300 hover:text-black">
+                        <SelectItem value="Day Program">Day Program</SelectItem>
+                        <SelectItem value="Evening Program">
+                          Evening Program
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {renderErrors("program")}
+                  </div>
+                </>
+              )}
 
               {errors.server && (
                 <p className="text-red-500 text-sm font-medium text-center">
