@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CapstoneProject extends Model
 {
     use HasFactory;
+
     protected $table = 'capstone_projects';
     protected $guarded = [];
 
@@ -16,12 +17,10 @@ class CapstoneProject extends Model
         return $this->belongsTo(User::class, 'adviser_id');
     }
 
-
     public function manuscript()
     {
         return $this->hasOne(CapstoneManuscript::class, 'project_id');
     }
-
 
     public function sourceCode()
     {
@@ -33,7 +32,6 @@ class CapstoneProject extends Model
         return $this->belongsTo(User::class, 'project_researchers');
     }
 
-
     public function projectResearcher()
     {
         return $this->hasOne(ProjectResearcher::class, 'project_id');
@@ -42,6 +40,12 @@ class CapstoneProject extends Model
     public function keywords()
     {
         return $this->belongsToMany(Keyword::class, 'project_keywords', 'project_id', 'keyword_id');
+    }
+
+    // NEW RELATIONSHIP ADDED
+    public function platformTypes()
+    {
+        return $this->belongsToMany(PlatformType::class, 'project_platforms', 'project_id', 'platform_type_id');
     }
 
     public function documentRequests()
