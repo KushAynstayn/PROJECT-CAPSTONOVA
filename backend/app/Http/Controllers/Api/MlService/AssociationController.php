@@ -16,32 +16,37 @@ class AssociationController extends Controller
      */
     public function train()
     {
-        // 1. Fetch all capstone projects with their source code and programming languages.
-        // Based on your schema: CapstoneProject -> CapstoneSourceCode -> project_languages -> ProgrammingLanguage
-        $projects = CapstoneProject::with('sourceCode.programmingLanguages')->get();
+        // 1. Fetch all capstone projects with their source code, languages, AND platform types.
+        // We eager load 'platformTypes' to handle the new Many-to-Many relationship efficiently.
+        $projects = CapstoneProject::with([
+            'sourceCode.programmingLanguages',
+            'platformTypes'
+        ])->get();
 
         // 2. Format the data into the structure required by the ML service.
         $formattedData = $projects->map(function ($project) {
             // Ensure the project has a source code entry and associated languages
             if ($project->sourceCode && $project->sourceCode->programmingLanguages->isNotEmpty()) {
                 return [
-                    'project_id' => $project->id,
-                    'platform_type' => $project->platform_type,
-                    'languages' => $project->sourceCode->programmingLanguages->pluck('language_name')->all(),
+                    'project_id'    => $project->id,
+                    // transform the collection of platform models into a simple array of names
+                    // e.g., ["Web", "Mobile"]
+                    'platform_type' => $project->platformTypes->pluck('platform_name')->values()->all(),
+                    'languages'     => $project->sourceCode->programmingLanguages->pluck('language_name')->values()->all(),
                 ];
             }
             return null;
-        })->filter()->values(); // filter() removes null values and values() re-indexes the array
+        })->filter()->values(); // filter() removes nulls, values() resets array keys
 
         if ($formattedData->isEmpty()) {
             return response()->json(['error' => 'No projects with associated programming languages found.'], 404);
         }
 
         // 3. Call the ML service's train endpoint.
-        // Make sure to set the ML_SERVICE_URL in your .env file (e.g., ML_SERVICE_URL=http://127.0.0.1:8001)
         $mlServiceUrl = rtrim(env('ML_SERVICE_URL'), '/') . '/data_mining/tech_stack_association/train';
 
         try {
+            // We increase timeout as training can be computationally expensive
             $response = Http::timeout(60)->post($mlServiceUrl, [
                 'data' => $formattedData,
             ]);
@@ -50,12 +55,12 @@ class AssociationController extends Controller
             return response()->json($response->json(), $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'error' => 'Could not connect to the ML service.',
+                'error'   => 'Could not connect to the ML service.',
                 'message' => $e->getMessage()
-            ], 503); // 503 Service Unavailable
+            ], 503);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'An unexpected error occurred.',
+                'error'   => 'An unexpected error occurred.',
                 'message' => $e->getMessage()
             ], 500);
         }
@@ -78,12 +83,12 @@ class AssociationController extends Controller
             return response()->json($response->json(), $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'error' => 'Could not connect to the ML service.',
+                'error'   => 'Could not connect to the ML service.',
                 'message' => $e->getMessage()
-            ], 503); // 503 Service Unavailable
+            ], 503);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'An unexpected error occurred.',
+                'error'   => 'An unexpected error occurred.',
                 'message' => $e->getMessage()
             ], 500);
         }

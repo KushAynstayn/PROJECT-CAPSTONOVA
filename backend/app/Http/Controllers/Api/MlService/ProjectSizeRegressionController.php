@@ -22,9 +22,11 @@ class ProjectSizeRegressionController extends Controller
     public function train(): JsonResponse
     {
         // 1. Fetch all projects with the necessary related data
+
         $projects = CapstoneProject::with([
             'manuscript',
-            'sourceCode.programmingLanguages'
+            'sourceCode.programmingLanguages',
+            'platformTypes'
         ])
             ->whereHas('manuscript') // Ensure the project has a manuscript with a size
             ->whereHas('sourceCode.programmingLanguages') // Ensure the project has languages
@@ -46,12 +48,18 @@ class ProjectSizeRegressionController extends Controller
                 ? (float) $framework_count / $language_count
                 : 0;
 
+            // COMPATIBILITY FIX:
+            // The DB now has multiple platforms, but the ML Model and Predict endpoint 
+            // expect a Single String (Categorical). We take the first platform as the primary one.
+            $primaryPlatform = $project->platformTypes->first();
+            $platformName = $primaryPlatform ? $primaryPlatform->platform_name : 'Web'; // Default fallback
+
             return [
-                'submission_year' => (int) $project->submission_year,       // [cite: 182]
-                'platform_type' => $project->platform_type,                 // [cite: 184]
-                'language_count' => $language_count,
+                'submission_year' => (int) $project->submission_year,
+                'platform_type'   => $platformName, // Passed as string to match existing ML model expectations
+                'language_count'  => $language_count,
                 'framework_ratio' => round($framework_ratio, 2),
-                'project_size' => (float) $project->manuscript->project_size, // [cite: 292]
+                'project_size'    => (float) $project->manuscript->project_size,
             ];
         });
 
@@ -98,11 +106,11 @@ class ProjectSizeRegressionController extends Controller
     public function predict(Request $request): JsonResponse
     {
         // 1. Validate the incoming flat request data
-        //    *** FIX: Use the injected $request object, not the Request facade ***
+        // Kept compatibility: Frontend still sends a single 'platform_type' string.
         $validator = Validator::make($request->all(), [
             'submission_year' => 'required|integer|digits:4',
-            'platform_type' => ['required', 'string', Rule::in(['Web', 'Mobile', 'IoT', 'Desktop'])],
-            'language_count' => 'required|integer|min:0',
+            'platform_type'   => ['required', 'string', Rule::in(['Web', 'Mobile', 'IoT', 'Desktop'])],
+            'language_count'  => 'required|integer|min:0',
             'framework_ratio' => 'required|numeric|between:0,1',
         ]);
 
@@ -117,8 +125,8 @@ class ProjectSizeRegressionController extends Controller
             'data' => [
                 [
                     'submission_year' => (int) $validatedData['submission_year'],
-                    'platform_type' => $validatedData['platform_type'],
-                    'language_count' => (int) $validatedData['language_count'],
+                    'platform_type'   => $validatedData['platform_type'],
+                    'language_count'  => (int) $validatedData['language_count'],
                     'framework_ratio' => (float) $validatedData['framework_ratio'],
                 ]
             ]
@@ -142,6 +150,9 @@ class ProjectSizeRegressionController extends Controller
         }
     }
 
+    /**
+     * Get plot image from ML Service.
+     */
     public function getPlot(Request $request)
     {
         // 1. Validate the 'plot_type' query parameter

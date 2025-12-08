@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Util;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\CapstoneProject;
-use App\Models\Suggestion; // Import the Suggestion model
+use App\Models\Suggestion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,8 +14,6 @@ class AdminDashboardUtilController extends Controller
 {
     /**
      * Get the top 5 advisers for the admin dashboard.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function topAdvisers(): JsonResponse
     {
@@ -36,9 +34,7 @@ class AdminDashboardUtilController extends Controller
     }
 
     /**
-     * Get the top 10 most used programming tools/languages using a raw SQL query.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Get the top 10 most used programming tools/languages.
      */
     public function programmingToolsUsage(): JsonResponse
     {
@@ -62,14 +58,14 @@ class AdminDashboardUtilController extends Controller
 
     /**
      * Get the count of projects for each platform type.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function projectsByType(): JsonResponse
     {
-        $projectCounts = CapstoneProject::query()
-            ->select('platform_type as type', DB::raw('count(*) as count'))
-            ->groupBy('platform_type')
+        $projectCounts = DB::table('platform_types')
+            ->join('project_platforms', 'platform_types.id', '=', 'project_platforms.platform_type_id')
+            ->join('capstone_projects', 'project_platforms.project_id', '=', 'capstone_projects.id')
+            ->select('platform_types.platform_name as type', DB::raw('count(capstone_projects.id) as count'))
+            ->groupBy('platform_types.platform_name')
             ->get();
 
         return response()->json($projectCounts);
@@ -77,8 +73,6 @@ class AdminDashboardUtilController extends Controller
 
     /**
      * Get the count of users for 'Adviser' and 'Proponent' roles.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function roleDistribution(): JsonResponse
     {
@@ -95,68 +89,47 @@ class AdminDashboardUtilController extends Controller
 
     /**
      * Get the latest capstone project submission details.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function latestSubmission(): JsonResponse
     {
-        // Query for the latest project BY CREATION DATE, ensuring relationships exist
         $latestProject = CapstoneProject::with(['adviser', 'projectResearcher.user'])
-            ->whereHas('projectResearcher.user') // Ensures the user who submitted exists
-            ->whereHas('adviser')               // Ensures the adviser exists
-            ->latest()                          // <-- Sorts by 'created_at' (newest first)
+            ->whereHas('projectResearcher.user')
+            ->whereHas('adviser')
+            ->latest()
             ->first();
 
-        // If no valid project is found, return null with a 200 OK status.
         if (!$latestProject) {
             return response()->json(null, 200);
         }
 
-        // Safely access related data
         $submittedByUser = optional($latestProject->projectResearcher)->user;
         $adviser = $latestProject->adviser;
 
         $responseData = [
             'title' => $latestProject->title,
-
-            'submitted_by' => trim(
-                optional($submittedByUser)->first_name . ' ' . optional($submittedByUser)->last_name
-            ) ?: 'N/A',
-
-            'adviser' => trim(
-                optional($adviser)->first_name . ' ' . optional($adviser)->last_name
-            ) ?: 'N/A',
-
-            // Use the submission_date from the project we found
+            'submitted_by' => trim(optional($submittedByUser)->first_name . ' ' . optional($submittedByUser)->last_name) ?: 'N/A',
+            'adviser' => trim(optional($adviser)->first_name . ' ' . optional($adviser)->last_name) ?: 'N/A',
             'date_submitted' => $latestProject->submission_date,
         ];
 
         return response()->json($responseData);
     }
+
     /**
      * Get the latest suggestion from an adviser.
-     *
-     * This method finds the most recently created suggestion and returns its
-     * title, content, and the name of the adviser who posted it.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function latestSuggestionCard(): JsonResponse
     {
-        // Find the latest suggestion and eager load the adviser's details.
         $latestSuggestion = Suggestion::with('adviser')
-            ->latest() // Shortcut for orderBy('created_at', 'desc')
+            ->latest()
             ->first();
 
-        // If no suggestions exist, return a 404 response.
         if (!$latestSuggestion) {
             return response()->json(['message' => 'No suggestions found.'], 404);
         }
 
-        // Format the response to include the adviser's name, title, and text.
         $responseData = [
             'adviser_name' => $latestSuggestion->adviser->first_name . ' ' . $latestSuggestion->adviser->last_name,
-            // Corrected to use the 'title' column from the suggestions table.
             'title' => $latestSuggestion->title,
             'suggestion_text' => $latestSuggestion->suggestion_text,
         ];
@@ -166,9 +139,6 @@ class AdminDashboardUtilController extends Controller
 
     /**
      * Get the advisory load, counting projects per adviser with date filtering.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function advisoryLoad(Request $request): JsonResponse
     {
@@ -188,12 +158,9 @@ class AdminDashboardUtilController extends Controller
             ->groupBy('adviser_name')
             ->orderBy('adviser_name');
 
-        // Filter by a single year
         if ($request->filled('year')) {
             $query->whereYear('capstone_projects.submission_date', $request->input('year'));
         }
-
-        // Filter by a date range
         if ($request->filled('from_year')) {
             $query->whereYear('capstone_projects.submission_date', '>=', $request->input('from_year'));
         }
@@ -207,10 +174,8 @@ class AdminDashboardUtilController extends Controller
     }
 
     /**
-     * Get project submission counts by course/department with date filtering using raw SQL.
-     *
-     * @param \Illuminate\Http.Request $request
-     * @return \Illuminate\Http.JsonResponse
+     * Get project submission counts by course/department with date filtering.
+     * STRICTLY FILTERS for: BSIS, BSIT, BIT-CT only.
      */
     public function submissionsByCourse(Request $request): JsonResponse
     {
@@ -220,60 +185,34 @@ class AdminDashboardUtilController extends Controller
             'to_year' => 'nullable|integer|digits:4|gte:from_year',
         ]);
 
-        $whereConditions = [];
-        $bindings = [];
+        $allowedDepartments = ['BSIS', 'BSIT', 'BIT-CT'];
 
-        // Build the date-based WHERE clause and bindings for capstone_projects table
+        $baseQuery = DB::table('capstone_projects as cp')
+            ->join('project_researchers as pr', 'cp.id', '=', 'pr.project_id')
+            ->join('user_details as ud', 'pr.user_id', '=', 'ud.user_id')
+            ->whereIn('ud.department', $allowedDepartments);
+
         if ($request->filled('year')) {
-            $whereConditions[] = 'YEAR(submission_date) = ?';
-            $bindings[] = $request->input('year');
+            $baseQuery->whereYear('cp.submission_date', $request->input('year'));
         }
-
         if ($request->filled('from_year')) {
-            $whereConditions[] = 'YEAR(submission_date) >= ?';
-            $bindings[] = $request->input('from_year');
+            $baseQuery->whereYear('cp.submission_date', '>=', $request->input('from_year'));
         }
         if ($request->filled('to_year')) {
-            $whereConditions[] = 'YEAR(submission_date) <= ?';
-            $bindings[] = $request->input('to_year');
+            $baseQuery->whereYear('cp.submission_date', '<=', $request->input('to_year'));
         }
 
-        $dateWhereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+        $totalSubmissions = $baseQuery->clone()->distinct()->count('cp.id');
 
-        // 1. Get total submissions (Optimized: No joins needed)
-        $totalSubmissionsQuery = "SELECT COUNT(*) as total FROM capstone_projects {$dateWhereClause}";
-        $totalResult = DB::selectOne($totalSubmissionsQuery, $bindings);
-        $totalSubmissions = $totalResult ? $totalResult->total : 0;
+        $totalArchived = $baseQuery->clone()
+            ->where('cp.is_archived', true)
+            ->distinct()
+            ->count('cp.id');
 
-        // 2. Get total archived submissions (Optimized: No joins needed)
-        $archivedWhereClause = $dateWhereClause;
-        if (empty($whereConditions)) {
-            $archivedWhereClause = 'WHERE is_archived = TRUE';
-        } else {
-            $archivedWhereClause .= ' AND is_archived = TRUE';
-        }
-        $totalArchivedQuery = "SELECT COUNT(*) as total_archived FROM capstone_projects {$archivedWhereClause}";
-        $archivedResult = DB::selectOne($totalArchivedQuery, $bindings);
-        $totalArchived = $archivedResult ? $archivedResult->total_archived : 0;
-
-        // 3. Get submissions per course/department (Corrected to use ud.department)
-        $courseWhereClause = !empty($whereConditions) ? 'WHERE ' . str_replace('submission_date', 'cp.submission_date', implode(' AND ', $whereConditions)) : '';
-
-        $submissionsPerCourseQuery = "
-        SELECT
-            ud.department as course, 
-            COUNT(cp.id) as count
-        FROM 
-            capstone_projects AS cp
-        JOIN 
-            project_researchers AS pr ON cp.id = pr.project_id
-        JOIN 
-            user_details AS ud ON pr.user_id = ud.user_id
-        {$courseWhereClause}
-        GROUP BY 
-            ud.department
-    ";
-        $submissions = DB::select($submissionsPerCourseQuery, $bindings);
+        $submissions = $baseQuery->clone()
+            ->select('ud.department as course', DB::raw('COUNT(DISTINCT cp.id) as count'))
+            ->groupBy('ud.department')
+            ->get();
 
         return response()->json([
             'submissions_per_course' => $submissions,
@@ -283,9 +222,8 @@ class AdminDashboardUtilController extends Controller
     }
 
     /**
-     * Get counts of users by role, including a departmental breakdown for proponents and viewers.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Get counts of users by role.
+     * FIXED: Viewer/Proponent totals now strictly exclude users not in BSIS, BSIT, or BIT-CT.
      */
     public function userRoleCounts(): JsonResponse
     {
@@ -315,6 +253,9 @@ class AdminDashboardUtilController extends Controller
             'viewers' => ['total' => 0, 'by_department' => []],
         ];
 
+        // Strict allowed departments list
+        $allowedDepartments = ['BSIS', 'BSIT', 'BIT-CT'];
+
         foreach ($results as $result) {
             switch ($result->role) {
                 case 'Admin':
@@ -324,22 +265,26 @@ class AdminDashboardUtilController extends Controller
                     $response['advisers'] = $result->count;
                     break;
                 case 'Proponent':
-                    if ($result->department) {
+                    // STRICT CHECK: Only process if department is in the allowed list
+                    if ($result->department && in_array($result->department, $allowedDepartments)) {
                         $response['proponents']['by_department'][] = [
                             'department' => $result->department,
                             'count' => $result->count
                         ];
+                        // Only add to total if it passed the check
+                        $response['proponents']['total'] += $result->count;
                     }
-                    $response['proponents']['total'] += $result->count;
                     break;
                 case 'Viewer':
-                    if ($result->department) {
+                    // STRICT CHECK: Only process if department is in the allowed list
+                    if ($result->department && in_array($result->department, $allowedDepartments)) {
                         $response['viewers']['by_department'][] = [
                             'department' => $result->department,
                             'count' => $result->count
                         ];
+                        // Only add to total if it passed the check
+                        $response['viewers']['total'] += $result->count;
                     }
-                    $response['viewers']['total'] += $result->count;
                     break;
             }
         }
