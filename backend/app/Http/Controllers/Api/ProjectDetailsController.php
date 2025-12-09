@@ -24,13 +24,15 @@ class ProjectDetailsController extends Controller
      */
     public function show(int $id): JsonResponse
     {
+        // Added 'platformTypes' to eager loading
         $project = CapstoneProject::with([
             'adviser',
             'projectResearcher.user',
-            'projectResearcher.panel', // Eager-load the new panel relationship
+            'projectResearcher.panel',
             'keywords',
             'manuscript',
-            'sourceCode.programmingLanguages'
+            'sourceCode.programmingLanguages',
+            'platformTypes'
         ])->findOrFail($id);
 
         $user = Auth::user();
@@ -52,6 +54,9 @@ class ProjectDetailsController extends Controller
         $leader = $researcher ? $researcher->user : null;
         $panel = $researcher?->panel;
 
+        // Maintain backward compatibility: Join platform names into a string
+        $platformString = $project->platformTypes->pluck('platform_name')->implode(', ');
+
         return response()->json([
             'id' => $project->id,
             'title' => $project->title,
@@ -60,7 +65,7 @@ class ProjectDetailsController extends Controller
                 : 'Viewing project abstracts is currently disabled by an administrator.',
             'submission_date' => $project->submission_date,
             'submission_year' => $project->submission_year,
-            'platform_type' => $project->platform_type,
+            'platform_type' => $platformString, // Updated to use relation data
             'is_archived' => (bool) $project->is_archived,
             'adviser' => $project->adviser ? "{$project->adviser->first_name} {$project->adviser->last_name}" : null,
             'manuscript_id' => $project->manuscript?->manuscript_id,
@@ -69,7 +74,6 @@ class ProjectDetailsController extends Controller
                 'leader' => $leader ? "{$leader->first_name} {$leader->last_name}" : null,
                 'hacker' => $researcher->member_hacker ?? null,
                 'hipster1' => $researcher->member_hipster1 ?? null,
-                // FIX: Removed the stray space before 'hipster2'
                 'hipster2' => $researcher->member_hipster2 ?? null,
             ],
             'panel_members' => $panel ? [
@@ -83,13 +87,13 @@ class ProjectDetailsController extends Controller
     }
 
     /**
+     * Get related studies based on keyword matching.
      *
      * @param int $id The ID of the primary capstone project.
      * @return JsonResponse
      */
     public function getRelatedStudies(int $id): JsonResponse
     {
-        // (This method remains unchanged)
         $project = CapstoneProject::with('keywords')->findOrFail($id);
         $keywordIds = $project->keywords->pluck('id');
 

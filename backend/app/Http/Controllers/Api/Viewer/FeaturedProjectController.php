@@ -21,8 +21,13 @@ class FeaturedProjectController extends Controller
     public function getFeaturedProjects(Request $request)
     {
         // Define the relationships to eager-load
-        // Added 'platformTypes' to fetch the new Many-to-Many relationship
-        $relations = ['projectResearcher.panel', 'projectResearcher', 'adviser', 'platformTypes'];
+        // Updated: Added 'projectResearcher.user' to fetch the Leader's info
+        $relations = [
+            'projectResearcher.panel',
+            'projectResearcher.user',
+            'adviser',
+            'platformTypes'
+        ];
 
         // 1. Get 5 Latest Projects
         $latestProjects = CapstoneProject::with($relations)
@@ -61,19 +66,26 @@ class FeaturedProjectController extends Controller
             $researcher = $project->projectResearcher;
             $panel = $researcher ? $researcher->panel : null;
 
+            // Fetch Leader details from the User relation
+            $leader = $researcher ? $researcher->user : null;
+            $leaderName = $leader ? $leader->first_name . ' ' . $leader->last_name : null;
+
             $adviser = $project->adviser;
             $adviserName = $adviser ? $adviser->first_name . ' ' . $adviser->last_name : null;
 
             // Handle the new PlatformType Many-to-Many relationship
-            // We join the names with a comma to maintain backward compatibility (returning a string)
             $platformTypeString = $project->platformTypes->pluck('platform_name')->implode(', ');
 
-            // Clean up member and panel arrays to remove nulls
-            $members = $researcher ? array_filter([
-                $researcher->member_hacker,
-                $researcher->member_hipster1,
-                $researcher->member_hipster2,
-            ]) : [];
+            // Collect all members including the leader
+            $rawMembers = [
+                $leaderName, // Leader is usually listed first
+                $researcher ? $researcher->member_hacker : null,
+                $researcher ? $researcher->member_hipster1 : null,
+                $researcher ? $researcher->member_hipster2 : null,
+            ];
+
+            // Filter out nulls and re-index array
+            $members = array_values(array_filter($rawMembers));
 
             $panelMembers = $panel ? array_filter([
                 $panel->panel_member_1,
@@ -86,10 +98,10 @@ class FeaturedProjectController extends Controller
                 'title' => $project->title,
                 'abstract' => $project->abstract,
                 'date_published' => $project->submission_date,
-                'platform_type' => $platformTypeString, // Now returns "Web, Mobile" etc.
+                'platform_type' => $platformTypeString,
                 'adviser_name' => $adviserName,
-                'members' => array_values($members), // Reset array keys
-                'panel' => array_values($panelMembers), // Reset array keys
+                'members' => $members, // Now includes Leader, Hacker, and Hipsters
+                'panel' => array_values($panelMembers),
             ];
         });
 

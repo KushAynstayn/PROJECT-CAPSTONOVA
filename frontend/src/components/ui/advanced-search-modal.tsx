@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface AdvancedSearchModalProps {
   children: React.ReactNode;
@@ -34,6 +49,13 @@ export function AdvancedSearchModal({ children }: AdvancedSearchModalProps) {
   const [yearFrom, setYearFrom] = useState("");
   const [yearTo, setYearTo] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+
+  // Combobox state
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [inputValue, setInputValue] = useState(""); // Captures what the user types
+
+  // Static list including "Hybrid"
+  const defaultPlatforms = ["Desktop", "Web", "Mobile", "IoT", "Hybrid"];
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -68,7 +90,6 @@ export function AdvancedSearchModal({ children }: AdvancedSearchModalProps) {
     setIsOpen(false); // Close the modal after search
   };
 
-  const platformTypes = ["Desktop", "Web", "Mobile", "IoT"];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 2009 }, (_, i) =>
     (currentYear - i).toString()
@@ -136,30 +157,71 @@ export function AdvancedSearchModal({ children }: AdvancedSearchModalProps) {
             />
           </div>
 
-          {/* Platform Type Select */}
+          {/* Platform Type - Creatable Combobox */}
           <div>
-            <label
-              htmlFor="platformType"
-              className="block text-sm font-medium text-[#E0A800] mb-2"
-            >
+            <label className="block text-sm font-medium text-[#E0A800] mb-2">
               Platform Type
             </label>
-            <Select onValueChange={setPlatformType} value={platformType}>
-              <SelectTrigger className="w-full bg-neutral-900 border-gray-700 text-white focus:ring-[#E0A800] focus:border-[#E0A800]">
-                <SelectValue placeholder="Select a platform type" />
-              </SelectTrigger>
-              <SelectContent className="bg-neutral-900 border-gray-700 text-white">
-                {platformTypes.map((type) => (
-                  <SelectItem
-                    key={type}
-                    value={type}
-                    className="hover:bg-neutral-800 focus:bg-neutral-800"
-                  >
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCombobox}
+                  className="w-full justify-between bg-neutral-900 border-gray-700 text-white hover:bg-neutral-800 hover:text-white focus:ring-[#E0A800] focus:border-[#E0A800]"
+                >
+                  {platformType || "Select or type a platform..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-neutral-900 border-gray-700 text-white">
+                <Command className="bg-neutral-900 text-white">
+                  <CommandInput
+                    placeholder="Search platform..."
+                    className="h-9 text-white placeholder:text-gray-500"
+                    onValueChange={setInputValue}
+                  />
+                  <CommandList>
+                    <CommandEmpty className="py-2 px-2 text-sm">
+                      <button
+                        className="w-full text-left px-2 py-1.5 rounded-sm hover:bg-neutral-800 text-yellow-400 font-medium transition-colors"
+                        onClick={() => {
+                          setPlatformType(inputValue);
+                          setOpenCombobox(false);
+                        }}
+                      >
+                        Create "{inputValue}"
+                      </button>
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {defaultPlatforms.map((type) => (
+                        <CommandItem
+                          key={type}
+                          value={type}
+                          onSelect={(currentValue) => {
+                            setPlatformType(
+                              currentValue === platformType ? "" : currentValue
+                            );
+                            setOpenCombobox(false);
+                          }}
+                          className="hover:bg-neutral-800 aria-selected:bg-neutral-800 cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4 text-[#E0A800]",
+                              platformType.toLowerCase() === type.toLowerCase()
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {type}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Keywords Input */}
