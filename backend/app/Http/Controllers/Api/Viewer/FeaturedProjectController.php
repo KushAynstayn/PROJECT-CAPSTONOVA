@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Viewer;
 use App\Http\Controllers\Controller;
 use App\Models\CapstoneProject;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection; // Make sure this is imported
+use Illuminate\Support\Collection;
 
 class FeaturedProjectController extends Controller
 {
@@ -21,7 +21,8 @@ class FeaturedProjectController extends Controller
     public function getFeaturedProjects(Request $request)
     {
         // Define the relationships to eager-load
-        $relations = ['projectResearcher.panel', 'projectResearcher', 'adviser'];
+        // Added 'platformTypes' to fetch the new Many-to-Many relationship
+        $relations = ['projectResearcher.panel', 'projectResearcher', 'adviser', 'platformTypes'];
 
         // 1. Get 5 Latest Projects
         $latestProjects = CapstoneProject::with($relations)
@@ -63,6 +64,10 @@ class FeaturedProjectController extends Controller
             $adviser = $project->adviser;
             $adviserName = $adviser ? $adviser->first_name . ' ' . $adviser->last_name : null;
 
+            // Handle the new PlatformType Many-to-Many relationship
+            // We join the names with a comma to maintain backward compatibility (returning a string)
+            $platformTypeString = $project->platformTypes->pluck('platform_name')->implode(', ');
+
             // Clean up member and panel arrays to remove nulls
             $members = $researcher ? array_filter([
                 $researcher->member_hacker,
@@ -81,7 +86,7 @@ class FeaturedProjectController extends Controller
                 'title' => $project->title,
                 'abstract' => $project->abstract,
                 'date_published' => $project->submission_date,
-                'platform_type' => $project->platform_type,
+                'platform_type' => $platformTypeString, // Now returns "Web, Mobile" etc.
                 'adviser_name' => $adviserName,
                 'members' => array_values($members), // Reset array keys
                 'panel' => array_values($panelMembers), // Reset array keys
