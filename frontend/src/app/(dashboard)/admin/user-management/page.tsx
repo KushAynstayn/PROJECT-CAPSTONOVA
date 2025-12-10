@@ -1,3 +1,6 @@
+// File Location: src/app/(dashboard)/admin/user-management/page.tsx
+// Status: [MODIFIED FILE]
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -13,6 +16,7 @@ import EditAdviserView from "../../../../components/user-manage/edit-adviser";
 import SuggestionView from "../../../../components/user-manage/view-suggestion";
 import { apiCall, ApiError } from "@/lib/api";
 import AddAdviser from "@/components/user-manage/add-adviser";
+import Pagination from "@/components/ui/pagination";
 
 // 🆕 Import your Restricted Accounts component
 import RestrictedAccounts from "@/components/user-manage/restricted-accounts";
@@ -85,6 +89,11 @@ const AdminUserManagementPage = () => {
   const [currentRole, setCurrentRole] = useState<Role>("Advisers");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [users, setUsers] = useState<Record<Role, User[]>>({
     Viewer: [],
     Proponents: [],
@@ -97,44 +106,62 @@ const AdminUserManagementPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // --- Reset Page on Role/Search Change ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentRole, searchQuery]);
+
   const fetchViewers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/viewers?search=${searchQuery}`);
-      setUsers((prev) => ({ ...prev, Viewer: data.data }));
+      const response = await apiCall(
+        `/user-mgt/viewers?search=${searchQuery}&page=${currentPage}`
+      );
+      setUsers((prev) => ({ ...prev, Viewer: response.data }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch viewers.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchProponents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/proponents?search=${searchQuery}`);
-      setUsers((prev) => ({ ...prev, Proponents: data.data }));
+      const response = await apiCall(
+        `/user-mgt/proponents?search=${searchQuery}&page=${currentPage}`
+      );
+      setUsers((prev) => ({ ...prev, Proponents: response.data }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch proponents.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchAdvisers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/advisers?name=${searchQuery}`);
-      setUsers((prev) => ({ ...prev, Advisers: data }));
+      const response = await apiCall(
+        `/user-mgt/advisers?name=${searchQuery}&page=${currentPage}`
+      );
+      // Handle response if it's an array or a paginated object
+      const adviserData = Array.isArray(response) ? response : response.data;
+      const lastPage = response.last_page || 1;
+
+      setUsers((prev) => ({ ...prev, Advisers: adviserData }));
+      setTotalPages(lastPage);
     } catch (err) {
       setError("Failed to fetch advisers.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchRestricted = useCallback(async () => {
     setIsLoading(false);
@@ -152,6 +179,7 @@ const AdminUserManagementPage = () => {
   }, [
     currentRole,
     searchQuery,
+    currentPage, // Added currentPage dependency
     fetchViewers,
     fetchProponents,
     fetchAdvisers,
@@ -250,7 +278,6 @@ const AdminUserManagementPage = () => {
       payload = updatedUser as ProponentEditData;
       fetchAction = fetchProponents;
     } else if (currentRole === "Advisers") {
-      // ✅ FIXED: Added the leading slash /
       endpoint = `/user-mgt/advisers/${updatedUser.id}`;
       payload = updatedUser as AdviserEditData;
       fetchAction = fetchAdvisers;
@@ -358,7 +385,23 @@ const AdminUserManagementPage = () => {
               )}
             </>
           ) : (
-            componentMap[currentRole]
+            <>
+              {componentMap[currentRole]}
+
+              {/* Pagination Controls - Only show if supported and data exists */}
+              {currentRole !== "Restricted" &&
+                !isLoading &&
+                users[currentRole].length > 0 &&
+                totalPages > 1 && (
+                  <div className="mt-4">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+            </>
           )}
         </div>
       </main>

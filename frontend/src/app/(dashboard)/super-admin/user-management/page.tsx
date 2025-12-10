@@ -1,6 +1,9 @@
+// File Location: src/app/(dashboard)/super-admin/user-management/page.tsx
+// Status: [MODIFIED FILE]
+
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import NavigationBar, {
   Role as NavRole,
 } from "@/components/ui/user-management-navbar";
@@ -17,6 +20,7 @@ import AddProponent from "../../../../components/user-manage/add-proponent";
 import AddAdviser from "../../../../components/user-manage/add-adviser";
 import AddAdmin from "../../../../components/user-manage/add-admin";
 import { apiCall, ApiError } from "@/lib/api";
+import Pagination from "@/components/ui/pagination";
 
 import RestrictedAccounts from "../../../../components/user-manage/restricted-accounts";
 
@@ -108,7 +112,6 @@ const placeholderText = {
   Admin: "Search Admins Here",
   "Super Admin": "Search Super Admins Here",
   Restricted: "Search Restricted Accounts Here",
-  // ✅ CHANGED: Updated text to match new behavior
   "Faculty Whitelist": "Search by Faculty ID...",
 };
 
@@ -116,6 +119,10 @@ const SuperAdminUserManagementPage = () => {
   const [currentRole, setCurrentRole] = useState<Role>("Viewer");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [users, setUsers] = useState<Record<Role, User[]>>({
     Viewer: [],
@@ -133,94 +140,120 @@ const SuperAdminUserManagementPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // --- Reset Page on Role/Search Change ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentRole, searchQuery]);
+
   // --- Data Fetching Callbacks ---
   const fetchViewers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/viewers?search=${searchQuery}`);
-      setUsers((prev) => ({ ...prev, Viewer: data.data }));
+      const response = await apiCall(
+        `/user-mgt/viewers?search=${searchQuery}&page=${currentPage}`
+      );
+      // Assuming Laravel pagination structure: { data: [...], last_page: 10, ... }
+      setUsers((prev) => ({ ...prev, Viewer: response.data }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch viewers.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchProponents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/proponents?search=${searchQuery}`);
-      setUsers((prev) => ({ ...prev, Proponents: data.data }));
+      const response = await apiCall(
+        `/user-mgt/proponents?search=${searchQuery}&page=${currentPage}`
+      );
+      setUsers((prev) => ({ ...prev, Proponents: response.data }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch proponents.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchAdvisers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/advisers?name=${searchQuery}`);
-      setUsers((prev) => ({ ...prev, Advisers: data }));
+      // Updated to handle pagination object instead of direct array
+      const response = await apiCall(
+        `/user-mgt/advisers?name=${searchQuery}&page=${currentPage}`
+      );
+      const adviserData = Array.isArray(response) ? response : response.data;
+      const lastPage = response.last_page || 1;
+
+      setUsers((prev) => ({ ...prev, Advisers: adviserData }));
+      setTotalPages(lastPage);
     } catch (err) {
       setError("Failed to fetch advisers.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/admin?name=${searchQuery}`);
-      const formattedData = data.data.map((admin: any) => ({
+      const response = await apiCall(
+        `/user-mgt/admin?name=${searchQuery}&page=${currentPage}`
+      );
+      const formattedData = response.data.map((admin: any) => ({
         ...admin,
         name: `${admin.first_name} ${admin.last_name}`,
       }));
       setUsers((prev) => ({ ...prev, Admin: formattedData }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch admins.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchSuperAdmins = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiCall(`/user-mgt/super-admin?name=${searchQuery}`);
-      const formattedData = data.data.map((admin: any) => ({
+      const response = await apiCall(
+        `/user-mgt/super-admin?name=${searchQuery}&page=${currentPage}`
+      );
+      const formattedData = response.data.map((admin: any) => ({
         ...admin,
         name: `${admin.first_name} ${admin.last_name}`,
       }));
       setUsers((prev) => ({ ...prev, "Super Admin": formattedData }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch super admins.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   const fetchWhitelist = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await apiCall(
-        `/user-mgt/faculty-whitelist?search=${searchQuery}`
+        `/user-mgt/faculty-whitelist?search=${searchQuery}&page=${currentPage}`
       );
       setUsers((prev) => ({ ...prev, "Faculty Whitelist": response.data }));
+      setTotalPages(response.last_page || 1);
     } catch (err) {
       setError("Failed to fetch whitelist.");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   useEffect(() => {
     setEditingUser(null);
@@ -246,11 +279,13 @@ const SuperAdminUserManagementPage = () => {
         fetchWhitelist();
         break;
       case "Restricted":
+        // RestrictedAccounts component handles its own data/view
         break;
     }
   }, [
     currentRole,
     searchQuery,
+    currentPage, // Added currentPage dependency
     fetchViewers,
     fetchProponents,
     fetchAdvisers,
@@ -555,7 +590,6 @@ const SuperAdminUserManagementPage = () => {
             />
           )}
 
-          {/* ✅ Whitelist Modal */}
           {isAddModalOpen && currentRole === "Faculty Whitelist" && (
             <AddWhitelist
               onClose={() => setIsAddModalOpen(false)}
@@ -605,7 +639,6 @@ const SuperAdminUserManagementPage = () => {
                   onCancel={handleCancelEdit}
                 />
               )}
-              {/* ✅ Whitelist Edit View */}
               {currentRole === "Faculty Whitelist" && (
                 <EditWhitelist
                   item={editingUser as WhitelistItem}
@@ -615,7 +648,23 @@ const SuperAdminUserManagementPage = () => {
               )}
             </>
           ) : (
-            componentMap[currentRole]
+            <>
+              {componentMap[currentRole]}
+
+              {/* Pagination Controls - Only show if supported and data exists */}
+              {currentRole !== "Restricted" &&
+                !isLoading &&
+                users[currentRole].length > 0 &&
+                totalPages > 1 && (
+                  <div className="mt-4">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+            </>
           )}
         </div>
       </main>
