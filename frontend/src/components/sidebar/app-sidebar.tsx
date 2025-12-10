@@ -82,6 +82,11 @@ const sidebarData = {
         icon: "/images/data_analytics_icon.png",
       },
       {
+        href: "/admin/pending-access-requests",
+        label: "Pending Access Requests",
+        icon: "/images/request_access_icon.png",
+      },
+      {
         href: "/admin/reports",
         label: "Reports",
         icon: "/images/report_icon.png",
