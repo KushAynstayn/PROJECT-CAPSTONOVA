@@ -17,29 +17,42 @@ class AssociationController extends Controller
     public function train()
     {
         // 1. Fetch all capstone projects with their source code, languages, AND platform types.
-        // We eager load 'platformTypes' to handle the new Many-to-Many relationship efficiently.
         $projects = CapstoneProject::with([
             'sourceCode.programmingLanguages',
             'platformTypes'
         ])->get();
 
         // 2. Format the data into the structure required by the ML service.
-        $formattedData = $projects->map(function ($project) {
+        // We use flatMap here. If a project has multiple platforms, map() inside will create
+        // multiple arrays, and flatMap will flatten them into the main collection.
+        $formattedData = $projects->flatMap(function ($project) {
             // Ensure the project has a source code entry and associated languages
-            if ($project->sourceCode && $project->sourceCode->programmingLanguages->isNotEmpty()) {
+            if (!$project->sourceCode || $project->sourceCode->programmingLanguages->isEmpty()) {
+                return [];
+            }
+
+            // Get the languages once for this project
+            $languages = $project->sourceCode->programmingLanguages->pluck('language_name')->values()->all();
+
+            // If the project has no platform types, we cannot create an association entry based on platform.
+            // (Assuming we skip projects with no defined platform).
+            if ($project->platformTypes->isEmpty()) {
+                return [];
+            }
+
+            // Iterate through each platform type attached to the project
+            // and create a separate entry for each one.
+            return $project->platformTypes->map(function ($platform) use ($project, $languages) {
                 return [
                     'project_id'    => $project->id,
-                    // transform the collection of platform models into a simple array of names
-                    // e.g., ["Web", "Mobile"]
-                    'platform_type' => $project->platformTypes->pluck('platform_name')->values()->all(),
-                    'languages'     => $project->sourceCode->programmingLanguages->pluck('language_name')->values()->all(),
+                    'platform_type' => $platform->platform_name, // Single string (e.g., "Web")
+                    'languages'     => $languages,               // Array (e.g., ["PHP", "HTML"])
                 ];
-            }
-            return null;
-        })->filter()->values(); // filter() removes nulls, values() resets array keys
+            });
+        })->values(); // Reset array keys to be a sequential JSON array
 
         if ($formattedData->isEmpty()) {
-            return response()->json(['error' => 'No projects with associated programming languages found.'], 404);
+            return response()->json(['error' => 'No valid projects with languages and platforms found.'], 404);
         }
 
         // 3. Call the ML service's train endpoint.

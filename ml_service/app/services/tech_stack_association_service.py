@@ -6,7 +6,7 @@ from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules
 from app.schemas.tech_stack_association import AssociationTrainingRequest
 from app.models.model_manager import save_json_artifact, load_json_artifact
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 class TechStackAssociationService:
     """
@@ -14,12 +14,15 @@ class TechStackAssociationService:
     """
     def __init__(self):
         self.model_name = "tech_stack_association"
-        self.platforms = ['Web', 'Mobile', 'IoT', 'Desktop'] # Predefined platforms
+        # Removed hardcoded self.platforms
 
     def generate_rules(self, training_payload: AssociationTrainingRequest) -> Dict[str, Any]:
         """
         Generates association rules from the provided project data and saves them.
         """
+        # 0. Identify Unique Platforms dynamically from the input data
+        unique_platforms = sorted(list(set(item.platform_type for item in training_payload.data)))
+
         # 1. Data Transformation
         transactions = []
         for project in training_payload.data:
@@ -37,8 +40,8 @@ class TechStackAssociationService:
         strong_rules = rules[rules['lift'] > 1.0].copy()
         strong_rules.sort_values(by=['lift', 'confidence'], ascending=[False, False], inplace=True)
 
-        # 4. Format Output
-        output = self._format_rules_for_json(strong_rules)
+        # 4. Format Output (Pass the discovered platforms)
+        output = self._format_rules_for_json(strong_rules, unique_platforms)
 
         # 5. Save Artifact
         artifact_path = save_json_artifact(output, self.model_name)
@@ -57,7 +60,7 @@ class TechStackAssociationService:
             raise RuntimeError(f"Association artifact '{self.model_name}' not found. Please generate the rules first.")
         return {"associations": associations}
 
-    def _format_rules_for_json(self, rules: pd.DataFrame) -> Dict[str, Any]:
+    def _format_rules_for_json(self, rules: pd.DataFrame, platforms: List[str]) -> Dict[str, Any]:
         """
         Formats the association rules into a structured dictionary.
         """
@@ -65,13 +68,15 @@ class TechStackAssociationService:
         rules['antecedents_str'] = rules['antecedents'].apply(lambda x: ', '.join(sorted(list(x))).replace('lang:', '').replace('platform:', ''))
         rules['consequents_str'] = rules['consequents'].apply(lambda x: ', '.join(sorted(list(x))).replace('lang:', ''))
 
-        for platform in self.platforms:
+        for platform in platforms:
             platform_identifier = f"platform:{platform}"
+            # Filter rules where the antecedent contains the specific platform tag
             platform_rules = rules[rules['antecedents'].apply(lambda x: platform_identifier in x)].copy()
 
             platform_output = {"core_stack": [], "popular_combinations": []}
 
             if not platform_rules.empty:
+                # Identify "Core" technologies (high confidence single items associated with the platform)
                 core_tech_rules = platform_rules[(platform_rules['antecedents'].apply(len) == 1) & (platform_rules['confidence'] > 0.70)]
                 core_techs = []
                 if not core_tech_rules.empty:
@@ -79,17 +84,22 @@ class TechStackAssociationService:
                     core_techs = sorted(list(all_core_techs.unique()))
                     platform_output["core_stack"] = core_techs
 
+                # Identify "Add-on" rules (combinations of existing items leading to new ones)
                 addon_rules = platform_rules[platform_rules['antecedents'].apply(len) > 1].copy()
                 if core_techs:
+                    # Filter out rules that just point to core techs we already know are standard
                     addon_rules = addon_rules[~addon_rules['consequents_str'].isin(core_techs)]
 
                 if not addon_rules.empty:
                     for _, row in addon_rules.head(5).iterrows():
+                        # Extract the 'if_using' part by removing the platform tag
                         antecedent_items = sorted([item.replace('lang:', '') for item in row['antecedents'] if 'platform:' not in item])
                         if not antecedent_items: continue
                         platform_output["popular_combinations"].append({
-                            "if_using": antecedent_items, "then_add": row['consequents_str'].split(', '),
-                            "confidence": round(row['confidence'], 2), "lift": round(row['lift'], 2)
+                            "if_using": antecedent_items, 
+                            "then_add": row['consequents_str'].split(', '),
+                            "confidence": round(row['confidence'], 2), 
+                            "lift": round(row['lift'], 2)
                         })
             output[platform] = platform_output
         return output
