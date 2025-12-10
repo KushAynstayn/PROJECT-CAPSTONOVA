@@ -150,7 +150,7 @@ class CapstoneProjectController extends Controller
                 'cp.title',
                 'cp.abstract',
                 'cp.submission_year',
-                'cp.platform_type',
+                // REMOVED: 'cp.platform_type', (Column no longer exists)
                 'adviser.first_name AS adviser_first_name',
                 'adviser.last_name AS adviser_last_name',
                 'leader.first_name AS leader_first_name',
@@ -212,14 +212,17 @@ class CapstoneProjectController extends Controller
         $projectIds = $projects->pluck('id')->toArray();
         $keywords = $this->getKeywordsForProjects($projectIds);
         $languages = $this->getLanguagesForProjects($projectIds);
+        // NEW: Fetch platforms
+        $platforms = $this->getPlatformsForProjects($projectIds);
 
-        $transformedProjects = $projects->map(function ($project) use ($keywords, $languages) {
+        $transformedProjects = $projects->map(function ($project) use ($keywords, $languages, $platforms) {
             return [
                 'id' => $project->id,
                 'title' => $project->title,
                 'abstract_snippet' => Str::limit($project->abstract, 100),
                 'submission_year' => $project->submission_year,
-                'platform_type' => $project->platform_type,
+                // UPDATED: Now returns an array of strings (e.g., ['Web', 'Mobile'])
+                'platform_type' => $platforms[$project->id] ?? [],
                 'adviser_name' => trim("{$project->adviser_first_name} {$project->adviser_last_name}"),
                 'project_leader' => trim("{$project->leader_first_name} {$project->leader_last_name}"),
                 'manuscript_id' => $project->manuscript_id,
@@ -248,6 +251,20 @@ class CapstoneProjectController extends Controller
             ->get();
 
         return $this->groupRelatedData($results, 'project_id', 'keyword_name');
+    }
+
+    // NEW: Helper method to fetch platform types
+    private function getPlatformsForProjects(array $projectIds): array
+    {
+        if (empty($projectIds)) return [];
+
+        $results = DB::table('project_platforms')
+            ->join('platform_types', 'project_platforms.platform_type_id', '=', 'platform_types.id')
+            ->whereIn('project_platforms.project_id', $projectIds)
+            ->select('project_platforms.project_id', 'platform_types.platform_name')
+            ->get();
+
+        return $this->groupRelatedData($results, 'project_id', 'platform_name');
     }
 
     private function getLanguagesForProjects(array $projectIds): array

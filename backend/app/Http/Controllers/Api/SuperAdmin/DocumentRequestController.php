@@ -22,8 +22,8 @@ class DocumentRequestController extends Controller
      */
     public function index(Request $request)
     {
-        if (!Gate::allows('isSuperAdmin')) {
-            abort(403, 'Unauthorized - Super Admin access required');
+        if (!(Gate::allows('isSuperAdmin') || Gate::allows('isAdmin'))) {
+            abort(403, 'Unauthorized - Super Admin or Admin access required');
         }
 
         $query = DB::table('document_requests')
@@ -95,8 +95,8 @@ class DocumentRequestController extends Controller
      */
     public function approve(Request $request, $id)
     {
-        if (!Gate::allows('isSuperAdmin')) {
-            abort(403, 'Unauthorized - Super Admin access required');
+        if (!(Gate::allows('isSuperAdmin') || Gate::allows('isAdmin'))) {
+            abort(403, 'Unauthorized - Super Admin or Admin access required');
         }
 
         $validator = Validator::make($request->all(), [
@@ -180,8 +180,8 @@ class DocumentRequestController extends Controller
      */
     public function reject(Request $request, $id)
     {
-        if (!Gate::allows('isSuperAdmin')) {
-            abort(403, 'Unauthorized - Super Admin access required');
+        if (!(Gate::allows('isSuperAdmin') || Gate::allows('isAdmin'))) {
+            abort(403, 'Unauthorized - Super Admin or Admin access required');
         }
 
         $documentRequest = DB::table('document_requests')
@@ -232,8 +232,8 @@ class DocumentRequestController extends Controller
      */
     public function approvalHistory(Request $request)
     {
-        if (!Gate::allows('isSuperAdmin')) {
-            abort(403, 'Unauthorized - Super Admin access required');
+        if (!(Gate::allows('isSuperAdmin') || Gate::allows('isAdmin'))) {
+            abort(403, 'Unauthorized - Super Admin or Admin access required');
         }
 
         $query = DB::table('approval_histories')

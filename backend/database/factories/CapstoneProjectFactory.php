@@ -25,8 +25,7 @@ class CapstoneProjectFactory extends Factory
             'adviser_id' => User::factory(['role' => 'Adviser']),
             'submission_date' => $submissionDate, // Use the generated date
             'submission_year' => $submissionDate->format('Y'), // Extract the year from it
-            'is_archived' => fake()->boolean(10),
-            'platform_type' => fake()->randomElement(['Web', 'Mobile', 'IoT', 'Desktop']),
+            'is_archived' => fake()->boolean(10)
         ];
     }
 

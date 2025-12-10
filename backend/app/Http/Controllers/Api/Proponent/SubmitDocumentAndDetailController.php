@@ -7,7 +7,8 @@ use App\Jobs\ProcessCapstoneManuscripts;
 use App\Models\ActionType;
 use App\Models\CapstoneProject;
 use App\Models\Keyword;
-use App\Models\Panel; // Added the Panel model
+use App\Models\Panel;
+use App\Models\PlatformType; // Added PlatformType model
 use App\Models\ProjectResearcher;
 use App\Models\SystemSetting;
 use App\Models\UserLog;
@@ -49,19 +50,20 @@ class SubmitDocumentAndDetailController extends Controller
         }
 
         // --- MODIFIED VALIDATION ---
-        // Added validation for panel members.
         $validator = Validator::make($request->all(), [
             'title' => ['required', 'string', 'max:255'],
             'abstract' => ['required', 'string'],
-            'platform_type' => ['required', 'string', 'max:50'],
+            // UPDATED: Now accepts strings to find or create
+            'platform_types' => ['required', 'array'],
+            'platform_types.*' => ['required', 'string', 'max:50'],
             'keywords' => ['required', 'array'],
             'keywords.*' => ['required', 'string', 'max:50'],
             'member_hacker' => ['required', 'string', 'max:255'],
             'member_hipster1' => ['required', 'string', 'max:255'],
             'member_hipster2' => ['nullable', 'string', 'max:255'],
-            'panel_member_1' => ['required', 'string', 'max:255'], // Added panel validation
-            'panel_member_2' => ['nullable', 'string', 'max:255'], // Added panel validation
-            'panel_member_3' => ['nullable', 'string', 'max:255'], // Added panel validation
+            'panel_member_1' => ['required', 'string', 'max:255'],
+            'panel_member_2' => ['nullable', 'string', 'max:255'],
+            'panel_member_3' => ['nullable', 'string', 'max:255'],
             'manuscript_path' => ['required', 'string'],
             'acm_path' => ['required', 'string'],
         ]);
@@ -86,15 +88,27 @@ class SubmitDocumentAndDetailController extends Controller
 
         DB::beginTransaction();
         try {
+            // Create Project
             $project = CapstoneProject::create([
                 'title' => $validated['title'],
                 'abstract' => $validated['abstract'],
                 'adviser_id' => $user->userDetail->adviser_id,
                 'submission_date' => now(),
                 'submission_year' => now()->year,
-                'platform_type' => $validated['platform_type'],
             ]);
 
+            // UPDATED: Handle Platform Types (Find or Create)
+            $platformIds = [];
+            foreach ($validated['platform_types'] as $platformName) {
+                // Determine logic: find existing by name or create new
+                $platform = PlatformType::firstOrCreate(
+                    ['platform_name' => trim($platformName)]
+                );
+                $platformIds[] = $platform->id;
+            }
+            $project->platformTypes()->attach($platformIds);
+
+            // Handle Keywords (Find or Create)
             $keywordIds = [];
             foreach ($validated['keywords'] as $keywordName) {
                 $keyword = Keyword::firstOrCreate(['keyword_name' => trim($keywordName)]);
@@ -111,9 +125,7 @@ class SubmitDocumentAndDetailController extends Controller
                 'member_hipster2' => $validated['member_hipster2'] ?? null,
             ]);
 
-            // --- ADDED PANEL CREATION LOGIC ---
-            // Create the Panel entry after creating the ProjectResearcher,
-            // using its ID for the foreign key relationship.
+            // Create the Panel entry
             Panel::create([
                 'project_researcher_id' => $projectResearcher->id,
                 'panel_member_1' => $validated['panel_member_1'],

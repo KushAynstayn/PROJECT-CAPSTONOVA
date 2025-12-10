@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { YearPicker } from "@/components/ui/year-picker";
+// FIX: Corrected the import name from AdvisoryLoadChart to AdviserLoadChart
 import { AdviserLoadChart } from "@/components/ui/advisory-load-chart";
 import { Button } from "@/components/ui/button";
 import { apiCall } from "@/lib/api";
@@ -54,16 +55,25 @@ const AdvisoryLoadView = () => {
           `/util/advisory-load?${params.toString()}`
         );
 
-        // Transform the API response into the format the chart component expects
-        // The chart expects one object in an array, with advisers as keys.
-        const transformedData = response.reduce((acc, item) => {
-          acc[item.adviser_name] = item.projects_handled;
-          return acc;
-        }, {} as { [key: string]: number });
+        // FIX: Transform data to the format expected by AdviserLoadChart
+        // The chart expects: [{ year: "2024", "Adviser A": 5, "Adviser B": 3 }]
 
         const yearLabel =
-          pickerMode === "single" ? singleYear : `${startYear}-${endYear}`;
-        setChartData([{ year: yearLabel, ...transformedData }]);
+          pickerMode === "single"
+            ? singleYear?.toString() || ""
+            : `${startYear}-${endYear}`;
+
+        // Create one data object for the chart
+        const dataPoint: { [key: string]: string | number } = {
+          year: yearLabel,
+        };
+
+        response.forEach((item) => {
+          dataPoint[item.adviser_name] = item.projects_handled;
+        });
+
+        // Set as an array containing this single data object
+        setChartData([dataPoint]);
       } catch (err: any) {
         setError(err.message || "Failed to fetch advisory load data.");
         setChartData([]);
@@ -145,6 +155,7 @@ const AdvisoryLoadView = () => {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
+          // FIX: Updated component usage
           <AdviserLoadChart data={chartData} />
         )}
       </div>

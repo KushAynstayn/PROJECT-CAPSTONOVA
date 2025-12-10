@@ -27,11 +27,9 @@ class SearchController extends Controller
     public function search(Request $request): JsonResponse
     {
         // With session-based authentication, Laravel's middleware handles user retrieval.
-        // We can simply use Auth::user(), which returns the authenticated user or null for guests.
         $user = Auth::user();
 
         // This permission check ONLY applies if the user is an Admin or an Adviser.
-        // Guests and other roles skip this.
         if ($user && in_array($user->role, ['Admin', 'Adviser'])) {
             $settingRoleKey = strtolower(str_replace(' ', '', $user->role));
             $settingName = $settingRoleKey . '_searchProjects';
@@ -48,14 +46,13 @@ class SearchController extends Controller
             }
         }
 
-        // The rest of your validation and query logic remains unchanged.
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
             'authors' => ['nullable', 'array'],
             'authors.*' => ['required_with:authors', 'string', 'max:255'],
             'adviser' => ['nullable', 'string', 'max:255'],
-            'platform_type' => ['nullable', 'string', 'max:50'],
+            'platform_type' => ['nullable', 'string', 'max:50'], // Input remains string for compatibility
             'keywords' => ['nullable', 'array'],
             'keywords.*' => ['required_with:keywords', 'string', 'max:50'],
             'languages' => ['nullable', 'array'],
@@ -80,11 +77,13 @@ class SearchController extends Controller
             $this->applyAdvancedFilters($query, $advancedFilters);
         }
 
+        // Added 'platformTypes' to eager loading
         $projects = $query->with([
             'projectResearcher.user',
             'keywords',
             'sourceCode.programmingLanguages',
-            'adviser'
+            'adviser',
+            'platformTypes'
         ])->paginate(10)->withQueryString();
 
         $transformedProjects = $projects->through(
@@ -108,8 +107,11 @@ class SearchController extends Controller
             $query->where('title', 'LIKE', '%' . $searchTerm . '%');
         }
 
+        // Updated: Search via relation instead of column
         if (!empty($filters['platform_type'])) {
-            $query->where('platform_type', $filters['platform_type']);
+            $query->whereHas('platformTypes', function (Builder $q) use ($filters) {
+                $q->where('platform_name', $filters['platform_type']);
+            });
         }
 
         if (!empty($filters['submission_year'])) {
@@ -172,12 +174,15 @@ class SearchController extends Controller
         $leader = $researcher?->user;
         $adviser = $project->adviser;
 
+        // Compatibility: Implode platform names to single string (e.g., "Web, Mobile")
+        $platformString = $project->platformTypes->pluck('platform_name')->implode(', ');
+
         return [
             'id' => $project->id,
             'title' => $project->title,
             'abstract_snippet' => \Illuminate\Support\Str::limit($project->abstract, 100),
             'submission_year' => $project->submission_year,
-            'platform_type' => $project->platform_type,
+            'platform_type' => $platformString, // Maintained key for frontend compatibility
             'adviser_name' => $adviser ? "{$adviser->first_name} {$adviser->last_name}" : null,
             'keyword_tags' => $this->formatTags($project->keywords, 'keyword_name'),
             'language_tags' => $this->formatTags($project->sourceCode?->programmingLanguages, 'language_name'),

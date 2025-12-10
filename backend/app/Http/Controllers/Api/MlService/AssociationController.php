@@ -16,32 +16,50 @@ class AssociationController extends Controller
      */
     public function train()
     {
-        // 1. Fetch all capstone projects with their source code and programming languages.
-        // Based on your schema: CapstoneProject -> CapstoneSourceCode -> project_languages -> ProgrammingLanguage
-        $projects = CapstoneProject::with('sourceCode.programmingLanguages')->get();
+        // 1. Fetch all capstone projects with their source code, languages, AND platform types.
+        $projects = CapstoneProject::with([
+            'sourceCode.programmingLanguages',
+            'platformTypes'
+        ])->get();
 
         // 2. Format the data into the structure required by the ML service.
-        $formattedData = $projects->map(function ($project) {
+        // We use flatMap here. If a project has multiple platforms, map() inside will create
+        // multiple arrays, and flatMap will flatten them into the main collection.
+        $formattedData = $projects->flatMap(function ($project) {
             // Ensure the project has a source code entry and associated languages
-            if ($project->sourceCode && $project->sourceCode->programmingLanguages->isNotEmpty()) {
-                return [
-                    'project_id' => $project->id,
-                    'platform_type' => $project->platform_type,
-                    'languages' => $project->sourceCode->programmingLanguages->pluck('language_name')->all(),
-                ];
+            if (!$project->sourceCode || $project->sourceCode->programmingLanguages->isEmpty()) {
+                return [];
             }
-            return null;
-        })->filter()->values(); // filter() removes null values and values() re-indexes the array
+
+            // Get the languages once for this project
+            $languages = $project->sourceCode->programmingLanguages->pluck('language_name')->values()->all();
+
+            // If the project has no platform types, we cannot create an association entry based on platform.
+            // (Assuming we skip projects with no defined platform).
+            if ($project->platformTypes->isEmpty()) {
+                return [];
+            }
+
+            // Iterate through each platform type attached to the project
+            // and create a separate entry for each one.
+            return $project->platformTypes->map(function ($platform) use ($project, $languages) {
+                return [
+                    'project_id'    => $project->id,
+                    'platform_type' => $platform->platform_name, // Single string (e.g., "Web")
+                    'languages'     => $languages,               // Array (e.g., ["PHP", "HTML"])
+                ];
+            });
+        })->values(); // Reset array keys to be a sequential JSON array
 
         if ($formattedData->isEmpty()) {
-            return response()->json(['error' => 'No projects with associated programming languages found.'], 404);
+            return response()->json(['error' => 'No valid projects with languages and platforms found.'], 404);
         }
 
         // 3. Call the ML service's train endpoint.
-        // Make sure to set the ML_SERVICE_URL in your .env file (e.g., ML_SERVICE_URL=http://127.0.0.1:8001)
         $mlServiceUrl = rtrim(env('ML_SERVICE_URL'), '/') . '/data_mining/tech_stack_association/train';
 
         try {
+            // We increase timeout as training can be computationally expensive
             $response = Http::timeout(60)->post($mlServiceUrl, [
                 'data' => $formattedData,
             ]);
@@ -50,12 +68,12 @@ class AssociationController extends Controller
             return response()->json($response->json(), $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'error' => 'Could not connect to the ML service.',
+                'error'   => 'Could not connect to the ML service.',
                 'message' => $e->getMessage()
-            ], 503); // 503 Service Unavailable
+            ], 503);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'An unexpected error occurred.',
+                'error'   => 'An unexpected error occurred.',
                 'message' => $e->getMessage()
             ], 500);
         }
@@ -78,12 +96,12 @@ class AssociationController extends Controller
             return response()->json($response->json(), $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             return response()->json([
-                'error' => 'Could not connect to the ML service.',
+                'error'   => 'Could not connect to the ML service.',
                 'message' => $e->getMessage()
-            ], 503); // 503 Service Unavailable
+            ], 503);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'An unexpected error occurred.',
+                'error'   => 'An unexpected error occurred.',
                 'message' => $e->getMessage()
             ], 500);
         }

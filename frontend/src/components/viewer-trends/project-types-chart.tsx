@@ -1,106 +1,218 @@
+// src/components/viewer-trends/project-types-chart.tsx
+// [MODIFIED FILE]
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import { apiCall } from "@/lib/api"; // Corrected: Import apiCall function
+import * as React from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
-// Define expected data structure
-interface PlatformData {
-  platform_type: string;
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
+import { apiCall } from "@/lib/api";
+
+// Define the shape of the data we expect from the component state
+interface ProjectTypeData {
+  type: string;
   count: number;
+  fill: string;
 }
 
-const COLORS = ["#FFD700", "#DAA520", "#B8860B", "#F0E68C", "#C5B358"];
+const chartConfig = {
+  count: {
+    label: "Projects",
+  },
+} satisfies ChartConfig;
 
-export const ProjectTypesChart = ({ year }: { year: number }) => {
-  const [data, setData] = useState<PlatformData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const generateColor = (index: number) => {
+  const colors = [
+    "hsl(var(--chart-1))",
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--chart-5))",
+  ];
+  return colors[index % colors.length];
+};
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!year) return;
+export function ProjectTypesChart({ year }: { year: number }) {
+  const [data, setData] = React.useState<ProjectTypeData[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Pagination / Sliding State
+  const [startIndex, setStartIndex] = React.useState(0);
+  const itemsPerPage = 5;
+
+  React.useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        // Corrected: Use apiCall with the correct path and method
-        const response = await apiCall(
-          `/util/project-type-distribution/${year}`,
-          "GET"
-        );
-        if (response && response.data && response.data.platforms) {
-          setData(response.data.platforms);
-        } else {
-          setData([]); // Clear data if none exists for the year
+        // 1. Fetch data using the corrected endpoint
+        const result = await apiCall(`/util/project-type-distribution/${year}`);
+
+        const rawData = result?.data?.platforms || [];
+
+        if (!Array.isArray(rawData)) {
+          console.error("Unexpected data format:", result);
+          setData([]);
+          return;
         }
-        setError(null);
+
+        // 3. Transform and sort data
+        const transformedData = rawData
+          .map((item: any, index: number) => ({
+            type: item.platform_type || "Unknown",
+            count: Number(item.count) || 0,
+            fill: generateColor(index),
+          }))
+          .sort((a: any, b: any) => b.count - a.count);
+
+        setData(transformedData);
+        setStartIndex(0);
       } catch (err) {
-        setError(`Failed to fetch project type data for ${year}.`);
-        console.error(err);
+        console.error("Failed to fetch project types:", err);
+        setError("Failed to load data.");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchData();
-  }, [year]); // Re-fetch when the year changes
+  }, [year]);
 
-  if (loading) {
-    return <div className="text-center p-4">Loading Chart...</div>;
-  }
+  // Derived state for the "window" of data to show
+  const visibleData = React.useMemo(() => {
+    return data.slice(startIndex, startIndex + itemsPerPage);
+  }, [data, startIndex]);
 
-  if (error) {
-    return <div className="text-center p-4 text-red-500">{error}</div>;
-  }
+  const canGoPrev = startIndex > 0;
+  const canGoNext = startIndex + itemsPerPage < data.length;
+
+  const handlePrev = () => {
+    if (canGoPrev) {
+      setStartIndex((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  const handleNext = () => {
+    if (canGoNext) {
+      setStartIndex((prev) => Math.min(data.length - itemsPerPage, prev + 1));
+    }
+  };
 
   return (
-    <div>
-      <h3 className="text-xl font-semibold text-yellow-400 mb-4">
-        Project Type Distribution ({year})
-      </h3>
-      {data.length > 0 ? (
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="count"
-              nameKey="platform_type"
-              label={({ name, percent }) =>
-                `${name} ${(percent * 100).toFixed(0)}%`
-              }
+    <Card className="flex flex-col h-full bg-neutral-900 border-yellow-500/30">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="space-y-1">
+          <CardTitle className="text-xl text-yellow-400">
+            Project Types
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Distribution for {year}
+          </CardDescription>
+        </div>
+
+        {/* Navigation Arrows */}
+        {data.length > itemsPerPage && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 text-white disabled:opacity-30"
+              onClick={handlePrev}
+              disabled={!canGoPrev}
             >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(30, 30, 30, 0.85)",
-                borderColor: "#f5b301",
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Previous</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 bg-neutral-800 border-neutral-700 hover:bg-neutral-700 text-white disabled:opacity-30"
+              onClick={handleNext}
+              disabled={!canGoNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Next</span>
+            </Button>
+          </div>
+        )}
+      </CardHeader>
+
+      <CardContent className="flex-1 pb-0">
+        {loading ? (
+          <div className="flex h-[250px] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
+          </div>
+        ) : error ? (
+          <div className="flex h-[250px] items-center justify-center text-red-400 text-sm">
+            {error}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex h-[250px] items-center justify-center text-gray-500">
+            No data available for this year.
+          </div>
+        ) : (
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square max-h-[300px] w-full"
+          >
+            <BarChart
+              data={visibleData}
+              layout="vertical"
+              margin={{
+                left: 10,
+                right: 10,
+                top: 10,
+                bottom: 10,
               }}
-            />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="text-center p-10 text-gray-400">
-          No project type data available for {year}.
+              barSize={32}
+            >
+              <CartesianGrid
+                horizontal={false}
+                stroke="rgba(255,255,255,0.1)"
+              />
+              <YAxis
+                dataKey="type"
+                type="category"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                width={100}
+                tick={{ fill: "#9ca3af", fontSize: 12 }}
+              />
+              <XAxis dataKey="count" type="number" hide />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="line" />}
+              />
+              <Bar dataKey="count" layout="vertical" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ChartContainer>
+        )}
+      </CardContent>
+      {/* Footer showing simple stats */}
+      {!loading && !error && data.length > 0 && (
+        <div className="flex-col gap-2 text-sm text-center py-4 text-gray-400">
+          <div className="flex items-center justify-center gap-2 font-medium leading-none text-yellow-500">
+            Top Type: {data[0]?.type}{" "}
+            <span className="text-gray-500">({data[0]?.count})</span>
+          </div>
         </div>
       )}
-    </div>
+    </Card>
   );
-};
+}

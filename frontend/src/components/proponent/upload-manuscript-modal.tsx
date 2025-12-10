@@ -18,6 +18,7 @@ import { apiCall, ApiError } from "../../lib/api";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { FileUploaderWithProgress } from "./file-uploader-with-progress";
+import { X } from "lucide-react"; // Imported X icon for removing tags
 
 interface ManuscriptUploadModalProps {
   isOpen: boolean;
@@ -29,61 +30,92 @@ type FormErrors = {
   [key: string]: string[] | undefined;
 };
 
+// --- MODIFIED: PlatformTypeInput to handle multiple tags ---
 const PlatformTypeInput = ({
   value,
   onValueChange,
   className,
   ...props
 }: Omit<InputProps, "value" | "onChange"> & {
-  value: string;
-  onValueChange: (value: string) => void;
+  value: string[];
+  onValueChange: (value: string[]) => void;
 }) => {
-  const [inputValue, setInputValue] = React.useState(value);
-  const suggestions = ["Mobile", "Web", "IoT", "Desktop"];
+  const [inputValue, setInputValue] = useState("");
+  // --- MODIFIED: Added 'Hybrid' to suggestions ---
+  const suggestions = ["Mobile", "Web", "IoT", "Desktop", "Hybrid"];
 
-  React.useEffect(() => {
-    setInputValue(value);
-  }, [value]);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const trimmed = inputValue.trim();
+      if (trimmed && !value.includes(trimmed)) {
+        onValueChange([...value, trimmed]);
+        setInputValue("");
+      }
+    }
+  };
 
   const handleSuggestionClick = (suggestion: string) => {
-    onValueChange(suggestion);
-    setInputValue(suggestion);
+    if (!value.includes(suggestion)) {
+      onValueChange([...value, suggestion]);
+    }
+    setInputValue("");
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    onValueChange(value.filter((tag) => tag !== tagToRemove));
   };
 
   const filteredSuggestions = suggestions.filter(
     (s) =>
-      s.toLowerCase().includes(inputValue.toLowerCase()) &&
-      s.toLowerCase() !== inputValue.toLowerCase()
+      s.toLowerCase().includes(inputValue.toLowerCase()) && !value.includes(s)
   );
 
   return (
     <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2 mb-2">
+        {value.map((tag, index) => (
+          <Badge
+            key={index}
+            variant="secondary"
+            className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(tag)}
+              className="ml-1 hover:text-blue-900 focus:outline-none"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+
       <Input
         value={inputValue}
-        onChange={(e) => {
-          setInputValue(e.target.value);
-          onValueChange(e.target.value);
-        }}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Type and press Enter to add..."
         className={cn(
           "flex-1 bg-transparent outline-none shadow-none focus-visible:ring-0 px-3 py-2 h-auto",
           className
         )}
         {...props}
       />
+
       <div className="flex flex-wrap gap-2">
         <span className="text-sm text-muted-foreground">Suggestions:</span>
-        {(inputValue === "" ? suggestions : filteredSuggestions).map(
-          (suggestion) => (
-            <Badge
-              key={suggestion}
-              variant="outline"
-              onMouseDown={() => handleSuggestionClick(suggestion)}
-              className="cursor-pointer hover:bg-secondary"
-            >
-              {suggestion}
-            </Badge>
-          )
-        )}
+        {filteredSuggestions.map((suggestion) => (
+          <Badge
+            key={suggestion}
+            variant="outline"
+            onClick={() => handleSuggestionClick(suggestion)}
+            className="cursor-pointer hover:bg-secondary transition-colors"
+          >
+            + {suggestion}
+          </Badge>
+        ))}
       </div>
     </div>
   );
@@ -100,7 +132,7 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
   const [formData, setFormData] = useState({
     title: "",
     abstract: "",
-    platform_type: "",
+    platform_types: [] as string[], // --- MODIFIED: Changed from string to string[] ---
     keywords: [] as string[],
     member_hacker: "",
     member_hipster1: "",
@@ -130,7 +162,12 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
     const data = new FormData();
     data.append("title", formData.title);
     data.append("abstract", formData.abstract);
-    data.append("platform_type", formData.platform_type);
+
+    // --- MODIFIED: Append platform_types as array ---
+    formData.platform_types.forEach((type) =>
+      data.append("platform_types[]", type)
+    );
+
     formData.keywords.forEach((keyword) => data.append("keywords[]", keyword));
     data.append("member_hacker", formData.member_hacker);
     data.append("member_hipster1", formData.member_hipster1);
@@ -191,8 +228,11 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
       case 1: // Project Details
         if (!formData.title) stepErrors.title = ["Title is required."];
         if (!formData.abstract) stepErrors.abstract = ["Abstract is required."];
-        if (!formData.platform_type)
-          stepErrors.platform_type = ["Platform type is required."];
+        // --- MODIFIED: Validate array length ---
+        if (formData.platform_types.length === 0)
+          stepErrors.platform_types = [
+            "At least one platform type is required.",
+          ];
         if (formData.keywords.length === 0)
           stepErrors.keywords = ["At least one keyword is required."];
         break;
@@ -321,19 +361,19 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="platform_type" className="text-right">
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="platform_types" className="text-right pt-2">
                     Platform Type
                   </Label>
                   <div className="col-span-3">
                     <PlatformTypeInput
-                      id="platform_type"
-                      value={formData.platform_type}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, platform_type: value })
+                      id="platform_types"
+                      value={formData.platform_types}
+                      onValueChange={(values) =>
+                        setFormData({ ...formData, platform_types: values })
                       }
                     />
-                    <ErrorMessage field="platform_type" />
+                    <ErrorMessage field="platform_types" />
                   </div>
                 </div>
 
@@ -360,7 +400,6 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
             {currentStep === 2 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  {/* --- MODIFIED: Label text size standardized --- */}
                   <Label htmlFor="member_hacker" className="text-right text-sm">
                     Hacker
                   </Label>
@@ -380,7 +419,6 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  {/* --- MODIFIED: Label text size standardized --- */}
                   <Label
                     htmlFor="member_hipster1"
                     className="text-right text-sm"
@@ -403,7 +441,6 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  {/* --- MODIFIED: Label text size standardized, Optional kept --- */}
                   <Label
                     htmlFor="member_hipster2"
                     className="text-right whitespace-nowrap text-sm"
@@ -431,7 +468,6 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  {/* --- MODIFIED: Label text size standardized, Optional removed --- */}
                   <Label
                     htmlFor="panel_member_1"
                     className="text-right text-sm"
@@ -454,7 +490,6 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  {/* --- MODIFIED: Label text size standardized, Optional kept --- */}
                   <Label
                     htmlFor="panel_member_2"
                     className="text-right whitespace-nowrap text-sm"
@@ -477,7 +512,6 @@ export const ManuscriptUploadModal: React.FC<ManuscriptUploadModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  {/* --- MODIFIED: Label text size standardized, Optional kept --- */}
                   <Label
                     htmlFor="panel_member_3"
                     className="text-right whitespace-nowrap text-sm"

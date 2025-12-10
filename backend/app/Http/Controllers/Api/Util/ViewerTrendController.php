@@ -26,13 +26,13 @@ class ViewerTrendController extends Controller
 
         // The query now uses the `submission_year` column for all date-based logic
         $projects = CapstoneProject::select(
-            'capstone_projects.submission_year as year', // Use submission_year
+            'capstone_projects.submission_year as year',
             'user_details.department',
             DB::raw('COUNT(DISTINCT capstone_projects.id) as total_projects')
         )
             ->join('project_researchers', 'capstone_projects.id', '=', 'project_researchers.project_id')
             ->join('user_details', 'project_researchers.user_id', '=', 'user_details.user_id')
-            ->where('capstone_projects.submission_year', '>=', $startYear) // Filter by submission_year
+            ->where('capstone_projects.submission_year', '>=', $startYear)
             ->groupBy('year', 'user_details.department')
             ->orderBy('year')
             ->orderBy('user_details.department')
@@ -72,30 +72,37 @@ class ViewerTrendController extends Controller
 
     /**
      * Get the distribution of capstone projects by platform type for a specific year.
+     * Updated to support Many-to-Many PlatformType relationship.
      *
      * @param int $year The year to query.
      * @return \Illuminate\Http\JsonResponse
      */
     public function getProjectTypeDistribution(int $year)
     {
-        // Get the count of projects for each platform type for the given year
-        $platformDistribution = CapstoneProject::select(
-            'platform_type',
-            DB::raw('COUNT(id) as count')
-        )
-            ->where('submission_year', $year)
-            ->groupBy('platform_type')
-            ->orderBy('platform_type')
+        // We join platform_types -> project_platforms -> capstone_projects
+        $platformDistribution = DB::table('platform_types')
+            ->select(
+                // Alias 'platform_name' as 'platform_type' to maintain backward compatibility with frontend
+                'platform_types.platform_name as platform_type',
+                DB::raw('COUNT(project_platforms.project_id) as count')
+            )
+            ->join('project_platforms', 'platform_types.id', '=', 'project_platforms.platform_type_id')
+            ->join('capstone_projects', 'project_platforms.project_id', '=', 'capstone_projects.id')
+            ->where('capstone_projects.submission_year', $year)
+            ->groupBy('platform_types.platform_name')
+            ->orderBy('platform_type') // sort by name alphabetically
             ->get();
 
-        // Calculate the total number of projects for the year
-        $totalProjects = $platformDistribution->sum('count');
+        // Calculate the total number of platform tags for the year
+        // Note: Since this is now Many-to-Many, this sum represents total platform assignments,
+        // not necessarily unique projects (a project can be both Web and Mobile).
+        $totalPlatformTags = $platformDistribution->sum('count');
 
         return response()->json([
             'message' => "Project type distribution for year {$year} fetched successfully.",
             'data' => [
                 'year' => $year,
-                'total_projects' => (int) $totalProjects,
+                'total_projects' => (int) $totalPlatformTags,
                 'platforms' => $platformDistribution->map(function ($item) {
                     // Ensure count is an integer
                     $item->count = (int) $item->count;
@@ -114,7 +121,6 @@ class ViewerTrendController extends Controller
     public function getLanguageUsageByYear(int $year)
     {
         // This query joins programming_languages with capstone_projects through the pivot tables
-        // to count how many projects in a given year used each language.
         $languageUsage = DB::table('programming_languages')
             ->select(
                 'programming_languages.language_name',
@@ -148,7 +154,7 @@ class ViewerTrendController extends Controller
             )
             ->join('capstone_projects', 'users.id', '=', 'capstone_projects.adviser_id')
             ->where('users.role', 'Adviser')
-            ->groupBy('adviser_name')
+            ->groupBy('adviser_name', 'users.first_name', 'users.last_name') // Added columns to group by for strict SQL modes
             ->orderBy('project_count', 'desc')
             ->limit(5)
             ->get();

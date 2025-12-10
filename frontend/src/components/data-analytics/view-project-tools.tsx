@@ -3,13 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { YearPicker } from "@/components/ui/year-picker";
 import { ProjectToolsChart } from "@/components/ui/project-tools-chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CreatableCombobox, Option } from "@/components/ui/creatable-combobox"; // Import the new component
 import { Button } from "@/components/ui/button";
 import { apiCall } from "@/lib/api";
 
@@ -34,6 +28,14 @@ const ProjectToolsView = () => {
 
   const fromYear = 2010;
   const toYear = currentYear;
+
+  // Options for the dropdown
+  const projectTypeOptions: Option[] = [
+    { value: "Web", label: "Web" },
+    { value: "Mobile", label: "Mobile" },
+    { value: "Desktop", label: "Desktop" },
+    { value: "IoT", label: "IoT" },
+  ];
 
   // This effect fetches data whenever the filters change
   useEffect(() => {
@@ -142,18 +144,16 @@ const ProjectToolsView = () => {
         </div>
 
         <div className="flex w-full flex-col items-center gap-4 md:w-auto md:flex-row">
-          <Select value={projectType} onValueChange={setProjectType}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Select Project Type" />
-            </SelectTrigger>
-            <SelectContent className="border border-gray-300 shadow-md rounded-md">
-              {/* These values now exactly match your database enums */}
-              <SelectItem value="Web" >Web</SelectItem>
-              <SelectItem value="Mobile">Mobile</SelectItem>
-              <SelectItem value="Desktop">Desktop</SelectItem>
-              <SelectItem value="IoT">IoT</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Replaced Select with CreatableCombobox */}
+          <CreatableCombobox
+            items={projectTypeOptions}
+            value={projectType}
+            onValueChange={setProjectType}
+            placeholder="Select or Type..."
+            searchPlaceholder="Search project type..."
+            emptyMessage="No type found. Type to create."
+            className="w-full md:w-[200px] border border-gray-300 shadow-md rounded-md"
+          />
         </div>
       </div>
 
