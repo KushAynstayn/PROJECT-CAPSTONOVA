@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\UserManagement;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActionType;
 use App\Models\FacultyWhitelist;
+use App\Models\UserLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -76,6 +79,14 @@ class FacultyWhitelistController extends Controller
             'hashed_email'    => hash('sha256', $request->email),
         ]);
 
+        // LOGGING
+        $actionType = ActionType::firstOrCreate(['action_name' => 'add_faculty_whitelist_entry']);
+        UserLog::create([
+            'user_id'        => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details'        => "Added faculty whitelist entry for Faculty ID {$whitelist->faculty_id} ({$whitelist->role}).",
+        ]);
+
         return response()->json([
             'message' => 'Faculty added to whitelist successfully.',
             'data'    => $this->formatData($whitelist)
@@ -139,6 +150,14 @@ class FacultyWhitelistController extends Controller
 
         $whitelist->save();
 
+        // LOGGING
+        $actionType = ActionType::firstOrCreate(['action_name' => 'update_faculty_whitelist_entry']);
+        UserLog::create([
+            'user_id'        => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details'        => "Updated faculty whitelist entry for Faculty ID {$whitelist->faculty_id}.",
+        ]);
+
         return response()->json([
             'message' => 'Faculty whitelist updated successfully.',
             'data'    => $this->formatData($whitelist)
@@ -151,7 +170,19 @@ class FacultyWhitelistController extends Controller
     public function destroy(string $id)
     {
         $whitelist = FacultyWhitelist::findOrFail($id);
+
+        // Capture details for log before deletion
+        $facultyId = $whitelist->faculty_id;
+
         $whitelist->delete();
+
+        // LOGGING
+        $actionType = ActionType::firstOrCreate(['action_name' => 'delete_faculty_whitelist_entry']);
+        UserLog::create([
+            'user_id'        => Auth::id(),
+            'action_type_id' => $actionType->id,
+            'details'        => "Deleted faculty whitelist entry for Faculty ID {$facultyId}.",
+        ]);
 
         return response()->json(['message' => 'Faculty whitelist entry deleted successfully.'], 200);
     }

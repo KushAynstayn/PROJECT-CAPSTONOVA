@@ -32,20 +32,21 @@ use App\Http\Controllers\Api\Util\ProjectToolsController;
 use App\Http\Controllers\Api\Adviser\SuggestionController;
 use App\Http\Controllers\Api\Auth\TwoFactorAuthController;
 use App\Http\Controllers\Api\SuperAdmin\UserLogController;
+use App\Http\Controllers\Api\System\SystemBackupController;
 use App\Http\Controllers\Api\Util\UserManuscriptController;
 use App\Http\Controllers\Api\Util\AdviserOverviewController;
 use App\Http\Controllers\Api\Util\CheckManuscriptController;
-use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 
+use App\Http\Controllers\Api\Util\CheckSourceCodeController;
 use App\Http\Controllers\Api\Admin\CapstoneProjectController;
 use App\Http\Controllers\Api\MlService\AssociationController;
 use App\Http\Controllers\Api\User\StreamManuscriptController;
 use App\Http\Controllers\Api\UserManagement\MAdminController;
 use App\Http\Controllers\Api\Util\EnvironmentTrendController;
 use App\Http\Controllers\Api\Viewer\RequestProjectController;
+
+
 use App\Http\Controllers\Api\MlService\MLSuggestionController;
-
-
 use App\Http\Controllers\Api\UserManagement\MViewerController;
 use App\Http\Controllers\Api\Viewer\FeaturedProjectController;
 use App\Http\Controllers\Api\Adviser\AssignedProjectController;
@@ -66,8 +67,8 @@ use App\Http\Controllers\Api\SuperAdmin\SACapstoneProjectController;
 use App\Http\Controllers\Api\UserManagement\RestrictedUsersController;
 use App\Http\Controllers\Api\MlService\ProjectSizeRegressionController;
 use App\Http\Controllers\Api\UserManagement\FacultyWhitelistController;
+use App\Http\Controllers\Api\UserManagement\MFacultyWhitelistController;
 use App\Http\Controllers\Api\Proponent\SubmitDocumentAndDetailController;
-use App\Http\Controllers\Api\System\SystemBackupController;
 
 
 // Authentication routes grouped under the 'auth' prefix.
@@ -492,6 +493,7 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
 
     //Faculty Whitelist routes
     Route::apiResource('faculty-whitelist', FacultyWhitelistController::class);
+    Route::post('/faculty-whitelist/import', [MFacultyWhitelistController::class, 'uploadExcel']);
 
 
     //Restrcted users routes
@@ -505,6 +507,7 @@ Route::prefix('user-mgt')->middleware('auth:sanctum')->group(function () {
         [RestrictedUsersController::class, 'restore']
     )->name('restricted-users.restore');
 });
+
 
 
 Route::prefix('ml-service')->group(function () {

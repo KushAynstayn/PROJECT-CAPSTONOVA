@@ -1,3 +1,6 @@
+// File Location: src/components/user-manage/view-whitelist.tsx
+// Status: [MODIFIED FILE]
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -30,6 +33,7 @@ interface WhitelistViewProps {
   onEdit: (item: WhitelistItem) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  onImport: () => void; // <--- NEW PROP
   isLoading: boolean;
 }
 
@@ -41,6 +45,7 @@ const WhitelistView = ({
   onEdit,
   onDelete,
   onAdd,
+  onImport, // <--- NEW PROP
   isLoading,
 }: WhitelistViewProps) => {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
@@ -128,7 +133,7 @@ const WhitelistView = ({
         }
       `}</style>
 
-      {/* Top Bar: Search and Add Button */}
+      {/* Top Bar: Search and Add Buttons */}
       <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="relative flex items-center w-full grow md:max-w-md rounded-md border border-gray-300 shadow-md bg-background overflow-hidden">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -137,7 +142,6 @@ const WhitelistView = ({
           <InputWithClear
             className="ml-10 w-full rounded-none border-none bg-none focus-visible:ring-0 focus-visible:ring-offset-0"
             type="search"
-            // ✅ CHANGED: Placeholder now indicates only Faculty ID search
             placeholder="Search by Faculty ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -148,16 +152,43 @@ const WhitelistView = ({
           />
         </div>
 
-        <button
-          className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:rounded-[25px] hover:scale-110 hover:opacity-100"
-          onClick={onAdd}
-        >
-          <img
-            src="/images/add-user.png"
-            alt="Add Whitelist"
-            className="h-12 w-12"
-          />
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Import Button */}
+          <button
+            className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:scale-110 hover:opacity-100 bg-[#660000] text-white px-4 py-2 rounded-full shadow-md gap-2"
+            onClick={onImport}
+            title="Import Excel"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            <span className="hidden md:inline font-medium">Import Excel</span>
+          </button>
+
+          {/* Add Button */}
+          <button
+            className="flex items-center justify-center opacity-70 transition-transform duration-200 hover:rounded-[25px] hover:scale-110 hover:opacity-100"
+            onClick={onAdd}
+            title="Add Manually"
+          >
+            <img
+              src="/images/add-user.png"
+              alt="Add Whitelist"
+              className="h-12 w-12"
+            />
+          </button>
+        </div>
       </div>
 
       {/* Table */}
