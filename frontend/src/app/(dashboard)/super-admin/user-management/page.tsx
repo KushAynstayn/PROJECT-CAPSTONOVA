@@ -33,6 +33,7 @@ import WhitelistView, {
 } from "../../../../components/user-manage/view-whitelist";
 import AddWhitelist from "../../../../components/user-manage/add-whitelist";
 import EditWhitelist from "../../../../components/user-manage/edit-whitelist";
+import ImportWhitelistModal from "../../../../components/user-manage/import-whitelist-modal"; // <--- IMPORT
 
 // --- Type and Interface definitions ---
 type Role =
@@ -139,6 +140,7 @@ const SuperAdminUserManagementPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false); // <--- NEW STATE
 
   // --- Reset Page on Role/Search Change ---
   useEffect(() => {
@@ -539,6 +541,7 @@ const SuperAdminUserManagementPage = () => {
         onSearchChange={(value) => setSearchQuery(value)}
         onClear={() => setSearchQuery("")}
         onAdd={() => setIsAddModalOpen(true)}
+        onImport={() => setIsImportModalOpen(true)} // <--- CONNECT HANDLER
         items={users["Faculty Whitelist"] as WhitelistItem[]}
         onEdit={(item) => handleEditUser(item)}
         onDelete={(id) => handleDeleteUser(id)}
@@ -594,6 +597,14 @@ const SuperAdminUserManagementPage = () => {
             <AddWhitelist
               onClose={() => setIsAddModalOpen(false)}
               onAdd={handleAddUser}
+            />
+          )}
+
+          {/* Import Modal */}
+          {isImportModalOpen && currentRole === "Faculty Whitelist" && (
+            <ImportWhitelistModal
+              onClose={() => setIsImportModalOpen(false)}
+              onSuccess={() => fetchWhitelist()}
             />
           )}
 
