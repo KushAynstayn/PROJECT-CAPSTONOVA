@@ -87,6 +87,7 @@ const Footer = () => {
               </AdvancedSearchModal>
             </li>
             <li><a href="/about" className="text-gray-300 animated-button uppercase text-sm tracking-wider">About</a></li>
+            <li><a href="/acm-templates" className="text-gray-300 animated-button uppercase text-sm tracking-wider">ACM Templates</a></li>
           </ul>
         </nav>
 

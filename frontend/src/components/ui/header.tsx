@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect, ReactNode, memo } from "react";
-import { Home, Library, Lightbulb, TrendingUp, Info, Bell, User, LucideProps } from "lucide-react";
+import { Home, Library, Lightbulb, TrendingUp, Info, Bell, User, FileText, LucideProps } from "lucide-react";
 import { usePathname } from "next/navigation";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -19,6 +19,7 @@ const menuItems = [
   { href: "/about", Icon: Info, label: "About Us", delay: 250 },
   { href: "/notifications", Icon: Bell, label: "Notifications", delay: 300 },
   { href: "/account", Icon: User, label: "Account", delay: 350 },
+  { href: "/acm-templates", Icon: FileText, label: "ACM Templates", delay: 400 },
 ];
 
 // --- OPTIMIZATION 2: Memoized MenuLink Component ---
@@ -121,15 +122,7 @@ const Header = () => {
                   <span className={STYLES.text}>{label}</span>
                 </MenuLink>
               ))}
-
-              <div className="flex items-center justify-center" data-aos="fade-up">
-                <Image
-                  src="/images/logo_capstonova.png"
-                  alt="Logo"
-                  width={150}
-                  height={150}
-                />
-              </div>
+  
             </div>
           </PopoverContent>
         </Popover>
